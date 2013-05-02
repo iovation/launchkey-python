@@ -38,11 +38,24 @@ def encrypt_RSA(key, message):
     encrypted = rsakey.encrypt(message)
     return encrypted.encode('base64')
 
+def sign_data(priv_key, data):
+    from Crypto.PublicKey import RSA
+    from Crypto.Signature import PKCS1_v1_5
+    from Crypto.Hash import SHA256
+    from base64 import b64encode, b64decode
+    rsakey = RSA.importKey(priv_key)
+    signer = PKCS1_v1_5.new(rsakey)
+    digest = SHA256.new()
+    digest.update(b64decode(data))
+    sign = signer.sign(digest)
+    return b64encode(sign)
 
-class LaunchKey():
+
+class API():
     """ Needed """
 
     API_HOST = "https://api.launchkey.com"
+    api_pub_key = None
 
     def __init__(self, app_key, app_secret, private_key, domain, version, test=False):
         self.app_key = app_key
@@ -61,7 +74,7 @@ class LaunchKey():
         if self.api_pub_key is None:
             #Ping to get key
             response = requests.get(self.API_HOST + "ping", verify=self.verify)
-            self.api_pub_key = response['key']
+            self.api_pub_key = response.json()['key']
         encrypted_app_secret = encrypt_RSA(self.api_pub_key, self.app_secret)
         signature = sign_data(self.private_key, encrypted_app_secret)
         return {'app_key': self.app_key, 'secret_key': encrypted_app_secret,
@@ -79,7 +92,7 @@ class LaunchKey():
             30422 - POST; Credentials incorrect for app and app secret
             30423 - POST; Error verifying app
             30424 - POST; No paired devices'''
-            raise
+            return "Error"
         return response.json()['auth_request']
 
     def poll_request(self, auth_request):
