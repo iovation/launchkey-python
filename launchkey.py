@@ -51,23 +51,22 @@ def sign_data(priv_key, data):
     return b64encode(sign)
 
 
-class API():
+class API(object):
     """ Needed """
 
+    #self.API_HOST = "https://sandbox-api.launchkey.com"
     API_HOST = "https://api.launchkey.com"
     api_pub_key = None
 
-    def __init__(self, app_key, app_secret, private_key, domain, version, test=False):
+    def __init__(self, app_key, app_secret, private_key, domain, version, api_host="", test=False):
         self.app_key = app_key
         self.app_secret = app_secret
         self.private_key = private_key
         self.domain = domain
         self.verify = not test
-        if test:
-            self.API_HOST = "https://dev-api.int.lkey:8000" + "/" + version + "/"
-            #self.API_HOST = "https://sandbox-api.launchkey.com" + "/" + version + "/"
-        else:
-            self.API_HOST += "/" + version + "/"
+        if api_host != "":
+            self.API_HOST = api_host
+        self.API_HOST += "/" + version + "/"
 
     def _prepare_auth(self):
         ''' Encrypts app_secret with RSA key and signs '''
