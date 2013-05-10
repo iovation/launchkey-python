@@ -73,8 +73,9 @@ class API(object):
         if self.api_pub_key is None:
             #Ping to get key
             response = requests.get(self.API_HOST + "ping", verify=self.verify)
+            to_encrypt = {"secret": self.app_secret, "stamped": response.json()['launchkey_time']}
             self.api_pub_key = response.json()['key']
-        encrypted_app_secret = encrypt_RSA(self.api_pub_key, self.app_secret)
+        encrypted_app_secret = encrypt_RSA(self.api_pub_key, str(to_encrypt))
         signature = sign_data(self.private_key, encrypted_app_secret)
         return {'app_key': self.app_key, 'secret_key': encrypted_app_secret,
                 'signature': signature}
