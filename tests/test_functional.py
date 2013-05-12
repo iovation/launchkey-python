@@ -13,6 +13,14 @@ def ping_get(launchkey_time=None):
         response['launchkey_time'] = launchkey_time
     return response
 
+def poll_get(iteration=0, error=0):
+    if error > 0:
+        return {"successful": False, "status_code": 400, "message": "Error message", "message_code": error, "response": {}}
+    if iteration == 1:
+        return {'auth': "c" * 360}
+    else:
+        return {"successful": False, "status_code": 400, "message": "There is no pending request", "message_code": 70402, "response": {}}
+
 def auths_post():
     return {"auth_request": "o2jf89r0wmnxnxzshaw9185yebsj4re3"}
 
@@ -32,3 +40,30 @@ class FunctionalTestAPI(unittest.TestCase):
         print repr(response)
         assert response == auths_post()['auth_request']
 
+    def test_poll_request(self):
+        api = self._create_API()
+        RequestReplacer().replacer("get", "poll", poll_get())
+        auth_request = "b" * 32
+        response = api.poll_request(auth_request)
+        assert response['message_code'] == 70402
+        assert response['message'] == "There is no pending request"
+        RequestReplacer().replacer("get", "poll", poll_get(1))
+        response = api.poll_request(auth_request)
+        assert response['auth'] == "c" * 360
+
+    def test_is_authorized(self):
+        ''' 
+            Give an encrypted package and decrypt it using private key 
+            Then test notify
+        '''
+        pass
+        api = self._create_API()
+        RequestReplacer().replacer("get", "ping", ping_get())
+        RequestReplacer().replacer("put", "logs", None)
+        
+
+    def test_logout(self):
+        pass
+        api = self._create_API()
+        RequestReplacer().replacer("get", "ping", ping_get())
+        RequestReplacer().replacer("put", "logs", None)

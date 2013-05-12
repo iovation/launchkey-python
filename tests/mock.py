@@ -1,4 +1,4 @@
-from mocker import Mocker, MockerTestCase, ANY, CONTAINS, ARGS, KWARGS
+from mocker import Mocker, MockerTestCase, ANY, CONTAINS
 
 
 class RequestReplacer(MockerTestCase):
