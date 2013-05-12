@@ -85,7 +85,6 @@ class API(object):
         params = self._prepare_auth()
         params['username'] = username
         response = requests.post(self.API_HOST + "auths", params=params, verify=self.verify)
-        print "\n\nresponse is \n" + repr(response.text)
         if 'status_code' in response.json() and response.json()['status_code'] >= 300:
             #Error response.json()['message_code']
             '''30421 - POST; Incorrect data for API call

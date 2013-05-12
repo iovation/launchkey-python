@@ -33,6 +33,9 @@ setup(name='LaunchKey Python SDK',
           'launchkey',
       ],
       zip_safe=False,
-      test_suite='launchkey-sdk-python',
+      test_suite='tests',
       install_requires=requires,
+      tests_require=[
+        'Mocker',
+      ],
       )
