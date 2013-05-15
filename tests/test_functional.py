@@ -47,6 +47,7 @@ class FunctionalTestAPI(unittest.TestCase):
         response = api.poll_request(auth_request)
         assert response['message_code'] == 70402
         assert response['message'] == "There is no pending request"
+        RequestReplacer().replacer("get", "ping", ping_get())
         RequestReplacer().replacer("get", "poll", poll_get(1))
         response = api.poll_request(auth_request)
         assert response['auth'] == "c" * 360

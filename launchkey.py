@@ -70,11 +70,10 @@ class API(object):
 
     def _prepare_auth(self):
         ''' Encrypts app_secret with RSA key and signs '''
-        if self.api_pub_key is None:
-            #Ping to get key
-            response = requests.get(self.API_HOST + "ping", verify=self.verify)
-            to_encrypt = {"secret": self.app_secret, "stamped": response.json()['launchkey_time']}
-            self.api_pub_key = response.json()['key']
+        #Ping to get key and time
+        response = requests.get(self.API_HOST + "ping", verify=self.verify)
+        to_encrypt = {"secret": self.app_secret, "stamped": response.json()['launchkey_time']}
+        self.api_pub_key = response.json()['key']
         encrypted_app_secret = encrypt_RSA(self.api_pub_key, str(to_encrypt))
         signature = sign_data(self.private_key, encrypted_app_secret)
         return {'app_key': self.app_key, 'secret_key': encrypted_app_secret,
@@ -96,21 +95,22 @@ class API(object):
 
     def poll_request(self, auth_request):
         ''' Poll the API to find the status of an authorization request '''
-        params = {'app_key': self.app_key, 'app_secret': self.app_secret,
-                  'auth_request': auth_request}
+        params = self._prepare_auth()
+        params['auth_request'] = auth_request
         response = requests.get(self.API_HOST + "poll", params=params, verify=self.verify)
         return response.json()
 
-    def is_authorized(self, package):
+    def is_authorized(self, auth_request, package):
         ''' 
             Returns boolean value based on whether user has denied or 
             accepted the authorization request
         '''
         import json
         auth_response = json.loads(decrypt_RSA(self.private_key, package))
-        if not auth_response['response'] or str(auth_response['response']).lower() == "false":
+        if not auth_response['response'] or str(auth_response['response']).lower() == "false" or \
+                not auth_response['auth_request'] or auth_request != auth_response['auth_request']:
             return self._notify("Authenticate", False)
-        if str(auth_response['response']).lower() == "true":
+        if self.pins_valid(auth_response['app_pins'], auth_response['device_id']) and str(auth_response['response']).lower() == "true":
             return self._notify("Authenticate", True, auth_response['auth_request'])
         return False
 
@@ -121,13 +121,13 @@ class API(object):
             session
         '''
         params = self._prepare_auth()
-        params['username'] = username
         params['action'] = action
         params['status'] = status
         params['auth_request'] = auth_request
         response = requests.put(self.API_HOST + "logs", params=params, verify=self.verify)
-        print "\n\nlogs response\n" + repr(response.text)
-        pass
+        if response.json().has_key("message") and response.json()['message'] == "Successfully updated":
+            return status
+        return False
 
     def logout(self, username):
         ''' 
@@ -135,3 +135,13 @@ class API(object):
             Then notifies API that the session end has been confirmed
         '''
         return self._notify("Revoke", False)
+
+    def pins_valid(self, app_pins, device):
+        ''' 
+            Return boolean for whether the tokens pass or not 
+            Not fully implemented
+            Should take into consideration device_id and whether the existing
+            pins match up to the previous pins on prior requests
+        '''
+        tokens = app_pins.split(",")
+        return True
