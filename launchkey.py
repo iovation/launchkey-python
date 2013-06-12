@@ -50,6 +50,24 @@ def sign_data(priv_key, data):
     sign = signer.sign(digest)
     return b64encode(sign)
 
+def verify_sign(pub_key, signature, data):
+    ''' 
+        Verifies with a public key from whom the data came that it was indeed
+        signed by their private key.
+    '''
+    from Crypto.PublicKey import RSA
+    from Crypto.Signature import PKCS1_v1_5
+    from Crypto.Hash import SHA256
+    from base64 import b64decode
+    data = data.replace('\r', '')
+    rsakey = RSA.importKey(pub_key)
+    signer = PKCS1_v1_5.new(rsakey)
+    digest = SHA256.new()
+    digest.update(data)
+    if signer.verify(digest, b64decode(signature)):
+        return True
+    return False
+
 
 class API(object):
     """ Needed """
@@ -74,7 +92,7 @@ class API(object):
         ''' Encrypts app_secret with RSA key and signs '''
         #Ping to get key and time
         self.ping()
-        to_encrypt = {"secret": self.app_secret, "stamped": self.ping_time}
+        to_encrypt = {"secret": self.app_secret, "stamped": str(self.ping_time)}
         encrypted_app_secret = encrypt_RSA(self.api_pub_key, str(to_encrypt))
         signature = sign_data(self.private_key, encrypted_app_secret)
         return {'app_key': self.app_key, 'secret_key': encrypted_app_secret,
@@ -85,7 +103,7 @@ class API(object):
         if self.api_pub_key is None or self.ping_time is None:
             response = requests.get(self.API_HOST + "ping", verify=self.verify).json()
             self.api_pub_key = response['key']
-            self.ping_time = response['launchkey_time']
+            self.ping_time = datetime.datetime.strptime(response['launchkey_time'], "%Y-%m-%d %H:%M:%S")
             self.ping_difference = datetime.datetime.now()
         else:
             self.ping_time = datetime.datetime.now() - self.ping_difference + self.ping_time
@@ -136,16 +154,30 @@ class API(object):
         params['status'] = status
         params['auth_request'] = auth_request
         response = requests.put(self.API_HOST + "logs", params=params, verify=self.verify)
-        if response.json().has_key("message") and response.json()['message'] == "Successfully updated":
+        if "message" in response.json() and response.json()['message'] == "Successfully updated":
             return status
         return False
 
-    def logout(self, username):
+    def deorbit(self, orbit, signature):
         ''' 
-            Forces an end of session for user
-            Then notifies API that the session end has been confirmed
+            Verify the deorbit request by signature and timestamp 
+            Return the user_hash needed to identify the user and log them out
         '''
-        return self._notify("Revoke", False)
+        import json
+        import datetime
+        self.ping()
+        if verify_sign(self.api_pub_key, signature, orbit):
+            decoded = json.loads(orbit)
+            date_request = datetime.datetime.strptime(decoded['launchkey_time'], "%Y-%m-%d %H:%M:%S")
+            if not self.ping_time - date_request > datetime.timedelta(minutes=5):
+                return decoded['user_hash']
+        return None
+
+    def logout(self, auth_request):
+        ''' 
+            Notifies API that the session end has been confirmed
+        '''
+        return self._notify("Revoke", True, auth_request)
 
     def pins_valid(self, app_pins, device):
         ''' 

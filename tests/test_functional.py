@@ -8,7 +8,7 @@ def ping_get(launchkey_time=None):
     import datetime
     response = {"date_stamp": "2013-04-20 21:40:02", "key": get_api_key()}
     if launchkey_time is None:
-        response['launchkey_time'] = datetime.datetime.now()
+        response['launchkey_time'] = str(datetime.datetime.now())[:19]
     else:
         response['launchkey_time'] = launchkey_time
     return response
