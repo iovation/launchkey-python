@@ -57,6 +57,8 @@ class API(object):
     #self.API_HOST = "https://sandbox-api.launchkey.com"
     API_HOST = "https://api.launchkey.com"
     api_pub_key = None
+    ping_time = None
+    ping_difference = None
 
     def __init__(self, app_key, app_secret, private_key, domain, version, api_host="", test=False):
         self.app_key = app_key
@@ -71,16 +73,22 @@ class API(object):
     def _prepare_auth(self):
         ''' Encrypts app_secret with RSA key and signs '''
         #Ping to get key and time
-        response = self.ping()
-        to_encrypt = {"secret": self.app_secret, "stamped": response.json()['launchkey_time']}
-        self.api_pub_key = response.json()['key']
+        self.ping()
+        to_encrypt = {"secret": self.app_secret, "stamped": self.ping_time}
         encrypted_app_secret = encrypt_RSA(self.api_pub_key, str(to_encrypt))
         signature = sign_data(self.private_key, encrypted_app_secret)
         return {'app_key': self.app_key, 'secret_key': encrypted_app_secret,
                 'signature': signature}
 
     def ping(self):
-        return requests.get(self.API_HOST + "ping", verify=self.verify)
+        import datetime
+        if self.api_pub_key is None or self.ping_time is None:
+            response = requests.get(self.API_HOST + "ping", verify=self.verify).json()
+            self.api_pub_key = response['key']
+            self.ping_time = response['launchkey_time']
+            self.ping_difference = datetime.datetime.now()
+        else:
+            self.ping_time = datetime.datetime.now() - self.ping_difference + self.ping_time
 
     def authorize(self, username):
         ''' Used to send an authorization request for a specific username '''
