@@ -78,11 +78,10 @@ class API(object):
     ping_time = None
     ping_difference = None
 
-    def __init__(self, app_key, app_secret, private_key, domain, version, api_host="", test=False):
+    def __init__(self, app_key, app_secret, private_key, version, api_host="", test=False):
         self.app_key = app_key
         self.app_secret = app_secret
         self.private_key = private_key
-        self.domain = domain
         self.verify = not test
         if api_host != "":
             self.API_HOST = api_host
