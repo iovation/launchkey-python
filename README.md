@@ -1,9 +1,9 @@
 ## Python SDK for LaunchKey API 
-For use in implementing LaunchKey
-Version 1.0
-@author LaunchKey
-@created 2013-03-20
-@updated 2013-06-20
+For use in implementing LaunchKey  
+Version 1.0  
+@author LaunchKey  
+@created 2013-03-20  
+@updated 2013-06-20  
 
 #########################
 ## Description
