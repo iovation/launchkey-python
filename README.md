@@ -13,7 +13,10 @@ Use to more easily interact with LaunchKey's API.
 #########################
 ## Installation
 
-    $ easy_install launchkey
+    $ easy_install launchkey-python
+or  
+
+    $ pip launchkey-python
 
 #########################
 ## Usage
@@ -52,8 +55,13 @@ Use to more easily interact with LaunchKey's API.
 
     api.logout(username)
 
-
 #########################
+## Tests
+
+    $ python setup.py test
+    
+#########################
+
 ## Contributing
 
 1. Fork it
