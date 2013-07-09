@@ -70,22 +70,27 @@ def verify_sign(pub_key, signature, data):
 
 
 class API(object):
-    """ Needed """
+    """ 
+        Launchkey API Object that can be used to authorize users,
+        check existing authorization requests, and notify LaunchKey
+        of the authorization response so it can appropriately be 
+        logged and placed in orbit.
+    """
 
-    #self.API_HOST = "https://sandbox-api.launchkey.com"
     API_HOST = "https://api.launchkey.com"
     api_pub_key = None
     ping_time = None
     ping_difference = None
 
-    def __init__(self, app_key, app_secret, private_key, domain, version, api_host="", test=False):
+    def __init__(self, app_key, app_secret, private_key, version="v1", api_host="", test=False):
         self.app_key = app_key
         self.app_secret = app_secret
         self.private_key = private_key
-        self.domain = domain
         self.verify = not test
         if api_host != "":
             self.API_HOST = api_host
+            if self.API_HOST[-1:] == "/":
+                self.API_HOST = self.API_HOST[:-1]
         self.API_HOST += "/" + version + "/"
 
     def _prepare_auth(self):
