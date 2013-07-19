@@ -11,8 +11,9 @@ import requests
 def generate_RSA(bits=2048):
     '''
         Generate an RSA keypair
-        @bits The key length in bits
-        Return private key and public key
+        :param bits: Int. The key length in bits
+        :return: String. private key
+        :return: String. public key
     '''
     from Crypto.PublicKey import RSA
     new_key = RSA.generate(bits, e=65537)
@@ -113,10 +114,16 @@ class API(object):
         else:
             self.ping_time = datetime.datetime.now() - self.ping_difference + self.ping_time
 
-    def authorize(self, username):
-        ''' Used to send an authorization request for a specific username '''
+    def authorize(self, username, session=True):
+        '''
+        Used to send an authorization request for a specific username
+        :param username: String. The LaunchKey username of the one authorizing
+        :param session: Boolean. If keeping a session mark True; transactional mark False
+        :return: String. The auth_request value for future reference.
+        '''
         params = self._prepare_auth()
         params['username'] = username
+        params['session'] = session
         response = requests.post(self.API_HOST + "auths", params=params, verify=self.verify)
         if 'status_code' in response.json() and response.json()['status_code'] >= 300:
             #Error response.json()['message_code']
@@ -128,7 +135,11 @@ class API(object):
         return response.json()['auth_request']
 
     def poll_request(self, auth_request):
-        ''' Poll the API to find the status of an authorization request '''
+        '''
+        Poll the API to find the status of an authorization request
+        :param auth_request: String. The reference value provided from authorize.
+        :return: JSON. The response will have an error or the encrypted response from the user.
+        '''
         params = self._prepare_auth()
         params['auth_request'] = auth_request
         response = requests.get(self.API_HOST + "poll", params=params, verify=self.verify)
@@ -136,23 +147,31 @@ class API(object):
 
     def is_authorized(self, auth_request, package):
         ''' 
-            Returns boolean value based on whether user has denied or 
-            accepted the authorization request
+        Returns boolean value based on whether user has denied or 
+        accepted the authorization request
+        :param auth_request. String. Same reference value used in poll_request and authorize
+        :param package. String. "auth" value returned from a successful poll_request
+        :return: Boolean. True if successfully authorizes. False if denied or something goes wrong.
         '''
         import json
         auth_response = json.loads(decrypt_RSA(self.private_key, package))
         if not auth_response['response'] or str(auth_response['response']).lower() == "false" or \
                 not auth_response['auth_request'] or auth_request != auth_response['auth_request']:
-            return self._notify("Authenticate", False)
+            return self._notify("Authenticate", False, auth_request)
         if self.pins_valid(auth_response['app_pins'], auth_response['device_id']) and str(auth_response['response']).lower() == "true":
             return self._notify("Authenticate", True, auth_response['auth_request'])
         return False
 
-    def _notify(self, action, status, auth_request=""):
+    def _notify(self, action, status, auth_request):
         '''
-            Notifies LaunchKey as to whether the user was logged in/out or not
-            This allows for the user to have a confirmed status regarding their
-            session
+        Notifies LaunchKey as to whether the user was logged in/out or not
+        This allows for the user to have a confirmed status regarding their
+        session
+        :param action: String. Authenticate or Revoke depending on action being taken.
+        :param status: Boolean. True for authorization, False for deny or failure.
+        :param auth_request: String. The value originally provided by authorize for reference.
+        :return: Boolean. Will match the status going in unless there's a failure in which case
+            the return will default to False.
         '''
         params = self._prepare_auth()
         params['action'] = action
@@ -193,3 +212,4 @@ class API(object):
         '''
         tokens = app_pins.split(",")
         return True
+        raise NotImplementedError

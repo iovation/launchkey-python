@@ -29,15 +29,14 @@ or
     #app_secret will be provided in the dashboard once, or a new one may be generated
     app_secret = "abcdefghijklmnopqrstuvwxyz123456"
     private_key = open("path/to/key.pem", "r").read()
-    #Your domain, which must match in the dashboard
-    domain = "http://yourdomain" 
-    version = "v1"
-    api = launchkey.API(app_key, app_secret, private_key, domain, "v1")
+    api = launchkey.API(app_key, app_secret, private_key)
 
 
 ### When a user wishes to login
 
-    auth_request = api.authorize(username)
+    session = True
+    #Set session to False if it's a transactional authorization and a session doesn't need to be kept.
+    auth_request = api.authorize(username, session)
 
 
 ### To check up on whether that user has launched or not
@@ -47,13 +46,13 @@ or
 
 ### To figure out whether the user authorized or denied the request
 
-    if api.is_authorized(launch_status['auth']):
+    if api.is_authorized(auth_request, launch_status['auth']):
     #Log username in
 
 
 ### When a user logs out
 
-    api.logout(username)
+    api.logout(auth_request)
 
 #########################
 ## Tests
