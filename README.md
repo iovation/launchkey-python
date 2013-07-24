@@ -1,9 +1,9 @@
 ## Python SDK for LaunchKey API 
 For use in implementing LaunchKey  
-Version 1.0  
+Version 1.0.3  
 @author LaunchKey  
 @created 2013-03-20  
-@updated 2013-06-20  
+@updated 2013-07-24
 
 #########################
 ## Description
@@ -47,7 +47,7 @@ or
 ### To figure out whether the user authorized or denied the request
 
     if api.is_authorized(auth_request, launch_status['auth']):
-    #Log username in
+        #Log the user in
 
 
 ### When a user logs out
