@@ -210,6 +210,6 @@ class API(object):
             Should take into consideration device_id and whether the existing
             pins match up to the previous pins on prior requests
         '''
-        tokens = app_pins.split(",")
+        #tokens = app_pins.split(",")
         return True
         raise NotImplementedError
