@@ -125,12 +125,11 @@ class API(object):
         params['username'] = username
         params['session'] = session
         response = requests.post(self.API_HOST + "auths", params=params, verify=self.verify)
-        if 'status_code' in response.json() and response.json()['status_code'] >= 300:
-            #Error response.json()['message_code']
-            '''30421 - POST; Incorrect data for API call
-            30422 - POST; Credentials incorrect for app and app secret
-            30423 - POST; Error verifying app
-            30424 - POST; No paired devices'''
+        try:
+            if 'status_code' in response.json() and response.json()['status_code'] >= 300:
+                error = str(response.json()['message_code']) + " " + response.json()['message']
+                return "Error: " + error
+        except Exception:
             return "Error"
         return response.json()['auth_request']
 
