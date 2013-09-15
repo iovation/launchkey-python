@@ -1,9 +1,8 @@
 ## Python SDK for LaunchKey API 
 For use in implementing LaunchKey  
-Version 1.0.3  
+Version 1.1.0
 @author LaunchKey  
-@created 2013-03-20  
-@updated 2013-07-24
+@updated 2013-09-15
 
 #########################
 ## Description
@@ -36,6 +35,7 @@ or
 
     session = True
     #Set session to False if it's a transactional authorization and a session doesn't need to be kept.
+    #If session is not specified it will automatically default to True
     auth_request = api.authorize(username, session)
 
 
@@ -47,12 +47,49 @@ or
 ### To figure out whether the user authorized or denied the request
 
     if api.is_authorized(auth_request, launch_status['auth']):
-        #Log the user in
+        #Now log the user in
 
 
 ### When a user logs out
 
     api.logout(auth_request)
+    
+### Dealing with Callbacks (Webhooks)
+
+Receiving an authorization
+
+    #You will get auth_request, auth, and user_hash information in a JSON string
+    auth_request = request.params['auth_request']
+    auth = request.params['auth']
+    user_hash = request.params['user_hash']
+    #Identify the user's session by the correlating auth_request
+    #Then use the is_authorized function to complete
+    success = api.isauthorized(auth_request, auth)
+    
+    
+Receiving a deorbit request
+
+    #You will receive two parameters: deorbit and signature
+    deorbit = request.params['deorbit']
+    signature = request.params['signature']
+    #Use the deorbit function with these parameters to get the user_hash to logout
+    user_hash = api.deorbit(deorbit, signature)
+    #If you've kept the auth_request stored for the correlating user_hash you can look it up
+    #and use it now to log the user out
+    #auth_request = get_auth_request_from_user_hash(user_hash)
+    api.logout(auth_request)
+    
+### Extras
+
+Optionally for additional verification you may check PINs that user devices generate. Each device a user has will have a device_id to identify it and up to 5 PIN codes which are sent in the authorization. Every time a new authorization is sent with that device to your app it will generate a new PIN code and discard the oldest. If you store the 4 newest PINs, you can match them up with each new authorization to ensure the device's authenticity.
+
+In order to take advantage of this feature you will need to implement the following functions in your own subclass that are outlined in the SDK:
+
+    pins_valid
+    get_user_hash
+    get_existing_pins
+    update_pins
+    
 
 #########################
 ## Tests
