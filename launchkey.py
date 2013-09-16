@@ -1,9 +1,9 @@
 """ 
-    Python SDK for LaunchKey API 
-    For use in implementing LaunchKey
-    Version 1.0
-    @author LaunchKey
-    @created 2013-03-20
+Python SDK for LaunchKey API 
+For use in implementing LaunchKey
+Version 1.1.0
+@author LaunchKey
+@updated 2013-09-16
 """
 
 import requests
@@ -22,6 +22,12 @@ def generate_RSA(bits=2048):
     return private_key, public_key
 
 def decrypt_RSA(key, package):
+    '''
+    Decrypt RSA encrypted package with private key
+    :param key: Private key
+    :param package: Base64 encoded string to decrypt
+    :return: String decrypted
+    '''
     from Crypto.PublicKey import RSA
     from Crypto.Cipher import PKCS1_OAEP
     from base64 import b64decode
@@ -31,6 +37,12 @@ def decrypt_RSA(key, package):
     return decrypted
 
 def encrypt_RSA(key, message):
+    '''
+    RSA encrypts the message using the public key
+    :param key: Public key to encrypt with
+    :param message: String to be encrypted
+    :return: Base64 encoded encrypted string
+    '''
     from Crypto.PublicKey import RSA
     from Crypto.Cipher import PKCS1_OAEP
     from base64 import b64encode
@@ -40,6 +52,12 @@ def encrypt_RSA(key, message):
     return encrypted.encode('base64')
 
 def sign_data(priv_key, data):
+    '''
+    Create a signature for a set of data using private key
+    :param priv_key: Private key
+    :param data: String data that the signature is being created for
+    :return: Base64 encoded signature
+    '''
     from Crypto.PublicKey import RSA
     from Crypto.Signature import PKCS1_v1_5
     from Crypto.Hash import SHA256
@@ -52,9 +70,13 @@ def sign_data(priv_key, data):
     return b64encode(sign)
 
 def verify_sign(pub_key, signature, data):
-    ''' 
-        Verifies with a public key from whom the data came that it was indeed
-        signed by their private key.
+    '''
+    Verifies with a public key from whom the data came that it was indeed
+    signed by their private key.
+    :param pub_key: Public key
+    :param signature: String signature to be verified
+    :param data: The data the signature was created with
+    :return: Boolean. True for verified. False for not verified.
     '''
     from Crypto.PublicKey import RSA
     from Crypto.Signature import PKCS1_v1_5
@@ -75,10 +97,10 @@ def verify_sign(pub_key, signature, data):
 
 class API(object):
     """ 
-        Launchkey API Object that can be used to authorize users,
-        check existing authorization requests, and notify LaunchKey
-        of the authorization response so it can appropriately be 
-        logged and placed in orbit.
+    Launchkey API Object that can be used to authorize users,
+    check existing authorization requests, and notify LaunchKey
+    of the authorization response so it can appropriately be 
+    logged and placed in orbit.
     """
 
     API_HOST = "https://api.launchkey.com"
@@ -170,8 +192,8 @@ class API(object):
         '''
         import json
         auth_response = json.loads(decrypt_RSA(self.private_key, package))
-        if not auth_response['response'] or str(auth_response['response']).lower() == "false" or \
-                not auth_response['auth_request'] or auth_request != auth_response['auth_request']:
+        if "response" not in auth_response or "auth_request" not in auth_response or \
+                auth_request != auth_response['auth_request']:
             return self._notify("Authenticate", False, auth_request)
         pins_valid = False
         try:
@@ -245,16 +267,21 @@ class API(object):
         raise NotImplementedError
         user = get_user_hash()
         pins = get_existing_pins(user, device)
+        update = False
         if app_pins.count(",") == 0 and pins.strip() == "":
+            update = True
+        elif app_pins.count(",") > 0:
+            if app_pins[:app_pins.rfind(",")] == pins.strip():
+                update = True
+                if app_pins.count(",") == 4:
+                    app_pins = app_pins[app_pins.find(",") + 1:]
+            elif app_pins[app_pins.find(",") + 1:] == pins.strip():
+                update = True
+                if app_pins.count(",") == 4:
+                    app_pins = app_pins[:app_pins.rfind(",")]
+        if update:
             update_pins(user, device, app_pins)
-        elif app_pins.count(",") > 0 and \
-                app_pins[app_pins.find(",") + 1:] == pins.strip():
-            if app_pins.count(",") == 4:
-                app_pins = app_pins[app_pins.find(",") + 1:]
-            update_pins(user, device, app_pins)
-        else:
-            return False
-        return True
+            return True
     
     def get_user_hash(self):
         '''
