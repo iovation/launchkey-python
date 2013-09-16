@@ -14,8 +14,11 @@ def verify_sign(pub_key, signature, data):
     signer = PKCS1_v1_5.new(rsakey)
     digest = SHA256.new()
     digest.update(b64decode(data))
-    if signer.verify(digest, b64decode(signature)):
-        return True
+    try:
+        if signer.verify(digest, b64decode(signature)):
+            return True
+    except ValueError:
+        pass
     return False
 
 class UnitTestAPI(unittest.TestCase):

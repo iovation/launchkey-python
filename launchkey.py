@@ -242,11 +242,12 @@ class API(object):
         raise NotImplementedError
         user = get_user_hash()
         pins = get_existing_pins(user, device)
-        if len(app_pins) == 4 and pins.strip() == "":
+        if app_pins.count(",") == 0 and pins.strip() == "":
             update_pins(user, device, app_pins)
-        elif len(app_pins) > 4 and app_pins[:-5] == pins.strip():
-            if len(app_pins) > 19:
-                app_pins = app_pins[5:]
+        elif app_pins.count(",") > 0 and \
+                app_pins[app_pins.find(",") + 1:] == pins.strip():
+            if app_pins.count(",") == 4:
+                app_pins = app_pins[app_pins.find(",") + 1:]
             update_pins(user, device, app_pins)
         else:
             return False
