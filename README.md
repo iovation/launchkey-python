@@ -1,6 +1,6 @@
 ## Python SDK for LaunchKey API 
 For use in implementing LaunchKey  
-Version 1.1.0
+Version 1.1.0  
 @author LaunchKey  
 @updated 2013-09-16
 
@@ -64,7 +64,7 @@ Receiving an authorization
     user_hash = request.params['user_hash']
     #Identify the user's session by the correlating auth_request
     #Then use the is_authorized function to complete
-    success = api.isauthorized(auth_request, auth)
+    success = api.is_authorized(auth_request, auth)
     
     
 Receiving a deorbit request
