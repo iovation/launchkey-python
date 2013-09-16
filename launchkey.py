@@ -200,8 +200,9 @@ class API(object):
             pins_valid = self.pins_valid(auth_response['app_pins'], auth_response['device_id'])
         except NotImplementedError:
             pins_valid = True
-        if pins_valid and str(auth_response['response']).lower() == "true":
-            return self._notify("Authenticate", True, auth_response['auth_request'])
+        if pins_valid:
+            auth_response = str(auth_response['response']).lower() == 'true'
+            return self._notify("Authenticate", auth_response, auth_response['auth_request'])
         return False
 
     def _notify(self, action, status, auth_request):
