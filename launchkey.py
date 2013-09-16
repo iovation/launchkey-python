@@ -142,7 +142,7 @@ class API(object):
             if 'status_code' in response.json() and response.json()['status_code'] >= 300:
                 error = str(response.json()['message_code']) + " " + response.json()['message']
                 return "Error: " + error
-        except Exception:
+        except ValueError:
             return "Error"
         return response.json()['auth_request']
 
@@ -172,8 +172,7 @@ class API(object):
             return self._notify("Authenticate", False, auth_request)
         pins_valid = False
         try:
-            pins_valid = self.pins_valid(auth_response['app_pins'],
-                    auth_response['device_id'], pins)
+            pins_valid = self.pins_valid(auth_response['app_pins'], auth_response['device_id'])
         except NotImplementedError:
             pins_valid = True
         if pins_valid and str(auth_response['response']).lower() == "true":
@@ -235,6 +234,7 @@ class API(object):
         May optionally be implemented in a subclass
         Should take into consideration device_id and whether the existing
         PINs match up to the previous pins on prior requests
+        Can one-way hash the PINs newest 4 PINs for storage and compare on authorization
         :param app_pins: The PINs that were sent with the device's authorization response
         :param device: The device_id to identify which of the user's devices was used and
         by which to check the PINs
