@@ -165,7 +165,7 @@ class API(object):
         response = requests.post(self.API_HOST + "auths", params=params, verify=self.verify)
         try:
             if 'status_code' in response.json() and response.json()['status_code'] >= 300:
-                error = str(response.json()['message_code']) + " " + response.json()['message']
+                error = str(response.json()['message_code']) + " " + str(response.json()['message'])
                 return "Error: " + error
         except ValueError:
             return "Error"
