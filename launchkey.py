@@ -1,9 +1,9 @@
 """ 
 Python SDK for LaunchKey API 
 For use in implementing LaunchKey
-Version 1.1.1
+Version 1.2.0
 @author LaunchKey
-@updated 2013-09-16
+@updated 2014-06-16
 """
 
 import requests
@@ -152,16 +152,19 @@ class API(object):
             self.ping_time = datetime.datetime.now() - self.ping_difference + self.ping_time
         return {"launchkey_time": str(self.ping_time)[:-7], "key": self.api_pub_key}
 
-    def authorize(self, username, session=True):
+    def authorize(self, username, session=True, user_push_id=False):
         '''
         Used to send an authorization request for a specific username
         :param username: String. The LaunchKey username of the one authorizing
         :param session: Boolean. If keeping a session mark True; transactional mark False
+        :param user_push_id: Boolean. If your app would like to be returned an ID for the user
+        that can be used to initiate notifications in the future without user input mark True.
         :return: String. The auth_request value for future reference.
         '''
         params = self._prepare_auth()
         params['username'] = username
         params['session'] = session
+        params['user_push_id'] = user_push_id
         response = requests.post(self.API_HOST + "auths", params=params, verify=self.verify)
         try:
             if 'status_code' in response.json() and response.json()['status_code'] >= 300:
