@@ -1,7 +1,7 @@
-## Python SDK for LaunchKey API 
-For use in implementing LaunchKey  
-Version 1.1.1  
-@author LaunchKey  
+## Python SDK for LaunchKey API  [![Build Status](https://travis-ci.org/LaunchKey/launchkey-python.png?branch=master)](https://travis-ci.org/LaunchKey/launchkey-python)
+For use in implementing LaunchKey
+Version 1.1.1
+@author LaunchKey
 @updated 2013-10-02
 
 #########################
@@ -13,7 +13,7 @@ Use to more easily interact with LaunchKey's API.
 ## Installation
 
     $ easy_install launchkey-python
-or  
+or
 
     $ pip launchkey-python
 
@@ -21,10 +21,10 @@ or
 ## Usage
 
 ### To create a LaunchKey API object
-    
+
     import launchkey
     #app_key will be provided in the dashboard
-    app_key = 1234567890 
+    app_key = 1234567890
     #app_secret will be provided in the dashboard once, or a new one may be generated
     app_secret = "abcdefghijklmnopqrstuvwxyz123456"
     private_key = open("path/to/key.pem", "r").read()
@@ -53,7 +53,7 @@ or
 ### When a user logs out
 
     api.logout(auth_request)
-    
+
 ### Dealing with Callbacks (Webhooks)
 
 Receiving an authorization
@@ -65,8 +65,8 @@ Receiving an authorization
     #Identify the user's session by the correlating auth_request
     #Then use the is_authorized function to complete
     success = api.is_authorized(auth_request, auth)
-    
-    
+
+
 Receiving a deorbit request
 
     #You will receive two parameters: deorbit and signature
@@ -78,7 +78,7 @@ Receiving a deorbit request
     #and use it now to log the user out
     #auth_request = get_auth_request_from_user_hash(user_hash)
     api.logout(auth_request)
-    
+
 ### Extras
 
 Optionally for additional verification you may check PINs that user devices generate. Each device a user has will have a device_id to identify it and up to 5 PIN codes which are sent in the authorization. Every time a new authorization is sent with that device to your app it will generate a new PIN code and discard the oldest. If you store the 4 newest PINs, you can match them up with each new authorization to ensure the device's authenticity.
@@ -89,13 +89,13 @@ In order to take advantage of this feature you will need to implement the follow
     get_user_hash
     get_existing_pins
     update_pins
-    
+
 
 #########################
 ## Tests
 
     $ python setup.py test
-    
+
 #########################
 
 ## Contributing
