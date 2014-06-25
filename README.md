@@ -33,10 +33,13 @@ or
 
 ### When a user wishes to login
 
-    session = True
-    #Set session to False if it's a transactional authorization and a session doesn't need to be kept.
+    #Set session to False if it's a transactional authorization and a session doesn't need to be kept
     #If session is not specified it will automatically default to True
-    auth_request = api.authorize(username, session)
+    session = True
+    #Set user_push_id to True if you would like to be returned a value that can be used to push requests to the user in the future
+    #If user_push_id is not specified it will automatically default to False
+    user_push_id = False
+    auth_request = api.authorize(username, session, user_push_id)
 
 
 ### To check up on whether that user has launched or not
