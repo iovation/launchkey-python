@@ -198,15 +198,9 @@ class API(object):
         if "response" not in auth_response or "auth_request" not in auth_response or \
                 auth_request != auth_response['auth_request']:
             return self._notify("Authenticate", False, auth_request)
-        pins_valid = False
-        try:
-            pins_valid = self.pins_valid(auth_response['app_pins'], auth_response['device_id'])
-        except NotImplementedError:
-            pins_valid = True
-        if pins_valid:
-            response = str(auth_response['response']).lower() == 'true'
-            return self._notify("Authenticate", response, auth_response['auth_request'])
-        return False
+        response = str(auth_response['response']).lower() == 'true'
+        return self._notify("Authenticate", response, auth_response['auth_request'])
+
 
     def _notify(self, action, status, auth_request):
         '''
@@ -257,36 +251,6 @@ class API(object):
         '''
         return self._notify("Revoke", True, auth_request)
 
-    def pins_valid(self, app_pins, device):
-        ''' 
-        Return boolean for whether the tokens pass or not 
-        May optionally be implemented in a subclass
-        Should take into consideration device_id and whether the existing
-        PINs match up to the previous pins on prior requests
-        Can one-way hash the PINs newest 4 PINs for storage and compare on authorization
-        :param app_pins: The PINs that were sent with the device's authorization response
-        :param device: The device_id to identify which of the user's devices was used and
-        by which to check the PINs
-        '''
-        raise NotImplementedError
-        user = get_user_hash()
-        pins = get_existing_pins(user, device)
-        update = False
-        if app_pins.count(",") == 0 and pins.strip() == "":
-            update = True
-        elif app_pins.count(",") > 0:
-            if app_pins[:app_pins.rfind(",")] == pins.strip():
-                update = True
-                if app_pins.count(",") == 4:
-                    app_pins = app_pins[app_pins.find(",") + 1:]
-            elif app_pins[app_pins.find(",") + 1:] == pins.strip():
-                update = True
-                if app_pins.count(",") == 4:
-                    app_pins = app_pins[:app_pins.rfind(",")]
-        if update:
-            update_pins(user, device, app_pins)
-            return True
-    
     def get_user_hash(self):
         '''
         Get the user hash for this request
@@ -294,23 +258,22 @@ class API(object):
         '''
         raise NotImplementedError('Subclass must implement.')
     
-    def get_existing_pins(self, user, device):
+    def create_whitelabel_user(self, identifier):
         '''
-        Get string of all PINs comma delimited that exist for the user already from
-        persistent store
-        :param user: the user_hash for this request
-        :param device: the device id that was decrypted in the response for this authorization
-        :return: pins as a string going from oldest to newest
+        WhiteLabel Only
+        Create a new user for your White Label application
+        If the user for the specified identifier already exists, then set up a new device
+        for that user
+        :param identifier: How the user is identified to your application
+            This should be a static value such as a user's ID or UUID value rather than an
+            email address which may be subject to change
+        :return: JSON response
+            qrcode - The URL to a QR Code for the device to scan
+            lk_identifier - The value to store in order to push future requests to this user
+            code - Manual code for the user to type into their device if they are unable to
+                scan the QR Code
         '''
-        raise NotImplementedError('Subclass must implement.')
-    
-    def update_pins(self, user, device, pins):
-        '''
-        Update the persistent store with the latest PINs
-        :param user: user_hash
-        :param device: the device_id to identify which of the user's devices
-        :param pins: the latest PINs with which to update
-        '''
-        raise NotImplementedError('Subclass must implement.')
-    
-    
+        params = self._prepare_auth()
+        params['identifier'] = identifier
+        response = requests.post(self.API_HOST + "users", params=params, verify=self.verify)
+        return response.json()
