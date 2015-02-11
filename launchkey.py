@@ -94,6 +94,19 @@ def verify_sign(pub_key, signature, data):
         pass
     return False
 
+def decrypt_AES(cipher, package, iv):
+    '''
+    Decrypts an AES package using a specific cipher and iv
+    :param cipher: String. Key for decryption.
+    :param package: String. The base64 encoded data to be decrypted.
+    :param iv: String. 16 characters. Used to randomize the data for repeated
+        cipher usage by changing this value. Can be sent plaintext.
+    '''
+    from Crypto.Cipher import AES
+    from base64 import b64decode
+    cipher_obj = AES.new(cipher, AES.MODE_CBC, iv)
+    return cipher_obj.decrypt(b64decode(package))
+
 
 class API(object):
     """ 
@@ -119,17 +132,33 @@ class API(object):
                 self.API_HOST = self.API_HOST[:-1]
         self.API_HOST += "/" + version + "/"
 
-    def _prepare_auth(self):
+    def _prepare_auth(self, cipher=None, signature=False):
         '''
-        Encrypts app_secret with RSA key and signs
+        Encrypts secret with RSA key and signs
+        :param cipher: The AES cipher that was used to encrypt other parameters or body
+        :return: Dict with RSA encrypted secret_key and signature of that value
         '''
         #Ping to get key and time
         self.ping()
-        to_encrypt = {"secret": self.app_secret, "stamped": str(self.ping_time)}
-        encrypted_app_secret = encrypt_RSA(self.api_pub_key, str(to_encrypt))
-        signature = sign_data(self.private_key, encrypted_app_secret)
-        return {'app_key': self.app_key, 'secret_key': encrypted_app_secret,
-                'signature': signature}
+        to_encrypt = {"secret": self.secret, "stamped": str(self.ping_time)}
+        if cipher is not None:
+            to_encrypt['cipher'] = cipher
+        encrypted_secret = encrypt_RSA(self.api_pub_key, str(to_encrypt))
+        to_return = {'secret_key': encrypted_secret}
+        if signature:
+            signature = sign_data(self.private_key, encrypted_secret)
+            to_return['signature'] = signature
+        if self.obj_type == "app":
+            to_return['app_key'] = self.id_key
+        elif self.obj_type == "org":
+            to_return['org_key'] = self.id_key
+        else:
+            raise KeyError('Need to specify whether obj is an application or organization')
+        return to_return
+
+    def _signature(self, body):
+        import json
+        return sign_data(self.private_key, json.dumps(body))
 
     def ping(self, force=False):
         '''
@@ -161,7 +190,7 @@ class API(object):
         that can be used to initiate notifications in the future without user input mark True.
         :return: String. The auth_request value for future reference.
         '''
-        params = self._prepare_auth()
+        params = self._prepare_auth(signature=True)
         params['username'] = username
         params['session'] = session
         params['user_push_id'] = user_push_id
@@ -180,7 +209,7 @@ class API(object):
         :param auth_request: String. The reference value provided from authorize.
         :return: JSON. The response will have an error or the encrypted response from the user.
         '''
-        params = self._prepare_auth()
+        params = self._prepare_auth(signature=True)
         params['auth_request'] = auth_request
         response = requests.get(self.API_HOST + "poll", params=params, verify=self.verify)
         return response.json()
@@ -213,7 +242,7 @@ class API(object):
         :return: Boolean. Will match the status going in unless there's a failure in which case
             the return will default to False.
         '''
-        params = self._prepare_auth()
+        params = self._prepare_auth(signature=True)
         params['action'] = action
         params['status'] = status
         params['auth_request'] = auth_request
@@ -273,7 +302,10 @@ class API(object):
             code - Manual code for the user to type into their device if they are unable to
                 scan the QR Code
         '''
-        params = self._prepare_auth()
-        params['identifier'] = identifier
-        response = requests.post(self.API_HOST + "users", params=params, verify=self.verify)
-        return response.json()
+        body = self._prepare_auth()
+        body['identifier'] = identifier
+        response = requests.post(self.API_HOST + "users", json=body, params={"signature": self._signature(body)}, verify=self.verify)
+        cipher = decrypt_RSA(self.private_key, response.json()['cipher'])
+        data = decrypt_AES(cipher[:-16], response.json()['data'], cipher[-16:])
+        import json
+        return json.loads(data)

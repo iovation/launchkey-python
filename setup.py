@@ -8,11 +8,11 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
     'pycrypto',
-    'requests',
+    'requests>=2.5.1',
     ]
 
 setup(name='launchkey-python',
-      version='1.2.1',
+      version='1.2.2',
       description='LaunchKey Python SDK',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
