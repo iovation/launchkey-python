@@ -140,7 +140,7 @@ class API(object):
         '''
         #Ping to get key and time
         self.ping()
-        to_encrypt = {"secret": self.secret, "stamped": str(self.ping_time)}
+        to_encrypt = {"secret": self.app_secret, "stamped": str(self.ping_time)}
         if cipher is not None:
             to_encrypt['cipher'] = cipher
         encrypted_secret = encrypt_RSA(self.api_pub_key, str(to_encrypt))
