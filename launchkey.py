@@ -148,12 +148,8 @@ class API(object):
         if signature:
             signature = sign_data(self.private_key, encrypted_secret)
             to_return['signature'] = signature
-        if self.obj_type == "app":
-            to_return['app_key'] = self.id_key
-        elif self.obj_type == "org":
-            to_return['org_key'] = self.id_key
-        else:
-            raise KeyError('Need to specify whether obj is an application or organization')
+        
+        to_return['app_key'] = self.app_key
         return to_return
 
     def _signature(self, body):
@@ -305,7 +301,7 @@ class API(object):
         body = self._prepare_auth()
         body['identifier'] = identifier
         response = requests.post(self.API_HOST + "users", json=body, params={"signature": self._signature(body)}, verify=self.verify)
-        cipher = decrypt_RSA(self.private_key, response.json()['cipher'])
-        data = decrypt_AES(cipher[:-16], response.json()['data'], cipher[-16:])
+        cipher = decrypt_RSA(self.private_key, response.json()['response']['cipher'])
+        data = decrypt_AES(cipher[:-16], response.json()['response']['data'], cipher[-16:])
         import json
         return json.loads(data)
