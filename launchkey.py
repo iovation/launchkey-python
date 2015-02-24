@@ -157,7 +157,7 @@ class API(object):
         to_return['app_key'] = self.app_key
         return to_return
 
-    def _signature(self):
+    def _signature(self, body):
         return sign_data(self.private_key, body, encoded=False)
 
     def ping(self, force=False):
