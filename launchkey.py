@@ -51,11 +51,13 @@ def encrypt_RSA(key, message):
     encrypted = rsakey.encrypt(message)
     return encrypted.encode('base64')
 
-def sign_data(priv_key, data):
+def sign_data(priv_key, data, encoded=True):
     '''
     Create a signature for a set of data using private key
     :param priv_key: Private key
     :param data: String data that the signature is being created for
+    :param encoded: Boolean. True for base64 encoded data input
+    False for raw data input
     :return: Base64 encoded signature
     '''
     from Crypto.PublicKey import RSA
@@ -65,7 +67,10 @@ def sign_data(priv_key, data):
     rsakey = RSA.importKey(priv_key)
     signer = PKCS1_v1_5.new(rsakey)
     digest = SHA256.new()
-    digest.update(b64decode(data))
+    if encoded:
+        digest.update(b64decode(data))
+    else:
+        digest.update(data)
     sign = signer.sign(digest)
     return b64encode(sign)
 
@@ -152,9 +157,8 @@ class API(object):
         to_return['app_key'] = self.app_key
         return to_return
 
-    def _signature(self, body):
-        import json
-        return sign_data(self.private_key, json.dumps(body))
+    def _signature(self):
+        return sign_data(self.private_key, body, encoded=False)
 
     def ping(self, force=False):
         '''
@@ -298,9 +302,14 @@ class API(object):
             code - Manual code for the user to type into their device if they are unable to
                 scan the QR Code
         '''
+        import json
         body = self._prepare_auth()
         body['identifier'] = identifier
-        response = requests.post(self.API_HOST + "users", json=body, params={"signature": self._signature(body)}, verify=self.verify)
+        json_string = json.dumps(body)
+        headers = {"content-type": "application/json"}
+        response = requests.post(self.API_HOST + "users", data=json_string,
+                                 params={"signature": self._signature(json_string)},
+                                 headers=headers, verify=self.verify)
         cipher = decrypt_RSA(self.private_key, response.json()['response']['cipher'])
         data = decrypt_AES(cipher[:-16], response.json()['response']['data'], cipher[-16:])
         import json
