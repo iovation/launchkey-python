@@ -1,8 +1,8 @@
 ## Python SDK for LaunchKey API  [![Build Status](https://travis-ci.org/LaunchKey/launchkey-python.png?branch=master)](https://travis-ci.org/LaunchKey/launchkey-python)
 For use in implementing LaunchKey
-Version 1.2.0
+Version 1.2.4
 @author LaunchKey
-@updated 2014-06-25
+@updated 2015-03-13
 
 #########################
 ## Description
@@ -82,16 +82,14 @@ Receiving a deorbit request
     #auth_request = get_auth_request_from_user_hash(user_hash)
     api.logout(auth_request)
 
-### Extras
+### White Label
 
-Optionally for additional verification you may check PINs that user devices generate. Each device a user has will have a device_id to identify it and up to 5 PIN codes which are sent in the authorization. Every time a new authorization is sent with that device to your app it will generate a new PIN code and discard the oldest. If you store the 4 newest PINs, you can match them up with each new authorization to ensure the device's authenticity.
+You can add users to your White Label Group via an App that belongs to the group using the new call.
 
-In order to take advantage of this feature you will need to implement the following functions in your own subclass that are outlined in the SDK:
+    response = api.create_whitelabel_user("identifier")
 
-    pins_valid
-    get_user_hash
-    get_existing_pins
-    update_pins
+It is important to note that the identifier sent in should be sent as a string and should be a non-changing value unique to that user. It is recommended to use a primary key or UUID instead of a username or email address that could be subject to change.
+The response will include qrcode, code, and lk_identifier. The qrcode is a url to an image of the QR Code for the mobile application to scan. The code is a value that can be entered in the mobile application in the event the QR Code cannot be scanned. The lk_identifer is a value that should be stored for that user and used to push future authentication requests when using "authorize".
 
 
 #########################
