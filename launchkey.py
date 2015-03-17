@@ -1,9 +1,9 @@
 """ 
 Python SDK for LaunchKey API 
 For use in implementing LaunchKey
-Version 1.2.0
+Version 1.2.4
 @author LaunchKey
-@updated 2014-06-16
+@updated 2015-03-13
 """
 
 import requests
@@ -286,7 +286,7 @@ class API(object):
         :return: user_hash
         '''
         raise NotImplementedError('Subclass must implement.')
-    
+
     def create_whitelabel_user(self, identifier):
         '''
         WhiteLabel Only
