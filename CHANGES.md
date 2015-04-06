@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+1.2.7
+-----
+
+Update manifest for new CHANGES file
+
 1.2.6
 -----
 
