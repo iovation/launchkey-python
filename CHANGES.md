@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+1.2.6
+-----
+
+Fix for bad build regarding CHANGES.md
+
 1.2.5
 -----
 
