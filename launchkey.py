@@ -298,7 +298,6 @@ class API(object):
             email address which may be subject to change
         :return: JSON response
             qrcode - The URL to a QR Code for the device to scan
-            lk_identifier - The value to store in order to push future requests to this user
             code - Manual code for the user to type into their device if they are unable to
                 scan the QR Code
         '''

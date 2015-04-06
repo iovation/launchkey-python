@@ -88,8 +88,13 @@ You can add users to your White Label Group via an App that belongs to the group
 
     response = api.create_whitelabel_user("identifier")
 
-It is important to note that the identifier sent in should be sent as a string and should be a non-changing value unique to that user. It is recommended to use a primary key or UUID instead of a username or email address that could be subject to change.
-The response will include qrcode, code, and lk_identifier. The qrcode is a url to an image of the QR Code for the mobile application to scan. The code is a value that can be entered in the mobile application in the event the QR Code cannot be scanned. The lk_identifer is a value that should be stored for that user and used to push future authentication requests when using "authorize".
+It is important to note that the identifier sent in should be sent as a string and should be a non-changing value unique
+to that user. It is recommended to use a primary key or UUID instead of a username or email address that could be
+subject to change.  This identifier will be used authenticate the user as well as pair devices additional devices to the
+user's account within your white label group.
+
+The response will include qrcode and code. The qrcode is a url to an image of the QR Code for the mobile application to
+scan. The code is a value that can be entered in the mobile application in the event the QR Code cannot be scanned.
 
 
 #########################
