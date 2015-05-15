@@ -1,9 +1,9 @@
 """ 
 Python SDK for LaunchKey API 
 For use in implementing LaunchKey
-Version 1.2.4
+Version 1.2.7
 @author LaunchKey
-@updated 2015-03-13
+@updated 2015-04-06
 """
 
 import requests
@@ -295,10 +295,10 @@ class API(object):
         for that user
         :param identifier: How the user is identified to your application
             This should be a static value such as a user's ID or UUID value rather than an
-            email address which may be subject to change
+            email address which may be subject to change.  This identifier will be used authenticate the user as well as
+            pair devices additional devices to the user's account within your white label group.
         :return: JSON response
             qrcode - The URL to a QR Code for the device to scan
-            lk_identifier - The value to store in order to push future requests to this user
             code - Manual code for the user to type into their device if they are unable to
                 scan the QR Code
         '''
