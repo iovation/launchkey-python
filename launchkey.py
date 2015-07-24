@@ -6,7 +6,7 @@
     @created 2013-03-20
 """
 
-import requests
+import requests, six
 
 def generate_RSA(bits=2048):
     '''
@@ -18,7 +18,7 @@ def generate_RSA(bits=2048):
     new_key = RSA.generate(bits, e=65537)
     public_key = new_key.publickey().exportKey("PEM")
     private_key = new_key.exportKey("PEM")
-    return private_key, public_key
+    return private_key.decode('unicode_escape'), public_key.decode('unicode_escape')
 
 def decrypt_RSA(key, package):
     from Crypto.PublicKey import RSA
@@ -27,16 +27,16 @@ def decrypt_RSA(key, package):
     rsakey = RSA.importKey(key)
     rsakey = PKCS1_OAEP.new(rsakey)
     decrypted = rsakey.decrypt(b64decode(package))
-    return decrypted
+    return decrypted.decode('unicode_escape')
 
 def encrypt_RSA(key, message):
     from Crypto.PublicKey import RSA
     from Crypto.Cipher import PKCS1_OAEP
-    from base64 import b64encode
     rsakey = RSA.importKey(key)
     rsakey = PKCS1_OAEP.new(rsakey)
-    encrypted = rsakey.encrypt(message)
-    return encrypted.encode('base64')
+    encrypted = rsakey.encrypt(six.b(message))
+    from base64 import b64encode
+    return b64encode(encrypted).decode('unicode_escape')
 
 def sign_data(priv_key, data):
     from Crypto.PublicKey import RSA
@@ -48,7 +48,7 @@ def sign_data(priv_key, data):
     digest = SHA256.new()
     digest.update(b64decode(data))
     sign = signer.sign(digest)
-    return b64encode(sign)
+    return b64encode(sign).decode('unicode_escape')
 
 def verify_sign(pub_key, signature, data):
     ''' 
