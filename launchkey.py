@@ -1,12 +1,12 @@
 """ 
 Python SDK for LaunchKey API 
 For use in implementing LaunchKey
-Version 1.2.7
+Version 1.2.9
 @author LaunchKey
-@updated 2015-04-06
+@updated 2016-02-17
 """
 
-import requests
+import requests, six
 
 def generate_RSA(bits=2048):
     '''
@@ -19,7 +19,7 @@ def generate_RSA(bits=2048):
     new_key = RSA.generate(bits, e=65537)
     public_key = new_key.publickey().exportKey("PEM")
     private_key = new_key.exportKey("PEM")
-    return private_key, public_key
+    return private_key.decode('unicode_escape'), public_key.decode('unicode_escape')
 
 def decrypt_RSA(key, package):
     '''
@@ -34,7 +34,7 @@ def decrypt_RSA(key, package):
     rsakey = RSA.importKey(key)
     rsakey = PKCS1_OAEP.new(rsakey)
     decrypted = rsakey.decrypt(b64decode(package))
-    return decrypted
+    return decrypted.decode('unicode_escape')
 
 def encrypt_RSA(key, message):
     '''
@@ -45,11 +45,11 @@ def encrypt_RSA(key, message):
     '''
     from Crypto.PublicKey import RSA
     from Crypto.Cipher import PKCS1_OAEP
-    from base64 import b64encode
     rsakey = RSA.importKey(key)
     rsakey = PKCS1_OAEP.new(rsakey)
-    encrypted = rsakey.encrypt(message)
-    return encrypted.encode('base64')
+    encrypted = rsakey.encrypt(six.b(message))
+    from base64 import b64encode
+    return b64encode(encrypted).decode('unicode_escape')
 
 def sign_data(priv_key, data, encoded=True):
     '''
@@ -72,7 +72,7 @@ def sign_data(priv_key, data, encoded=True):
     else:
         digest.update(data)
     sign = signer.sign(digest)
-    return b64encode(sign)
+    return b64encode(sign).decode('unicode_escape')
 
 def verify_sign(pub_key, signature, data):
     '''
@@ -201,6 +201,10 @@ class API(object):
         response = requests.post(self.API_HOST + "auths", params=params, verify=self.verify)
         try:
             if 'status_code' in response.json() and response.json()['status_code'] >= 300:
+                '''30421 - POST; Incorrect data for API call
+                30422 - POST; Credentials incorrect for app and app secret
+                30423 - POST; Error verifying app
+                30424 - POST; No paired devices'''
                 error = str(response.json()['message_code']) + " " + str(response.json()['message'])
                 return "Error: " + error
         except ValueError:
@@ -318,3 +322,4 @@ class API(object):
         data = decrypt_AES(cipher[:-16], response.json()['response']['data'], cipher[-16:])
         import json
         return json.loads(data)
+

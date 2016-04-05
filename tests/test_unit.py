@@ -25,16 +25,16 @@ class UnitTestAPI(unittest.TestCase):
 
     def test_generate_RSA(self):
         private_key, public_key = generate_RSA()
-        self.assertEquals("-----BEGIN RSA PRIVATE KEY-----", private_key[:31])
-        self.assertEquals("-----END RSA PRIVATE KEY-----", private_key[-29:])
-        self.assertEquals("-----BEGIN PUBLIC KEY-----", public_key[:26])
-        self.assertEquals("-----END PUBLIC KEY-----", public_key[-24:])
+        self.assertEqual("-----BEGIN RSA PRIVATE KEY-----", private_key[:31])
+        self.assertEqual("-----END RSA PRIVATE KEY-----", private_key[-29:])
+        self.assertEqual("-----BEGIN PUBLIC KEY-----",public_key[:26])
+        self.assertEqual("-----END PUBLIC KEY-----", public_key[-24:])
         assert len(private_key) > len(public_key) * 3
         private_key, public_key = generate_RSA(1024)
-        self.assertEquals("-----BEGIN RSA PRIVATE KEY-----", private_key[:31])
-        self.assertEquals("-----END RSA PRIVATE KEY-----", private_key[-29:])
-        self.assertEquals("-----BEGIN PUBLIC KEY-----", public_key[:26])
-        self.assertEquals("-----END PUBLIC KEY-----", public_key[-24:])
+        self.assertEqual("-----BEGIN RSA PRIVATE KEY-----", private_key[:31])
+        self.assertEqual("-----END RSA PRIVATE KEY-----", private_key[-29:])
+        self.assertEqual("-----BEGIN PUBLIC KEY-----", public_key[:26])
+        self.assertEqual("-----END PUBLIC KEY-----", public_key[-24:])
         assert len(private_key) > len(public_key) * 3
 
     def test_encrypt_RSA(self):
@@ -50,7 +50,7 @@ class UnitTestAPI(unittest.TestCase):
         private_key, public_key = generate_RSA()
         encrypted = encrypt_RSA(public_key, "test message " * 5)
         decrypted = decrypt_RSA(private_key, encrypted)
-        self.assertEquals(decrypted, "test message " * 5)
+        self.assertEqual(decrypted, "test message " * 5)
 
     def test_sign_data(self):
         from launchkey import encrypt_RSA, decrypt_RSA, sign_data

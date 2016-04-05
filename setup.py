@@ -9,10 +9,11 @@ CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 requires = [
     'pycrypto',
     'requests>=2.5.1',
+    'six',
     ]
 
 setup(name='launchkey-python',
-      version='1.2.8',
+      version='1.2.9',
       description='LaunchKey Python SDK',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
@@ -33,5 +34,7 @@ setup(name='launchkey-python',
       install_requires=requires,
       tests_require=[
         'Mocker',
+        'mock',
       ],
       )
+
