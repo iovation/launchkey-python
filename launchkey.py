@@ -1,12 +1,13 @@
 """ 
 Python SDK for LaunchKey API 
 For use in implementing LaunchKey
-Version 1.2.9
+Version 1.3.0
 @author LaunchKey
-@updated 2016-02-17
+@updated 2016-04-22
 """
 
 import requests, six
+
 
 def generate_RSA(bits=2048):
     '''
@@ -20,6 +21,7 @@ def generate_RSA(bits=2048):
     public_key = new_key.publickey().exportKey("PEM")
     private_key = new_key.exportKey("PEM")
     return private_key.decode('unicode_escape'), public_key.decode('unicode_escape')
+
 
 def decrypt_RSA(key, package):
     '''
@@ -36,6 +38,7 @@ def decrypt_RSA(key, package):
     decrypted = rsakey.decrypt(b64decode(package))
     return decrypted.decode('unicode_escape')
 
+
 def encrypt_RSA(key, message):
     '''
     RSA encrypts the message using the public key
@@ -50,6 +53,7 @@ def encrypt_RSA(key, message):
     encrypted = rsakey.encrypt(six.b(message))
     from base64 import b64encode
     return b64encode(encrypted).decode('unicode_escape')
+
 
 def sign_data(priv_key, data, encoded=True):
     '''
@@ -73,6 +77,7 @@ def sign_data(priv_key, data, encoded=True):
         digest.update(data)
     sign = signer.sign(digest)
     return b64encode(sign).decode('unicode_escape')
+
 
 def verify_sign(pub_key, signature, data):
     '''
@@ -98,6 +103,7 @@ def verify_sign(pub_key, signature, data):
     except ValueError:
         pass
     return False
+
 
 def decrypt_AES(cipher, package, iv):
     '''
@@ -143,7 +149,7 @@ class API(object):
         :param cipher: The AES cipher that was used to encrypt other parameters or body
         :return: Dict with RSA encrypted secret_key and signature of that value
         '''
-        #Ping to get key and time
+        # Ping to get key and time
         self.ping()
         to_encrypt = {"secret": self.app_secret, "stamped": str(self.ping_time)}
         if cipher is not None:
@@ -153,7 +159,7 @@ class API(object):
         if signature:
             signature = sign_data(self.private_key, encrypted_secret)
             to_return['signature'] = signature
-        
+
         to_return['app_key'] = self.app_key
         return to_return
 
@@ -181,7 +187,7 @@ class API(object):
             self.ping_time = datetime.datetime.now() - self.ping_difference + self.ping_time
         return {"launchkey_time": str(self.ping_time)[:-7], "key": self.api_pub_key}
 
-    def authorize(self, username, session=True, user_push_id=False, context=None):
+    def authorize(self, username, session=True, user_push_id=False, context=None, policy=None):
         '''
         Used to send an authorization request for a specific username
         :param username: String. The LaunchKey username of the one authorizing
@@ -190,6 +196,7 @@ class API(object):
         that can be used to initiate notifications in the future without user input mark True.
         :param context: String. Text the rocket would like to send along to the user about this
         particular authentication request.
+        :param policy: Policy. Policy object to request a policy override for this request
         :return: String. The auth_request value for future reference.
         '''
         params = self._prepare_auth(signature=True)
@@ -198,6 +205,9 @@ class API(object):
         params['user_push_id'] = user_push_id
         if context is not None:
             params['context'] = context
+        if policy is not None:
+            import json
+            params['policy'] = json.dumps(policy)
         response = requests.post(self.API_HOST + "auths", params=params, verify=self.verify)
         try:
             if 'status_code' in response.json() and response.json()['status_code'] >= 300:
@@ -233,11 +243,10 @@ class API(object):
         import json
         auth_response = json.loads(decrypt_RSA(self.private_key, package))
         if "response" not in auth_response or "auth_request" not in auth_response or \
-                auth_request != auth_response['auth_request']:
+                        auth_request != auth_response['auth_request']:
             return self._notify("Authenticate", False, auth_request)
         response = str(auth_response['response']).lower() == 'true'
         return self._notify("Authenticate", response, auth_response['auth_request'])
-
 
     def _notify(self, action, status, auth_request):
         '''
@@ -260,7 +269,7 @@ class API(object):
         return False
 
     def deorbit(self, deorbit, signature):
-        ''' 
+        '''
         Verify the deorbit request by signature and timestamp 
         Return the user_hash needed to identify the user and log them out
         :param deorbit: JSON string from LaunchKey with the user_hash and
@@ -276,7 +285,7 @@ class API(object):
             decoded = json.loads(deorbit)
             date_request = datetime.datetime.strptime(decoded['launchkey_time'], "%Y-%m-%d %H:%M:%S")
             if self.ping_time - date_request < datetime.timedelta(minutes=5):
-                #Only want to honor a request that's been made recently
+                # Only want to honor a request that's been made recently
                 return decoded['user_hash']
         return None
 
@@ -323,3 +332,52 @@ class API(object):
         import json
         return json.loads(data)
 
+
+class Policy(dict):
+    """
+    Policy object for applying dynamic policies to requests
+    """
+    def __init__(self, all=0, knowledge=False, inherence=False, possession=False):
+        """
+        :param all: An integer number for the number of all tfactor types to require
+        :param knowledge: Flag to determine if a knowledge factor is required
+        :param inherence: Flag to determine if an inherence factor is required
+        :param possession: Flag to determine if a knowledge factor is required
+        """
+        if all and (knowledge or inherence or possession):
+            raise AttributeError(
+                "You must use either \"all\" or a factor (knowledge, inherence, or possession) not both"
+            )
+        self['minimum_requirements'] = [{
+            'requirement': 'authenticated',
+            'all': all,
+            'knowledge': 1 if knowledge else 0,
+            'inherence': 1 if inherence else 0,
+            'possession': 1 if possession else 0
+        }]
+        self['factors'] = []
+
+    def add_location(self, radius, latitude, longitude):
+        """
+        Add a location for geo-location restrictions on this policy
+        :param radius: Distance in meters
+        :param latitude: Degrees latitude
+        :param longitude: Degrees longitude
+        :return:
+        """
+        if not len(self['factors']):
+            self['factors'].append({
+                'factor': 'geofence',
+                'requirement': 'forced requirement',
+                'quickfail': True,
+                'priority': 1,
+                'attributes': {
+                    'locations': []
+                }
+
+            })
+        self['factors'][0]['attributes']['locations'].append({
+            "radius": radius,
+            "latitude": latitude,
+            "longitude": longitude
+        })
