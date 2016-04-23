@@ -1,8 +1,8 @@
 ## Python SDK for LaunchKey API  [![Build Status](https://travis-ci.org/LaunchKey/launchkey-python.png?branch=master)](https://travis-ci.org/LaunchKey/launchkey-python)
 For use in implementing LaunchKey
-Version 1.2.7
+Version 1.3.0
 @author LaunchKey
-@updated 2015-04-06
+@updated 2016-04-22
 
 #########################
 ## Description
