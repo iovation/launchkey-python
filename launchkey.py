@@ -205,6 +205,9 @@ class API(object):
         params['user_push_id'] = user_push_id
         if context is not None:
             params['context'] = context
+        if policy is not None:
+            import json
+            params['policy'] = json.dumps(policy)
         response = requests.post(self.API_HOST + "auths", params=params, verify=self.verify)
         try:
             if 'status_code' in response.json() and response.json()['status_code'] >= 300:
@@ -330,28 +333,40 @@ class API(object):
         return json.loads(data)
 
 
-class Policy(object):
-
-    def __init__(self, any=0, knowledge=False, inherence=False, possession=False):
-        if any and (knowledge or inherence or possession):
+class Policy(dict):
+    """
+    Policy object for applying dynamic policies to requests
+    """
+    def __init__(self, all=0, knowledge=False, inherence=False, possession=False):
+        """
+        :param all: An integer number for the number of all tfactor types to require
+        :param knowledge: Flag to determine if a knowledge factor is required
+        :param inherence: Flag to determine if an inherence factor is required
+        :param possession: Flag to determine if a knowledge factor is required
+        """
+        if all and (knowledge or inherence or possession):
             raise AttributeError(
-                "You must use either \"any\" or a factor (knowledge, inherence, or possession) not both"
+                "You must use either \"all\" or a factor (knowledge, inherence, or possession) not both"
             )
-        self.__dict__ = {
-            'minimum requirements': [{
-                'requirement': 'authenticated',
-                'any': any,
-                'knowledge': 1 if knowledge else 0,
-                'inherence': 1 if inherence else 0,
-                'possession': 1 if possession else 0
-            }],
-            'factors': []
-        }
+        self['minimum_requirements'] = [{
+            'requirement': 'authenticated',
+            'all': all,
+            'knowledge': 1 if knowledge else 0,
+            'inherence': 1 if inherence else 0,
+            'possession': 1 if possession else 0
+        }]
+        self['factors'] = []
 
     def add_location(self, radius, latitude, longitude):
-        if not len(self.__dict__['factors']):
-            self.__dict__['factors'].append({
-                'category': 'inherence',
+        """
+        Add a location for geo-location restrictions on this policy
+        :param radius: Distance in meters
+        :param latitude: Degrees latitude
+        :param longitude: Degrees longitude
+        :return:
+        """
+        if not len(self['factors']):
+            self['factors'].append({
                 'factor': 'geofence',
                 'requirement': 'forced requirement',
                 'quickfail': True,
@@ -361,7 +376,7 @@ class Policy(object):
                 }
 
             })
-        self.__dict__['factors'][0]['attributes']['locations'].append({
+        self['factors'][0]['attributes']['locations'].append({
             "radius": radius,
             "latitude": latitude,
             "longitude": longitude
