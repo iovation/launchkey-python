@@ -144,7 +144,7 @@ class UnitTestAPI(unittest.TestCase):
                               '{"requirement": "authenticated","all":0,"knowledge":0,"inherence":0,"possession":0}' +
                               '],' +
                               '"factors":[' +
-                              '{"category":"inherence","factor":"geofence","requirement":"forced requirement",' +
+                              '{"factor":"geofence","requirement":"forced requirement",' +
                               '"quickfail":true,"priority":1,"attributes":{"locations":[' +
                               '{"radius":11.1,"latitude":12.2,"longitude":13.3},' +
                               '{"radius":21.1,"latitude":22.2,"longitude":23.3}' +
