@@ -191,7 +191,7 @@ class UnitTestAPI(unittest.TestCase):
         api = API("app key", "secret key", private_key)
         api.authorize("username", policy=policy)
 
-        requests.post.assert_called()
+        self.assertTrue(requests.post.called, 'Expected requests.post to be called but was not')
         args, kwargs = requests.post.call_args
         self.assertDictContainsSubset({'policy': expected}, kwargs['params'])
 
