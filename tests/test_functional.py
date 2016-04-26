@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 import unittest
-from tests.mock import RequestReplacer
+from .mock_test import RequestReplacer
 
 
 def get_api_key():
