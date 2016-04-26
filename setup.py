@@ -7,9 +7,9 @@ README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 
 requires = [
-    'pycrypto',
-    'requests>=2.5.1',
-    'six',
+    'pycrypto >= 2.6.1', 'pycrypto < 3.0.0',
+    'requests >= 2.5.1', 'requests < 3.0.0',
+    'six >= 1.10.0', 'six < 2.0.0',
     ]
 
 setup(name='launchkey-python',
@@ -33,8 +33,8 @@ setup(name='launchkey-python',
       test_suite='tests',
       install_requires=requires,
       tests_require=[
-        'Mocker',
-        'mock',
+        'Mocker==1.1.1',
+        'mock==2.0.0',
       ],
       )
 
