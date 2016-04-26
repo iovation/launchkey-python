@@ -34,7 +34,7 @@ setup(name='launchkey-python',
       install_requires=requires,
       tests_require=[
         'Mocker==1.1.1',
-        'mock==2.0.0',
+        'mock==1.3.0'
       ],
       )
 
