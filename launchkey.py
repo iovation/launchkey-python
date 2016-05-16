@@ -171,21 +171,22 @@ class API(object):
         Used to retrieve the API's public key and server time
         The key is used to encrypt data being sent to the API and the server time is used
         to ensure the data being sent is recent and relevant.
-        Instead of doing a ping each time to the server, it keeps the key and server_time
+        Instead of doing a ping each time to the server, it keeps the key and server time
         stored and does a comparison from the local time to appropriately adjust the value
         :param force: Boolean. True will override the cached variables and ping LaunchKey
-        :return: JSON response with the launchkey_time and API's public key
+        :return: JSON response with the api_time and API's public key
         '''
         import datetime
         if force or self.api_pub_key is None or self.ping_time is None:
+            import dateutil.parser
             response = requests.get(self.API_HOST + "ping", verify=self.verify).json()
             self.api_pub_key = response['key']
-            self.ping_time = datetime.datetime.strptime(response['launchkey_time'], "%Y-%m-%d %H:%M:%S")
+            self.ping_time = dateutil.parser(response['api_time'])
             self.ping_difference = datetime.datetime.now()
             return response
         else:
             self.ping_time = datetime.datetime.now() - self.ping_difference + self.ping_time
-        return {"launchkey_time": str(self.ping_time)[:-7], "key": self.api_pub_key}
+        return {"api_time": str(self.ping_time)[:-7], "key": self.api_pub_key}
 
     def authorize(self, username, session=True, user_push_id=False, context=None, policy=None):
         '''
@@ -282,8 +283,9 @@ class API(object):
         import datetime
         self.ping()
         if verify_sign(self.api_pub_key, signature, deorbit):
+            import dateutil.parser
             decoded = json.loads(deorbit)
-            date_request = datetime.datetime.strptime(decoded['launchkey_time'], "%Y-%m-%d %H:%M:%S")
+            date_request = dateutil.parser(decoded['api_time'])
             if self.ping_time - date_request < datetime.timedelta(minutes=5):
                 # Only want to honor a request that's been made recently
                 return decoded['user_hash']
