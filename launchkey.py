@@ -1,7 +1,7 @@
 """ 
 Python SDK for LaunchKey API 
 For use in implementing LaunchKey
-Version 1.3.1
+Version 2.0.0
 @author LaunchKey
 @updated 2016-05-16
 """
@@ -186,8 +186,7 @@ class API(object):
             return response
         else:
             self.ping_time = datetime.datetime.now() - self.ping_difference + self.ping_time
-        return {"launchkey_time": str(self.ping_time)[:-7], "api_time": str(self.ping_time)[:-7], 
-                "key": self.api_pub_key}
+        return {"api_time": str(self.ping_time)[:-7], "key": self.api_pub_key}
 
     def authorize(self, username, session=True, user_push_id=False, context=None, policy=None):
         '''
