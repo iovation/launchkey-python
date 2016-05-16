@@ -181,7 +181,7 @@ class API(object):
             import dateutil.parser
             response = requests.get(self.API_HOST + "ping", verify=self.verify).json()
             self.api_pub_key = response['key']
-            self.ping_time = dateutil.parser(response['api_time'])
+            self.ping_time = dateutil.parser.parse(response['api_time'])
             self.ping_difference = datetime.datetime.now()
             return response
         else:
@@ -286,7 +286,7 @@ class API(object):
         if verify_sign(self.api_pub_key, signature, deorbit):
             import dateutil.parser
             decoded = json.loads(deorbit)
-            date_request = dateutil.parser(decoded['api_time'])
+            date_request = dateutil.parser.parse(decoded['api_time'])
             if self.ping_time - date_request < datetime.timedelta(minutes=5):
                 # Only want to honor a request that's been made recently
                 return decoded['user_hash']
