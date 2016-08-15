@@ -168,7 +168,7 @@ class UnitTestAPI(unittest.TestCase):
         ping_response = Response()
         ping_response.json = MagicMock(return_value={
             "date_stamp" : "2013-04-20 21:40:02",
-            "launchkey_time" : "2015-04-23 05:25:24",
+            "api_time" : "2015-04-23 05:25:24",
             "key" : "-----BEGIN PUBLIC KEY-----\n\n" +
                     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8zQos4iDSjmUVrFUAg5G\n" +
                     "uhU6GehNKb8MCXFadRWiyLGjtbGZAk8fusQU0Uj9E3o0mne0SYESACkhyK+3M1Er\n" +

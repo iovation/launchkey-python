@@ -10,9 +10,9 @@ def ping_get(launchkey_time=None):
     import datetime
     response = {"date_stamp": "2013-04-20 21:40:02", "key": get_api_key()}
     if launchkey_time is None:
-        response['launchkey_time'] = str(datetime.datetime.now())[:19]
+        response['api_time'] = str(datetime.datetime.now())[:19]
     else:
-        response['launchkey_time'] = launchkey_time
+        response['api_time'] = launchkey_time
     return response
 
 def poll_get(iteration=0, error=0):
@@ -105,7 +105,7 @@ nwIDAQAB
         self._ping_response = MagicMock()
         self._ping_response.json.return_value = {
             'date_stamp': '2013-04-20 21:40:02',
-            'launchkey_time': '2015-01-01 00:00:00',
+            'api_time': '2015-01-01 00:00:00',
             'key': self._api_key
         }
         self._ping_mock = MagicMock(return_value=self._ping_response)
@@ -127,7 +127,7 @@ nwIDAQAB
             expected,
             {
                 'date_stamp': '2013-04-20 21:40:02',
-                'launchkey_time': '2015-01-01 00:00:00',
+                'api_time': '2015-01-01 00:00:00',
                 'key': self._api_key
             }
         ]
