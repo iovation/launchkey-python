@@ -19,5 +19,6 @@ notifications:
     recipients:
       - secure: "bdFDE8d50zWO9XWc1gQ4OPDrbvjZXOum1AIchDqwYXr8C7iluJcS2q+z5mczdvHlW3XflcjALl+x81hekdBk+8L6AJuAj5MhTF+HvjFL2EkY7q0V+seLTltYhoqnnlf0BlYGwoILBbDX2p/GYHNUOqWvCtGlJGMpy0qM3R8t5Vw="
 install:
+  - pip install -U 'setuptools>=17.1'
   - pip install .
 script: python setup.py test
