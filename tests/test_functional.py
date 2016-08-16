@@ -1,27 +1,38 @@
 from __future__ import absolute_import
+from launchkey import API, generate_rsa
+from mock import patch, MagicMock
 import unittest
-
 import requests
 
+api_key = """-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8zQos4iDSjmUVrFUAg5G
+uhU6GehNKb8MCXFadRWiyLGjtbGZAk8fusQU0Uj9E3o0mne0SYESACkhyK+3M1Er
+bHlwYJHN0PZHtpaPWqsRmNzui8PvPmhm9QduF4KBFsWu1sBw0ibBYsLrua67F/wK
+PaagZRnUgrbRUhQuYt+53kQNH9nLkwG2aMVPxhxcLJYPzQCat6VjhHOX0bgiNt1i
+HRHU2phxBcquOW2HpGSWcpzlYgFEhPPQFAxoDUBYZI3lfRj49gBhGQi32qQ1YiWp
+aFxOB8GA0Ny5SfI67u6w9Nz9Z9cBhcZBfJKdq5uRWjZWslHjBN3emTAKBpAUPNET
+nwIDAQAB
+-----END PUBLIC KEY-----
+"""
 
-def get_api_key():
-    return "-----BEGIN PUBLIC KEY-----\n\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8zQos4iDSjmUVrFUAg5G\nuhU6GehNKb8MCXFadRWiyLGjtbGZAk8fusQU0Uj9E3o0mne0SYESACkhyK+3M1Er\nbHlwYJHN0PZHtpaPWqsRmNzui8PvPmhm9QduF4KBFsWu1sBw0ibBYsLrua67F/wK\nPaagZRnUgrbRUhQuYt+53kQNH9nLkwG2aMVPxhxcLJYPzQCat6VjhHOX0bgiNt1i\nHRHU2phxBcquOW2HpGSWcpzlYgFEhPPQFAxoDUBYZI3lfRj49gBhGQi32qQ1YiWp\naFxOB8GA0Ny5SfI67u6w9Nz9Z9cBhcZBfJKdq5uRWjZWslHjBN3emTAKBpAUPNET\nnwIDAQAB\n-----END PUBLIC KEY-----\n"
 
 def ping_get():
     import datetime
-    return {"date_stamp": "2013-04-20 21:40:02", "key": get_api_key(), 'api_time': str(datetime.datetime.now())[:19]}
+    return {"date_stamp": "2013-04-20 21:40:02", "key": api_key, 'api_time': str(datetime.datetime.now())[:19]}
+
 
 def auths_post():
     return {"auth_request": "o2jf89r0wmnxnxzshaw9185yebsj4re3"}
 
-class FunctionalTestAPI(unittest.TestCase):
 
-    __poll_responses = [{"successful": False, "status_code": 400, "message": "Error message", "message_code": 1, "response": {}}]
+class FunctionalTestAPI(unittest.TestCase):
+    __poll_responses = [
+        {"successful": False, "status_code": 400, "message": "Error message", "message_code": 1, "response": {}}]
 
     def __response_to_get(self):
 
         def _responder(*args, **kwargs):
-
+            del kwargs
             response = MagicMock()
             if args[0].endswith('poll'):
                 response.json = MagicMock(return_value=self.__poll_responses.pop())
@@ -30,7 +41,6 @@ class FunctionalTestAPI(unittest.TestCase):
             return response
 
         return _responder
-
 
     def setUp(self):
         super(FunctionalTestAPI, self).setUp()
@@ -57,8 +67,8 @@ class FunctionalTestAPI(unittest.TestCase):
         requests.delete = self.__delete
 
     def _create_API(self):
-        from launchkey import API, generate_RSA
-        self.private_key, self.public_key = generate_RSA()
+        from launchkey import API, generate_rsa
+        self.private_key, self.public_key = generate_rsa()
         return API(1234567890, "abcdefghijklmnopqrstuvwyz1234567", self.private_key,
                    "testdomain.com", "v1")
 
@@ -84,10 +94,6 @@ class FunctionalTestAPI(unittest.TestCase):
         self.assertEqual("c" * 360, response['auth'])
 
 
-from launchkey import API, generate_RSA
-from mock import patch, MagicMock
-
-
 class FunctionalTestAPI2(unittest.TestCase):
     def tearDown(self):
         super(FunctionalTestAPI2, self).tearDown()
@@ -99,7 +105,7 @@ class FunctionalTestAPI2(unittest.TestCase):
 
     def setUp(self):
         super(FunctionalTestAPI2, self).setUp()
-        self._private_key, self._public_key = generate_RSA()
+        self._private_key, self._public_key = generate_rsa()
         self._api_key = """-----BEGIN PUBLIC KEY-----
 
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8zQos4iDSjmUVrFUAg5G
@@ -154,4 +160,3 @@ nwIDAQAB
 
             response = self._api.poll_request('auth request')
             self.assertEqual(response, expected)
-

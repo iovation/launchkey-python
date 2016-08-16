@@ -1,12 +1,13 @@
 import unittest
-from launchkey import generate_RSA
+from launchkey import generate_rsa
+from mock import patch
 
 
 def verify_sign(pub_key, signature, data):
-    ''' 
+    """
         Verifies with a public key from whom the data came that it was indeed
         signed by their private key.
-    '''
+    """
     from Crypto.PublicKey import RSA
     from Crypto.Signature import PKCS1_v1_5
     from Crypto.Hash import SHA256
@@ -24,41 +25,40 @@ def verify_sign(pub_key, signature, data):
 
 
 class UnitTestAPI(unittest.TestCase):
-    def test_generate_RSA(self):
-        private_key, public_key = generate_RSA()
+    def test_generate_rsa(self):
+        private_key, public_key = generate_rsa()
         self.assertEqual("-----BEGIN RSA PRIVATE KEY-----", private_key[:31])
         self.assertEqual("-----END RSA PRIVATE KEY-----", private_key[-29:])
         self.assertEqual("-----BEGIN PUBLIC KEY-----", public_key[:26])
         self.assertEqual("-----END PUBLIC KEY-----", public_key[-24:])
         assert len(private_key) > len(public_key) * 3
-        private_key, public_key = generate_RSA(1024)
+        private_key, public_key = generate_rsa(1024)
         self.assertEqual("-----BEGIN RSA PRIVATE KEY-----", private_key[:31])
         self.assertEqual("-----END RSA PRIVATE KEY-----", private_key[-29:])
         self.assertEqual("-----BEGIN PUBLIC KEY-----", public_key[:26])
         self.assertEqual("-----END PUBLIC KEY-----", public_key[-24:])
         assert len(private_key) > len(public_key) * 3
 
-    def test_encrypt_RSA(self):
-        from launchkey import encrypt_RSA
-        private_key, public_key = generate_RSA()
-        encrypted = encrypt_RSA(public_key, "#" * 214)
+    def test_encrypt_rsa(self):
+        from launchkey import encrypt_rsa
+        private_key, public_key = generate_rsa()
+        encrypted = encrypt_rsa(public_key, "#" * 214)
         assert len(encrypted) > 300
         assert "#" * 214 not in encrypted
-        self.assertRaises(ValueError, encrypt_RSA, public_key, "#" * 215)
+        self.assertRaises(ValueError, encrypt_rsa, public_key, "#" * 215)
 
-    def test_decrypt_RSA(self):
-        from launchkey import encrypt_RSA, decrypt_RSA
-        private_key, public_key = generate_RSA()
-        encrypted = encrypt_RSA(public_key, "test message " * 5)
-        decrypted = decrypt_RSA(private_key, encrypted)
+    def test_decrypt_rsa(self):
+        from launchkey import encrypt_rsa, decrypt_rsa
+        private_key, public_key = generate_rsa()
+        encrypted = encrypt_rsa(public_key, "test message " * 5)
+        decrypted = decrypt_rsa(private_key, encrypted)
         self.assertEqual(decrypted, "test message " * 5)
 
     def test_sign_data(self):
-        from launchkey import encrypt_RSA, decrypt_RSA, sign_data
-        from Crypto.PublicKey import RSA
-        private_key, public_key = generate_RSA()
-        encrypted = encrypt_RSA(public_key, "test message")
-        private_key2, public_key2 = generate_RSA()
+        from launchkey import encrypt_rsa, sign_data
+        private_key, public_key = generate_rsa()
+        encrypted = encrypt_rsa(public_key, "test message")
+        private_key2, public_key2 = generate_rsa()
         signature = sign_data(private_key2, encrypted)
         self.assertTrue(verify_sign(public_key2, signature, encrypted))
         self.assertFalse(verify_sign(public_key, signature, encrypted))
@@ -158,42 +158,41 @@ class UnitTestAPI(unittest.TestCase):
 
         self.assertEqual(expected, actual)
 
-    def test_authorize_passes_correct_policy(self):
+    @patch('requests.get')
+    @patch('requests.post')
+    def test_authorize_passes_correct_policy(self, post_patch, get_patch):
         from mock import MagicMock
-        import requests
         import json
         from requests.models import Response
         from launchkey import API, Policy
 
         ping_response = Response()
         ping_response.json = MagicMock(return_value={
-            "date_stamp" : "2013-04-20 21:40:02",
-            "api_time" : "2015-04-23 05:25:24",
-            "key" : "-----BEGIN PUBLIC KEY-----\n\n" +
-                    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8zQos4iDSjmUVrFUAg5G\n" +
-                    "uhU6GehNKb8MCXFadRWiyLGjtbGZAk8fusQU0Uj9E3o0mne0SYESACkhyK+3M1Er\n" +
-                    "bHlwYJHN0PZHtpaPWqsRmNzui8PvPmhm9QduF4KBFsWu1sBw0ibBYsLrua67F/wK\n" +
-                    "PaagZRnUgrbRUhQuYt+53kQNH9nLkwG2aMVPxhxcLJYPzQCat6VjhHOX0bgiNt1i\n" +
-                    "HRHU2phxBcquOW2HpGSWcpzlYgFEhPPQFAxoDUBYZI3lfRj49gBhGQi32qQ1YiWp\n" +
-                    "aFxOB8GA0Ny5SfI67u6w9Nz9Z9cBhcZBfJKdq5uRWjZWslHjBN3emTAKBpAUPNET\n" +
-                    "nwIDAQAB\n\n-----END PUBLIC KEY-----\n"
+            "date_stamp": "2013-04-20 21:40:02",
+            "api_time": "2015-04-23 05:25:24",
+            "key": "-----BEGIN PUBLIC KEY-----\n\n" +
+                   "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8zQos4iDSjmUVrFUAg5G\n" +
+                   "uhU6GehNKb8MCXFadRWiyLGjtbGZAk8fusQU0Uj9E3o0mne0SYESACkhyK+3M1Er\n" +
+                   "bHlwYJHN0PZHtpaPWqsRmNzui8PvPmhm9QduF4KBFsWu1sBw0ibBYsLrua67F/wK\n" +
+                   "PaagZRnUgrbRUhQuYt+53kQNH9nLkwG2aMVPxhxcLJYPzQCat6VjhHOX0bgiNt1i\n" +
+                   "HRHU2phxBcquOW2HpGSWcpzlYgFEhPPQFAxoDUBYZI3lfRj49gBhGQi32qQ1YiWp\n" +
+                   "aFxOB8GA0Ny5SfI67u6w9Nz9Z9cBhcZBfJKdq5uRWjZWslHjBN3emTAKBpAUPNET\n" +
+                   "nwIDAQAB\n\n-----END PUBLIC KEY-----\n"
         })
 
         post_response = Response()
         post_response.json = MagicMock(return_value={"auth_request": "auth request"})
 
-        requests.get = MagicMock(return_value=ping_response)
-        requests.post = MagicMock(return_value=post_response)
-        private_key, public_key = generate_RSA()
+        get_patch.return_value = ping_response
+        post_patch.return_value = post_response
+        private_key, public_key = generate_rsa()
         policy = Policy()
         expected = json.dumps(policy)
 
         api = API("app key", "secret key", private_key)
         api.authorize("username", policy=policy)
 
-        self.assertTrue(requests.post.called, 'Expected requests.post to be called but was not')
-        args, kwargs = requests.post.call_args
+        self.assertTrue(post_patch.called, 'Expected requests.post to be called but was not')
+        args, kwargs = post_patch.call_args
         self.assertIn('policy', kwargs['params'])
         self.assertEqual(expected, kwargs['params']['policy'])
-
-

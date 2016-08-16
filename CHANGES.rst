@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+2.0.0
+-----
+
+* Make tests run under Python 3.5+ 
+
 1.3.0
 -----
 
