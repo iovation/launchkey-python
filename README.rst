@@ -1,23 +1,24 @@
-## Python SDK for LaunchKey API  [![Build Status](https://travis-ci.org/LaunchKey/launchkey-python.png?branch=master)](https://travis-ci.org/LaunchKey/launchkey-python)
-For use in implementing LaunchKey
-Version 1.3.1
-@author LaunchKey
-@updated 2016-05-16
+# Python SDK for LaunchKey API
 
-#########################
+.. image:: https://travis-ci.org/LaunchKey/launchkey-python.svg?branch=master
+    :target: https://travis-ci.org/LaunchKey/launchkey-python
+
+.. _LaunchKey: https://launchkey.com
+
+For use in implementing LaunchKey_.
+
+
 ## Description
 
 Use to more easily interact with LaunchKey's API.
 
-#########################
 ## Installation
 
     $ easy_install launchkey-python
 or
 
-    $ pip launchkey-python
+    $ pip install launchkey-python
 
-#########################
 ## Usage
 
 ### To create a LaunchKey API object
@@ -97,12 +98,10 @@ The response will include qrcode and code. The qrcode is a url to an image of th
 scan. The code is a value that can be entered in the mobile application in the event the QR Code cannot be scanned.
 
 
-#########################
 ## Tests
 
     $ python setup.py test
 
-#########################
 
 ## Contributing
 

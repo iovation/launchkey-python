@@ -3,8 +3,8 @@ import os
 from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.md')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
+README = open(os.path.join(here, 'README.rst')).read()
+CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 requires = [
     'pycrypto >= 2.6.1', 'pycrypto < 3.0.0',
@@ -16,7 +16,7 @@ requires = [
 setup(name='launchkey-python',
       version='2.0.0',
       description='LaunchKey Python SDK',
-      long_description=README + '\n\n' + CHANGES,
+      long_description=README + '\n\n' + CHANGES + '\n',
       classifiers=[
         "Programming Language :: Python",
         "Topic :: Internet :: WWW/HTTP",
