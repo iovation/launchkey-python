@@ -10,6 +10,7 @@ requires = [
     'pycrypto >= 2.6.1', 'pycrypto < 3.0.0',
     'requests >= 2.5.1', 'requests < 3.0.0',
     'six >= 1.10.0', 'six < 2.0.0',
+    'python-dateutil >= 2.4.2', 'python-dateutil < 3.0.0'
     ]
 
 setup(name='launchkey-python',
@@ -33,7 +34,6 @@ setup(name='launchkey-python',
       test_suite='tests',
       install_requires=requires,
       tests_require=[
-        'Mocker==1.1.1',
         'mock==1.3.0'
       ],
       )

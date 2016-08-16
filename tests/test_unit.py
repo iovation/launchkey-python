@@ -77,7 +77,7 @@ class UnitTestAPI(unittest.TestCase):
                               '}')
         policy = Policy(all=3)
         actual = json.loads(json.dumps(policy))
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_policy_required_knowledge_factor_properly_json_encodes(self):
         from launchkey import Policy
@@ -90,7 +90,7 @@ class UnitTestAPI(unittest.TestCase):
                               '}')
         policy = Policy(knowledge=True)
         actual = json.loads(json.dumps(policy))
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_policy_required_inherence_factor_properly_json_encodes(self):
         from launchkey import Policy
@@ -103,7 +103,7 @@ class UnitTestAPI(unittest.TestCase):
                               '}')
         policy = Policy(inherence=True)
         actual = json.loads(json.dumps(policy))
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_policy_required_possession_factor_properly_json_encodes(self):
         from launchkey import Policy
@@ -116,7 +116,7 @@ class UnitTestAPI(unittest.TestCase):
                               '}')
         policy = Policy(possession=True)
         actual = json.loads(json.dumps(policy))
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_policy_required_all_factors_properly_json_encodes(self):
         from launchkey import Policy
@@ -129,7 +129,7 @@ class UnitTestAPI(unittest.TestCase):
                               '}')
         policy = Policy(knowledge=True, inherence=True, possession=True)
         actual = json.loads(json.dumps(policy))
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_policy_raises_error_when_all_factors_and_required_factors_together(self):
         from launchkey import Policy
@@ -156,7 +156,7 @@ class UnitTestAPI(unittest.TestCase):
         policy.add_location(radius=21.1, latitude=22.2, longitude=23.3)
         actual = json.loads(json.dumps(policy))
 
-        self.assertEquals(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_authorize_passes_correct_policy(self):
         from mock import MagicMock
@@ -193,6 +193,7 @@ class UnitTestAPI(unittest.TestCase):
 
         self.assertTrue(requests.post.called, 'Expected requests.post to be called but was not')
         args, kwargs = requests.post.call_args
-        self.assertDictContainsSubset({'policy': expected}, kwargs['params'])
+        self.assertIn('policy', kwargs['params'])
+        self.assertEqual(expected, kwargs['params']['policy'])
 
 
