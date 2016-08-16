@@ -26,6 +26,8 @@
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+import datetime
+
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.ifconfig', 'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -42,8 +44,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'LaunchKey Python SDK'
-copyright = u'2013, LaunchKey, Inc.'
-
+copyright = u'{}, LaunchKey, Inc.'.format(datetime.date.today().year)
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
