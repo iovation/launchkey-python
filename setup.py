@@ -14,7 +14,7 @@ requires = [
     ]
 
 setup(name='launchkey-python',
-      version='2.0.0',
+      version='2.0.1',
       description='LaunchKey Python SDK',
       long_description=README + '\n\n' + CHANGES + '\n',
       classifiers=[
