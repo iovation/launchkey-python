@@ -1,9 +1,9 @@
 """ 
 Python SDK for LaunchKey API 
 For use in implementing LaunchKey
-Version 2.0.0
+Version 2.0.1
 @author LaunchKey
-@updated 2016-05-16
+@updated 2016-08-16
 """
 import warnings
 import requests
