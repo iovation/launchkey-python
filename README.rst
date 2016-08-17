@@ -14,10 +14,10 @@ Use to more easily interact with LaunchKey's API.
 
 ## Installation
 
-    $ easy_install launchkey-python
+    easy_install launchkey-python
 or
 
-    $ pip install launchkey-python
+    pip install launchkey-python
 
 ## Usage
 
@@ -100,8 +100,13 @@ scan. The code is a value that can be entered in the mobile application in the e
 
 ## Tests
 
-    $ python setup.py test
+Mac/Linux:
 
+    python setup.py test
+
+Windows:
+
+    setup.py test
 
 ## Contributing
 
