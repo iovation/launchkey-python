@@ -1,7 +1,7 @@
 # Python SDK for LaunchKey API
 
-.. image:: https://travis-ci.org/LaunchKey/launchkey-python.svg?branch=master
-    :target: https://travis-ci.org/LaunchKey/launchkey-python
+.. image:: https://travis-ci.org/iovation/launchkey-python.svg?branch=master
+    :target: https://travis-ci.org/iovation/launchkey-python
 
 .. _LaunchKey: https://launchkey.com
 
