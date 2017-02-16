@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.0.0
+-----
+
+* Complete revamp for new V3 LaunchKey API
+
 2.0.1
 -----
 
