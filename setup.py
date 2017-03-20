@@ -10,8 +10,6 @@ requires = [
     'requests >= 2.5.1', 'requests < 3.0.0',
     'six >= 1.10.0', 'six < 2.0.0',
     'pycrypto >= 2.6.1', 'pycrypto < 3.0.0',
-    'PyJWT >= 1.3.0', 'PyJWT < 2.0.0',
-    'jose >= 1.0.0', 'jose < 2.0.0',
     'python-dateutil >= 2.4.2', 'python-dateutil < 3.0.0',
     'formencode >= 1.3.1', 'formencode < 2.0.0',
     'pyjwkest >= 1.3.2', 'pyjwkest < 2.0.0'
@@ -44,7 +42,6 @@ setup(name='launchkey',
       test_suite='tests',
       install_requires=requires,
       tests_require=[
-        'setuptools >= 32.2.0', 'setuptools < 33.0.0',
         'nose-exclude >= 0.5.0', 'nose-exclude < 1.0.0',
         'mock >= 2.0.0', 'mock < 3.0.0'
       ],
