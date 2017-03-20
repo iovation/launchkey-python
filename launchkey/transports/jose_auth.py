@@ -269,7 +269,7 @@ class JOSETransport(object):
             for key in self.issuer_private_keys:
                 if key.kid == h.headers['kid']:
                     keys = [key]
-        return JWE().decrypt(response, keys=keys)
+        return JWE().decrypt(response, keys=keys).decode('utf-8')
 
     def verify_jwt_response(self, headers, jti, content_body, subject):
         """
