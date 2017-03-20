@@ -1,0 +1,7 @@
+launchkey.egg-info
+dist
+build
+.idea
+*.pyc
+.eggs
+.coverage
