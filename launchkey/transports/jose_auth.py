@@ -122,7 +122,7 @@ class JOSETransport(object):
 
     def add_issuer_key(self, private_key):
         """
-        Adds a public key to the list of keys available for decryption and signatures
+        Adds a private key to the list of keys available for decryption and signatures
         :return: Boolean - Whether the key is already in the list
         """
         new_key = RSAKey(key=import_rsa_key(private_key), kid=self.__generate_key_id(private_key))

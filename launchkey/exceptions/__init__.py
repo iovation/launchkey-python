@@ -38,8 +38,12 @@ class InvalidPolicyInput(LaunchKeyAPIException):
     """API Error APP-002 - The input auth policy is not valid"""
 
 
-class Forbidden(LaunchKeyAPIException):
+class Unauthorized(LaunchKeyAPIException):
     """Generic API 401 Error - Authentication was denied. Likely an invalid key."""
+
+
+class Forbidden(LaunchKeyAPIException):
+    """Generic API 403 Error"""
 
 
 class EntityNotFound(LaunchKeyAPIException):
