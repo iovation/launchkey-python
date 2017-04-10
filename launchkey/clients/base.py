@@ -1,6 +1,6 @@
 from launchkey.exceptions import InvalidEntityID, LaunchKeyAPIException, InvalidParameters, EntityNotFound, \
     PolicyFailure, InvalidPolicyInput, RequestTimedOut, RateLimited, InvalidDirectoryIdentifier, \
-    UnexpectedAPIResponse, Forbidden
+    UnexpectedAPIResponse, Forbidden, Unauthorized
 from launchkey.transports.base import APIResponse
 from uuid import UUID
 from formencode import Invalid
@@ -13,7 +13,8 @@ error_code_map = {
 }
 
 status_code_map = {
-    401: Forbidden,
+    401: Unauthorized,
+    403: Forbidden,
     404: EntityNotFound,
     408: RequestTimedOut,
     429: RateLimited

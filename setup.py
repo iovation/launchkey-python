@@ -42,6 +42,7 @@ setup(name='launchkey',
       test_suite='tests',
       install_requires=requires,
       tests_require=[
+        'nose >= 1.3.0', 'nose < 2.0.0',
         'nose-exclude >= 0.5.0', 'nose-exclude < 1.0.0',
         'mock >= 2.0.0', 'mock < 3.0.0'
       ],

@@ -1,4 +1,4 @@
 include MANIFEST.in
 include *.txt
-include CHANGES.md
-include README.md
+include CHANGES.rst
+include README.rst
