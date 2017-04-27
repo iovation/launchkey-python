@@ -32,8 +32,8 @@ def api_call(function):
             return function(*args, **kwargs)
         except LaunchKeyAPIException as e:
             if not isinstance(e.message, dict) or 'error_code' not in e.message or 'error_detail' not in e.message:
-                error_code = ""
-                error_detail = ""
+                error_code = "HTTP-%s" % e.status_code
+                error_detail = "%s" % e.reason
             else:
                 error_code = e.message.get('error_code')
                 error_detail = e.message.get('error_detail')

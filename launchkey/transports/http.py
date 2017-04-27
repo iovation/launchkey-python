@@ -33,7 +33,7 @@ class RequestsTransport(object):
             response.raise_for_status()
         except requests.exceptions.HTTPError:
             if response.status_code < 500:
-                return APIErrorResponse(data, response.headers, response.status_code)
+                return APIErrorResponse(data, response.headers, response.status_code, response.reason)
             else:
                 raise
 

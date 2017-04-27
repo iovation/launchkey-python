@@ -20,10 +20,11 @@ class InvalidAlgorithm(Exception):
 
 class LaunchKeyAPIException(Exception):
     """API Error (400+) was returned"""
-    def __init__(self, message=None, status_code=None, *args, **kwargs):
+    def __init__(self, message=None, status_code=None, reason=None, *args, **kwargs):
         super(LaunchKeyAPIException, self).__init__(message, *args, **kwargs)
         self.message = message
         self.status_code = status_code
+        self.reason = reason
 
 
 class InvalidParameters(LaunchKeyAPIException):
