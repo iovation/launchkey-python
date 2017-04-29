@@ -144,7 +144,7 @@ class AuthorizationResponse(object):
 class SessionEndRequest(object):
     """Session end request containing the logout_requested unix timestamp and the service_user_hash"""
 
-    def __init__(self, api_time, service_user_hash):
+    def __init__(self, service_user_hash, api_time):
         self.logout_requested = api_time
         self.service_user_hash = service_user_hash
 
