@@ -1,6 +1,7 @@
 from .base import BaseClient, api_call
 from launchkey.exceptions import UnexpectedDeviceResponse, UnexpectedKeyID, InvalidParameters
 from formencode import Schema, validators, Invalid
+from formencode.foreach import ForEach
 from base64 import b64decode
 from json import loads, dumps
 
@@ -15,7 +16,7 @@ class AuthorizationResponseValidator(Schema):
 
 
 class AuthorizationResponsePackageValidator(Schema):
-    service_pins = validators.String()
+    service_pins = ForEach()
     auth_request = validators.String()  # UUID
     response = validators.Bool()
     device_id = validators.String()
@@ -135,7 +136,7 @@ class AuthorizationResponse(object):
         self.authorization_request_id = decrypted_package.get('auth_request')
         self.authorized = decrypted_package.get('response')
         self.device_id = decrypted_package.get('device_id')
-        self.service_pins = decrypted_package.get('service_pins').split(",")
+        self.service_pins = decrypted_package.get('service_pins')
         self.service_user_hash = data.get('service_user_hash')
         self.organization_user_hash = data.get('org_user_hash')
         self.user_push_id = data.get('user_push_id')
