@@ -253,7 +253,7 @@ class JOSETransport(object):
             response.data = result
 
         if isinstance(response, APIErrorResponse):
-            raise LaunchKeyAPIException(response.data, response.status_code)
+            raise LaunchKeyAPIException(response.data, response.status_code, response.reason)
 
         return response
 

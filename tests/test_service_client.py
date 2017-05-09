@@ -21,7 +21,7 @@ class TestServiceClient(unittest.TestCase):
         self._transport.put.return_value = self._response
         self._transport.delete.return_value = self._response
         self._device_response = {"auth_request": str(uuid4()), "response": True, "device_id": str(uuid4()),
-                                 "service_pins": "1234,3456,5678"}
+                                 "service_pins": ["1234","3456","5678"]}
         self._transport.loaded_issuer_private_key.decrypt.return_value = dumps(self._device_response)
         self._service_client = ServiceClient(uuid4(), self._transport)
         self._service_client._transport._verify_jwt_response = MagicMock()
@@ -174,7 +174,7 @@ class TestAuthorizationResponse(unittest.TestCase):
         self.assertEqual(response.authorization_request_id, decrypted.get('auth_request'))
         self.assertEqual(response.authorized, decrypted.get('response'))
         self.assertEqual(response.device_id, decrypted.get('device_id'))
-        self.assertEqual(response.service_pins, decrypted.get('service_pins').split())
+        self.assertEqual(response.service_pins, decrypted.get('service_pins'))
         self.assertEqual(response.service_user_hash, self.data.get('service_user_hash'))
         self.assertEqual(response.organization_user_hash, self.data.get('org_user_hash'))
         self.assertEqual(response.user_push_id, self.data.get('user_push_id'))
