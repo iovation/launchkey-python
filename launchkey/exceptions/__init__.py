@@ -12,7 +12,15 @@ class InvalidPrivateKey(Exception):
 
 class InvalidIssuer(Exception):
     """The issuer is not valid"""
+    
 
+class InvalidIssuerFormat(Exception):
+    """The issuer format is not a valid UUID"""
+    
+    
+class InvalidIssuerVersion(Exception):
+    """The issuer UUID is the wrong version type"""
+    
 
 class InvalidAlgorithm(Exception):
     """Input algorithm is not supported"""
