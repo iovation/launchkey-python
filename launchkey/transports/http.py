@@ -79,3 +79,13 @@ class RequestsTransport(object):
         """
         return self._parse_response(
             requests.delete(self.url + path, data=data, headers=headers, verify=self.verify_ssl))
+            
+    def patch(self, path, headers=None, data=None):
+        """
+        Performs and HTTP PATCH request against the LaunchKey API
+        :param path: Path or endpoint that will be hit
+        :param headers: Headers to add onto the request
+        :param data: Dictionary, bytes, or file-like object to send in the body of the request.
+        :return:
+        """
+        return self._parse_response(requests.patch(self.url + path, data=data, headers=headers, verify=self.verify_ssl))
