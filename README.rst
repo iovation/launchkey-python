@@ -6,6 +6,8 @@ Python SDK for LaunchKey API
 
 .. _LaunchKey: https://launchkey.com
 
+.. _docs: https://docs.launchkey.com/developer/web-desktop/sdk/python/sdk-v3
+
 For use in implementing LaunchKey_.
 
 
@@ -13,6 +15,8 @@ Description
 -----------
 
 Use to more easily interact with iovation's LaunchKey API.
+
+A more in-depth look at this SDK can be found at the official docs_.
 
 Installation
 ------------

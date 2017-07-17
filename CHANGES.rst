@@ -1,6 +1,20 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.0.2
+-----
+
+* Improved 401 error handling
+* Bug fix for SessionEndRequest object
+* Service PINs bug fix
+
+3.0.1
+-----
+
+* Typo and manifest fixes
+* Added Unauthorized status code error handler
+* Nose version lock for test requirements
+
 3.0.0
 -----
 
