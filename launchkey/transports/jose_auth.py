@@ -322,7 +322,7 @@ class JOSETransport(object):
 
     def post(self, path, subject=None, **kwargs):
         """
-        Performs and HTTP POST request against the LaunchKey API
+        Performs an HTTP POST request against the LaunchKey API
         :param path: Path or endpoint that will be hit
         :param subject: Subject for which the request is issued for
         :param kwargs: Any additional KWARGs will be converted to data parameters
@@ -332,7 +332,7 @@ class JOSETransport(object):
 
     def put(self, path, subject=None, **kwargs):
         """
-        Performs and HTTP PUT request against the LaunchKey API
+        Performs an HTTP PUT request against the LaunchKey API
         :param path: Path or endpoint that will be hit
         :param subject: Subject for which the request is issued for
         :param kwargs: Any additional KWARGs will be converted to data parameters
@@ -342,7 +342,7 @@ class JOSETransport(object):
 
     def delete(self, path, subject=None, **kwargs):
         """
-        Performs and HTTP DELETE request against the LaunchKey API
+        Performs an HTTP DELETE request against the LaunchKey API
         :param path: Path or endpoint that will be hit
         :param subject: Subject for which the request is issued for
         :param kwargs: Any additional KWARGs will be converted to data parameters
@@ -352,7 +352,7 @@ class JOSETransport(object):
 
     def patch(self, path, subject=None, **kwargs):
         """
-        Performs and HTTP PATCH request against the LaunchKey API
+        Performs an HTTP PATCH request against the LaunchKey API
         :param path: Path or endpoint that will be hit
         :param subject: Subject for which the request is issued for
         :param kwargs: Any additional KWARGs will be converted to data parameters
