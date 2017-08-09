@@ -349,3 +349,13 @@ class JOSETransport(object):
         :return:
         """
         return self._process_jose_request('delete', path, subject, kwargs)
+
+    def patch(self, path, subject=None, **kwargs):
+        """
+        Performs and HTTP PATCH request against the LaunchKey API
+        :param path: Path or endpoint that will be hit
+        :param subject: Subject for which the request is issued for
+        :param kwargs: Any additional KWARGs will be converted to data parameters
+        :return:
+        """
+        return self._process_jose_request('patch', path, subject, kwargs)

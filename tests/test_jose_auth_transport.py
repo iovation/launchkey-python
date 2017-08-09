@@ -302,6 +302,11 @@ class TestJOSETransportRESTCalls(unittest.TestCase):
         requests_patch.return_value = MagicMock()
         self.assertIsInstance(self._transport.delete('/path', ANY), APIResponse)
 
+    @patch('requests.patch')
+    def test_patch(self, requests_patch):
+        requests_patch.return_value = MagicMock()
+        self.assertIsInstance(self._transport.patch('/path', ANY), APIResponse)
+
 
 class TestJOSETransportIssuers(unittest.TestCase):
 
