@@ -128,7 +128,7 @@ Using Dynamic Policies
 
 .. code-block:: python
 
-    from launchkey.clients.service import AuthPolicy
+    from launchkey.entities.service import AuthPolicy
     # Require 2 factors and don't allow any jailbroken or rooted devices
     policy = AuthPolicy(any=2, jailbreak_protection=True)
     # Also make it so the user can only log in from the Portland area
@@ -176,7 +176,7 @@ You will use the same handle_webhook method for both login and logout.
 .. code-block:: python
 
     from flask import request
-    from launchkey.clients.service import AuthorizationResponse, SessionEndRequest
+    from launchkey.entities.service import AuthorizationResponse, SessionEndRequest
     package = service_client.handle_webhook(request.data, request.headers)
     if isinstance(package, AuthorizationResponse):
         if package.authorized is True:

@@ -96,7 +96,6 @@ class TestRequestsHTTPTransport(unittest.TestCase):
         requests_patch.assert_called_once()
         
     @patch("requests.patch")
-    def test_put(self, requests_patch):
+    def test_patch(self, requests_patch):
         self._transport.patch(MagicMock())
         requests_patch.assert_called_once()
-

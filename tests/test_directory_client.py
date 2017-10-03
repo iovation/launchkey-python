@@ -2,11 +2,22 @@ import unittest
 from mock import MagicMock, ANY
 from uuid import uuid4
 from launchkey.clients import DirectoryClient
-from launchkey.clients.directory import DeviceStatus
+from launchkey.clients.directory import Session
+from launchkey.entities.directory import DeviceStatus
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, InvalidDirectoryIdentifier, EntityNotFound, \
     UnexpectedAPIResponse, InvalidDeviceStatus
 from launchkey.transports.base import APIResponse
+from .shared import SharedTests
 import six
+from datetime import datetime
+import pytz
+
+
+class TestDirectoryClientServices(SharedTests.Services):
+
+    def setUp(self):
+        client = DirectoryClient(uuid4(), MagicMock())
+        self.setup_client(client)
 
 
 class TestDirectoryClient(unittest.TestCase):
@@ -18,11 +29,13 @@ class TestDirectoryClient(unittest.TestCase):
         self._transport.get.return_value = self._response
         self._transport.put.return_value = self._response
         self._transport.delete.return_value = self._response
+        self._transport.patch.return_value = self._response
         self._directory_client = DirectoryClient(uuid4(), self._transport)
 
     def test_link_device_success(self):
         self._response.data = {"qrcode": ANY, "code": "abcdefg"}
         self._directory_client.link_device(ANY)
+        self._transport.post.assert_called_once()
 
     def test_link_device_unexpected_result(self):
         self._response.data = {MagicMock(), MagicMock()}
@@ -47,13 +60,14 @@ class TestDirectoryClient(unittest.TestCase):
         ]
         result = self._directory_client.get_linked_devices(ANY)
         self.assertEqual(len(result), 3)
+        self._transport.post.assert_called_once()
 
     def test_get_linked_devices_status(self):
-        for key, map in six.iteritems(DeviceStatus._status_map):
+        for key, value in six.iteritems(DeviceStatus._status_map):
             self._response.data = [{"id": ANY, "name": ANY, "status": key, "type": ANY}]
             device = self._directory_client.get_linked_devices(ANY)[0]
-            self.assertEqual(device.status.status_code, map[0])
-            self.assertEqual(device.status.is_active, map[1])
+            self.assertEqual(device.status.status_code, value[0])
+            self.assertEqual(device.status.is_active, value[1])
 
     def test_get_linked_devices_invalid_status_code(self):
         self._response.data = [{"id": ANY, "name": ANY, "status": ANY, "type": ANY}]
@@ -76,6 +90,7 @@ class TestDirectoryClient(unittest.TestCase):
 
     def test_unlink_device_success(self):
         self._directory_client.unlink_device(ANY, ANY)
+        self._transport.delete.assert_called_once()
 
     def test_unlink_device_invalid_params(self):
         self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -89,6 +104,7 @@ class TestDirectoryClient(unittest.TestCase):
 
     def test_end_all_service_sessions_success(self):
         self._directory_client.end_all_service_sessions(ANY)
+        self._transport.delete.assert_called_once()
 
     def test_end_all_service_sessions_invalid_params(self):
         self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -99,3 +115,30 @@ class TestDirectoryClient(unittest.TestCase):
         self._transport.delete.side_effect = LaunchKeyAPIException({}, 404)
         with self.assertRaises(EntityNotFound):
             self._directory_client.end_all_service_sessions(ANY)
+
+    def test_get_all_service_sessions_success(self):
+        self._response.data = [
+            {
+                "auth_request": "cf6a29b9-e807-4a13-a2d7-88b6b89673bc",
+                "date_created": "2017-10-03T22:50:15Z",
+                "service_icon": "https://image.location.com/abc.png",
+                "service_id": "e743e23d-e2cb-4191-a905-cd23cfd0cefe",
+                "service_name": "atestservice"
+            }
+        ]
+        response = self._directory_client.get_all_service_sessions(ANY)
+        self._transport.post.assert_called_once()
+        self.assertEqual(len(response), 1)
+        session = response[0]
+        self.assertIsInstance(session, Session)
+        self.assertEqual(session.auth_request, "cf6a29b9-e807-4a13-a2d7-88b6b89673bc")
+        self.assertEqual(session.service_id, "e743e23d-e2cb-4191-a905-cd23cfd0cefe")
+        self.assertEqual(session.service_icon, "https://image.location.com/abc.png")
+        self.assertEqual(session.service_name, "atestservice")
+        self.assertEqual(session.created, datetime(year=2017, month=10, day=3, hour=22, minute=50, second=15,
+                                                   tzinfo=pytz.timezone("UTC")))
+
+    def test_get_all_service_sessions_invalid_params(self):
+        self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
+        with self.assertRaises(InvalidParameters):
+            self._directory_client.get_all_service_sessions(ANY)

@@ -4,9 +4,11 @@ from launchkey.factories.base import BaseFactory
 from launchkey.factories import DirectoryFactory, OrganizationFactory, ServiceFactory
 from launchkey.clients import DirectoryClient, OrganizationClient, ServiceClient
 from launchkey.transports import JOSETransport
-from uuid import uuid1
+from uuid import uuid1, uuid4
+from ddt import ddt, data
 
 
+@ddt
 class TestBaseFactory(unittest.TestCase):
 
     def setUp(self):
@@ -14,6 +16,14 @@ class TestBaseFactory(unittest.TestCase):
 
     def test_add_additional_private_key(self):
         self._factory.add_additional_private_key(ANY)
+
+    @data(uuid1(), uuid4())
+    def test_multiple_uuid_support(self, entity_id):
+        BaseFactory(ANY, entity_id, ANY, ANY, ANY, MagicMock(spec=JOSETransport))
+
+    @data(uuid1(), uuid4())
+    def test_multiple_uuid_support_string(self, entity_id):
+        BaseFactory(ANY, str(entity_id), ANY, ANY, ANY, MagicMock(spec=JOSETransport))
 
 
 class TestDirectoryFactory(unittest.TestCase):

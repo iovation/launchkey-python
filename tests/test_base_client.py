@@ -12,9 +12,11 @@ class TestAPICallDecorator(unittest.TestCase):
 
     def setUp(self):
         self._failure_method = MagicMock()
+        self._failure_method.__name__ = str(uuid4())
 
     def test_success(self):
         method = MagicMock()
+        method.__name__ = str(uuid4())
         self.assertEqual(api_call(method)(), method())
 
     def test_error_code_map(self):
