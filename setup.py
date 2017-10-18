@@ -35,9 +35,11 @@ setup(name='launchkey',
       packages=[
           'launchkey',
           'launchkey.clients',
+          'launchkey.entities',
           'launchkey.exceptions',
           'launchkey.factories',
-          'launchkey.transports'
+          'launchkey.transports',
+          'launchkey.utils'
       ],
       zip_safe=False,
       test_suite='tests',
