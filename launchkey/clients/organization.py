@@ -344,7 +344,7 @@ class OrganizationClient(BaseClient):
         self._transport.patch("/organization/v3/directory/keys", self._subject, **kwargs)
 
     @api_call
-    def get_new_directory_authenticator_sdk_key(self, directory_id):
+    def generate_and_add_directory_sdk_key(self, directory_id):
         """
         Creates and retrieves a new Authenticator SDK Key for a Directory
         :param directory_id: Unique Directory ID
@@ -355,7 +355,7 @@ class OrganizationClient(BaseClient):
                                     self._subject, directory_id=str(directory_id)).data['sdk_key']
 
     @api_call
-    def remove_directory_authenticator_sdk_key(self, directory_id, sdk_key):
+    def remove_directory_sdk_key(self, directory_id, sdk_key):
         """
         Removes an Authenticator SDK Key from a Directory
         :param directory_id: Unique Directory ID

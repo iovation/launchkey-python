@@ -359,34 +359,34 @@ class TestOrganizationClientDirectories(unittest.TestCase):
         with self.assertRaises(Forbidden):
             self._organization_client.update_service_public_key(ANY, ANY)
 
-    def test_get_new_directory_authenticator_sdk_key_success(self):
+    def test_generate_and_add_directory_sdk_key_success(self):
         self._response.data = {"sdk_key": "249b1df4-91f2-42e9-9599-da48f982404e"}
-        sdk_key = self._organization_client.get_new_directory_authenticator_sdk_key(
+        sdk_key = self._organization_client.generate_and_add_directory_sdk_key(
             "b4ce1d35-63e3-4bd3-affc-dd073d391107"
         )
         self._transport.post.assert_called_once()
         self.assertEqual(sdk_key, "249b1df4-91f2-42e9-9599-da48f982404e")
 
-    def test_get_new_directory_authenticator_sdk_key_invalid_params(self):
+    def test_generate_and_add_directory_sdk_key_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
         with self.assertRaises(InvalidParameters):
-            self._organization_client.get_new_directory_authenticator_sdk_key(ANY)
+            self._organization_client.generate_and_add_directory_sdk_key(ANY)
 
-    def test_remove_directory_authenticator_sdk_key_success(self):
-        self._organization_client.remove_directory_authenticator_sdk_key(ANY, ANY)
+    def test_remove_directory_sdk_key_success(self):
+        self._organization_client.remove_directory_sdk_key(ANY, ANY)
         self._transport.delete.assert_called_once()
 
-    def test_remove_directory_authenticator_sdk_key_invalid_params(self):
+    def test_remove_directory_sdk_key_invalid_params(self):
         self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
         with self.assertRaises(InvalidParameters):
-            self._organization_client.remove_directory_authenticator_sdk_key(ANY, ANY)
+            self._organization_client.remove_directory_sdk_key(ANY, ANY)
 
-    def test_remove_directory_authenticator_sdk_key_last_remaining_sdk_key(self):
+    def test_remove_directory_sdk_key_last_remaining_sdk_key(self):
         self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ORG-005", "error_detail": ""}, 400)
         with self.assertRaises(LastRemainingSDKKey):
-            self._organization_client.remove_directory_authenticator_sdk_key(ANY, ANY)
+            self._organization_client.remove_directory_sdk_key(ANY, ANY)
 
-    def test_remove_directory_authenticator_sdk_key_invalid_sdk_key(self):
+    def test_remove_directory_sdk_key_invalid_sdk_key(self):
         self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ORG-006", "error_detail": ""}, 400)
         with self.assertRaises(InvalidSDKKey):
-            self._organization_client.remove_directory_authenticator_sdk_key(ANY, ANY)
+            self._organization_client.remove_directory_sdk_key(ANY, ANY)
