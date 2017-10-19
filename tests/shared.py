@@ -75,7 +75,7 @@ class SharedTests(object):
                     "callback_url": "https://my.webhook.is/here"
                 }
             ]
-            response = self._client.get_services(ANY)
+            response = self._client.get_services("abe9ff82-b665-4dd5-97e6-06fc599bb9cc")
             self._transport.post.assert_called_once()
             self.assertEqual(len(response), 1)
             service = response[0]
@@ -90,7 +90,7 @@ class SharedTests(object):
         def test_get_services_invalid_params(self):
             self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
             with self.assertRaises(InvalidParameters):
-                self._client.get_services(ANY)
+                self._client.get_services("a69d46cf-aac4-42c6-ae3d-5fca8a2546bc")
 
         @data(True, False)
         def test_get_service_success(self, active):
@@ -104,7 +104,7 @@ class SharedTests(object):
                     "callback_url": "https://my.webhook.is/here"
                 }
             ]
-            service = self._client.get_service(ANY)
+            service = self._client.get_service("abe9ff82-b665-4dd5-97e6-06fc599bb9cc")
             self._transport.post.assert_called_once()
             self.assertIsInstance(service, Service)
             self.assertEqual(service.id, "abe9ff82-b665-4dd5-97e6-06fc599bb9cc")

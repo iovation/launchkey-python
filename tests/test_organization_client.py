@@ -87,7 +87,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
                 "active": True
             }
         ]
-        response = self._organization_client.get_directories(ANY)
+        response = self._organization_client.get_directories("760b2ae5-b44b-49ac-a83c-d3421b30936f")
         self._transport.post.assert_called_once()
         self.assertEqual(len(response), 1)
         directory = response[0]
@@ -108,7 +108,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
     def test_get_directories_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
         with self.assertRaises(InvalidParameters):
-            self._organization_client.get_directories(ANY)
+            self._organization_client.get_directories("c7d4ffcd-069d-4ea7-9994-03c25ce42bd8")
 
     def test_get_directory(self):
         self._response.data = [

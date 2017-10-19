@@ -53,7 +53,7 @@ class DirectoryClient(BaseClient):
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were not correct
         :raise: launchkey.exceptions.EntityNotFound - The input device was not found. It may already be unlinked.
         """
-        self._transport.delete("/directory/v3/devices", self._subject, identifier=user_id, device_id=device_id)
+        self._transport.delete("/directory/v3/devices", self._subject, identifier=user_id, device_id=str(device_id))
 
     @api_call
     def end_all_service_sessions(self, user_id):
@@ -113,7 +113,8 @@ class DirectoryClient(BaseClient):
         :return: List - launchkey.entities.service.Service object containing Service details
         """
         return [Service(self._validate_response(service, ServiceValidator)) for service in
-                self._transport.post("/directory/v3/services/list", self._subject, service_ids=service_ids).data]
+                self._transport.post("/directory/v3/services/list", self._subject,
+                                     service_ids=[str(service_id) for service_id in service_ids]).data]
 
     @api_call
     def get_service(self, service_id):
@@ -124,7 +125,7 @@ class DirectoryClient(BaseClient):
         :return: launchkey.entities.service.Service object containing Service details
         """
         return Service(self._validate_response(
-            self._transport.post("/directory/v3/services/list", self._subject, service_ids=[service_id]).data[0],
+            self._transport.post("/directory/v3/services/list", self._subject, service_ids=[str(service_id)]).data[0],
             ServiceValidator))
 
     @api_call
@@ -144,7 +145,7 @@ class DirectoryClient(BaseClient):
                                                  sufficient permissions.
         :return:
         """
-        kwargs = {"service_id": service_id}
+        kwargs = {"service_id": str(service_id)}
         if name is not False:
             kwargs['name'] = name
         if description is not False:
@@ -173,7 +174,7 @@ class DirectoryClient(BaseClient):
                                                  sufficient permissions.
         :return: MD5 fingerprint (key_id) of the public key, IE: e0:2f:a9:5a:76:92:6b:b5:4d:24:67:19:d1:8a:0a:75
         """
-        kwargs = {"service_id": service_id, "public_key": public_key}
+        kwargs = {"service_id": str(service_id), "public_key": public_key}
         if expires is not None:
             kwargs['date_expires'] = iso_format(expires)
         if active is not None:
@@ -195,7 +196,7 @@ class DirectoryClient(BaseClient):
                                                  sufficient permissions.
         :return:
         """
-        self._transport.delete("/directory/v3/service/keys", self._subject, service_id=service_id,
+        self._transport.delete("/directory/v3/service/keys", self._subject, service_id=str(service_id),
                                key_id=key_id)
 
     @api_call
@@ -211,7 +212,7 @@ class DirectoryClient(BaseClient):
         """
         return [PublicKey(self._validate_response(key, PublicKeyValidator)) for key in
                 self._transport.post("/directory/v3/service/keys/list", self._subject,
-                                     service_id=service_id).data]
+                                     service_id=str(service_id)).data]
 
     @api_call
     def update_service_public_key(self, service_id, key_id, expires=False, active=None):
@@ -227,7 +228,7 @@ class DirectoryClient(BaseClient):
                                                  sufficient permissions.
         :return:
         """
-        kwargs = {"service_id": service_id, "key_id": key_id}
+        kwargs = {"service_id": str(service_id), "key_id": key_id}
         if active is not None:
             kwargs['active'] = active
         if expires is not False:
@@ -245,7 +246,7 @@ class DirectoryClient(BaseClient):
         """
         policy = ServiceSecurityPolicy()
         policy.set_policy(self._validate_response(
-            self._transport.post("/directory/v3/service/policy/item", self._subject, service_id=service_id).data,
+            self._transport.post("/directory/v3/service/policy/item", self._subject, service_id=str(service_id)).data,
             ServiceSecurityPolicyValidator))
         return policy
 
@@ -259,7 +260,7 @@ class DirectoryClient(BaseClient):
         :raise: launchkey.exceptions.ServiceNotFound - No Service could be found matching the input ID
         :return:
         """
-        self._transport.put("/directory/v3/service/policy", self._subject, service_id=service_id,
+        self._transport.put("/directory/v3/service/policy", self._subject, service_id=str(service_id),
                             policy=policy.get_policy())
 
     @api_call
@@ -271,4 +272,4 @@ class DirectoryClient(BaseClient):
         :raise: launchkey.exceptions.ServiceNotFound - No Service could be found matching the input ID
         :return:
         """
-        self._transport.delete("/directory/v3/service/policy", self._subject, service_id=service_id)
+        self._transport.delete("/directory/v3/service/policy", self._subject, service_id=str(service_id))
