@@ -89,7 +89,7 @@ class AuthPolicy(object):
         self.require_jailbreak_protection(jailbreak_protection)
 
     def __eq__(self, other):
-        return self._policy == other._policy
+        return self._policy == other._policy if hasattr(other, '_policy') else False
 
     def add_geofence(self, latitude, longitude, radius, name=None):
         """

@@ -361,6 +361,15 @@ class TestPolicyObject(unittest.TestCase):
         policy2.add_geofence(1, 2, 2, '122')
         self.assertNotEqual(policy, policy2)
 
+    @data("test", {}, True, False, None)
+    def test_eq_mismatch_non_object(self, value):
+        policy = AuthPolicy()
+        self.assertNotEqual(policy, value)
+
+    def test_eq_mismatch_non_object_matching_policy(self):
+        policy = AuthPolicy()
+        self.assertNotEqual(policy, policy.get_policy())
+
     @data(True, False)
     def test_require_jailbreak_protection_new(self, status):
         policy = AuthPolicy()
