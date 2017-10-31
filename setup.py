@@ -12,7 +12,8 @@ requires = [
     'pycrypto >= 2.6.1, < 3.0.0',
     'python-dateutil >= 2.4.2, < 3.0.0',
     'formencode >= 1.3.1, < 2.0.0',
-    'pyjwkest >= 1.3.2, < 2.0.0'
+    'pyjwkest >= 1.3.2, < 2.0.0',
+    'pytz==2017.2'
     ]
 
 setup(name='launchkey',
@@ -34,9 +35,11 @@ setup(name='launchkey',
       packages=[
           'launchkey',
           'launchkey.clients',
+          'launchkey.entities',
           'launchkey.exceptions',
           'launchkey.factories',
-          'launchkey.transports'
+          'launchkey.transports',
+          'launchkey.utils'
       ],
       zip_safe=False,
       test_suite='tests',
@@ -44,6 +47,7 @@ setup(name='launchkey',
       tests_require=[
         'nose >= 1.3.0, < 2.0.0',
         'nose-exclude >= 0.5.0, < 1.0.0',
-        'mock >= 2.0.0, < 3.0.0'
+        'mock >= 2.0.0, < 3.0.0',
+        'ddt >= 1.1.1, < 2.0.0'
       ],
       )

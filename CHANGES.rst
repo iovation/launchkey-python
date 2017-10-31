@@ -5,6 +5,9 @@ CHANGELOG for LaunchKey Python SDK
 -----
 
 * Added patch method for transports
+* Support for many new endpoints added involving Organization, Directory, and Service management
+* Moved all entity objects into their own submodule
+* Added UUID validation for factory entity IDs
 
 3.0.2
 -----

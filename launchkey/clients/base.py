@@ -1,15 +1,28 @@
 from launchkey.exceptions import InvalidEntityID, LaunchKeyAPIException, InvalidParameters, EntityNotFound, \
     PolicyFailure, InvalidPolicyInput, RequestTimedOut, RateLimited, InvalidDirectoryIdentifier, \
-    UnexpectedAPIResponse, Forbidden, Unauthorized
+    UnexpectedAPIResponse, Forbidden, Unauthorized, InvalidRoute, ServiceNameTaken, ServiceNotFound, \
+    PublicKeyAlreadyInUse, InvalidPublicKey, PublicKeyDoesNotExist, LastRemainingKey, LastRemainingSDKKey, \
+    InvalidSDKKey, DirectoryNameInUse
 from launchkey.transports.base import APIResponse
 from uuid import UUID
 from formencode import Invalid
+from functools import wraps
 
 error_code_map = {
     "ARG-001": InvalidParameters,
+    "ARG-002": InvalidRoute,
+    "SVC-001": ServiceNameTaken,
     "SVC-002": InvalidPolicyInput,
     "SVC-003": PolicyFailure,
-    "DIR-001": InvalidDirectoryIdentifier
+    "SVC-004": ServiceNotFound,
+    "DIR-001": InvalidDirectoryIdentifier,
+    "KEY-001": InvalidPublicKey,
+    "KEY-002": PublicKeyAlreadyInUse,
+    "KEY-003": PublicKeyDoesNotExist,
+    "KEY-004": LastRemainingKey,
+    "ORG-003": DirectoryNameInUse,
+    "ORG-005": LastRemainingSDKKey,
+    "ORG-006": InvalidSDKKey
 }
 
 status_code_map = {
@@ -27,6 +40,7 @@ def api_call(function):
     :param function:
     :return:
     """
+    @wraps(function)
     def wrapper(*args, **kwargs):
         try:
             return function(*args, **kwargs)
