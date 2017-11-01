@@ -1,7 +1,7 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
-3.0.3
+3.1.0
 -----
 
 * Added patch method for transports
