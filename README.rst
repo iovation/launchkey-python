@@ -47,15 +47,15 @@ Factory uses Directory credentials, and the Service Factory uses Service credent
 which are accessible to the factory. The availability is based on the hierarchy of the entities themselves. Below is a
 matrix of available services for each factory.
 
-+--------------+------------------+----------------+
-| Factory      | Directory Client | Service Client |
-+==============+==================+================+
-| Organization |       Yes        |      Yes       |
-+--------------+------------------+----------------+
-| Directory    |       Yes        |      Yes       |
-+--------------+------------------+----------------+
-| Service      |       No         |      Yes       |
-+--------------+------------------+----------------+
++--------------+---------------------+------------------+----------------+
+| Factory      | Organization Client | Directory Client | Service Client |
++==============+=====================+==================+================+
+| Organization |         Yes         |       Yes        |      Yes       |
++--------------+---------------------+------------------+----------------+
+| Directory    |         No          |       Yes        |      Yes       |
++--------------+---------------------+------------------+----------------+
+| Service      |         No          |       No         |      Yes       |
++--------------+---------------------+------------------+----------------+
 
 **Using individual clients**
 
