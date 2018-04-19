@@ -247,3 +247,35 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         self.assertEqual(timefence.start_time, time(hour=12, minute=0, tzinfo=pytz.timezone("US/Pacific")))
         self.assertEqual(timefence.end_time, time(hour=13, minute=0, tzinfo=pytz.timezone("US/Pacific")))
         self.assertEqual(timefence.timezone, "US/Pacific")
+
+    def test_import_geofence_from_policy_does_not_require_name(self):
+        policy = ServiceSecurityPolicy()
+        self.assertEqual(len(policy.timefences), 0)
+        policy.set_policy(
+            {
+                'minimum_requirements': [],
+                'factors': [
+                    {
+                        'quickfail': False,
+                        'priority': 1,
+                        'requirement': 'forced requirement',
+                        'attributes': {
+                            'locations': [
+                                {
+                                    'latitude': 36.15986241774762,
+                                    'longitude': -115.15869140624999,
+                                    'radius': 20700
+                                }
+                            ]
+                        },
+                        'factor': 'geofence'
+                    }
+                ]
+            }
+        )
+        self.assertEqual(len(policy.geofences), 1)
+        geofence = policy.geofences[0]
+        self.assertIsNone(geofence.name)
+        self.assertEqual(geofence.latitude, 36.15986241774762)
+        self.assertEqual(geofence.longitude, -115.15869140624999)
+        self.assertEqual(geofence.radius, 20700)

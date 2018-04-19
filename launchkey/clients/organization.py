@@ -211,6 +211,7 @@ class OrganizationClient(BaseClient):
         Creates a new Directory
         :param name: Name describing the Directory that can be viewed in the Admin Center
         :return: String - ID of the Directory that is created
+        :raise: launchkey.exceptions.DirectoryNameInUse - Directory name already taken
         """
         return self._transport.post("/organization/v3/directories", self._subject, name=name).data['id']
 
