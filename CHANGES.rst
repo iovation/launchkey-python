@@ -1,6 +1,12 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.1.2
+-----
+
+* Fixed geofence missing name bug
+* Added more expectd error conditions to pydocs
+
 3.1.1
 -----
 
