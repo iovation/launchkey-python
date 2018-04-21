@@ -242,7 +242,7 @@ class AuthPolicy(object):
                 if factor['factor'] == 'geofence' and 'locations' in factor['attributes']:
                     for fence in factor['attributes']['locations']:
                         self.geofences.append(GeoFence(fence['latitude'], fence['longitude'], fence['radius'],
-                                                       fence['name']))
+                                                       fence.get('name', None)))
                 elif factor['factor'] == 'device integrity' and 'factor enabled' in factor['attributes']:
                     if factor['attributes']['factor enabled']:
                         self.jailbreak_protection = True
