@@ -33,11 +33,11 @@ class RequestsTransport(object):
             response.raise_for_status()
         except requests.exceptions.HTTPError:
             if response.status_code < 500:
-                return APIErrorResponse(data, response.headers, response.status_code, response.reason)
+                return APIErrorResponse(data, response.headers, response.status_code, response.reason, response.text)
             else:
                 raise
 
-        return APIResponse(data, response.headers, response.status_code)
+        return APIResponse(data, response.headers, response.status_code, raw_data=response.text)
 
     def get(self, path, headers=None, data=None):
         """

@@ -152,22 +152,46 @@ class TestJOSEProcessJOSERequest(unittest.TestCase):
         self._transport._encrypt_request = MagicMock()
 
     @patch('requests.get')
-    def test_process_jose_request_success(self, requests_patch):
+    def test_process_jose_request_success_encrypted_response(self, requests_patch):
         requests_patch.return_value = MagicMock()
-        self.assertIsInstance(self._transport._process_jose_request('GET', '/path', ANY), APIResponse)
+        response = self._transport._process_jose_request('GET', '/path', ANY)
+        self._transport.decrypt_response.assert_called_once()
+        self.assertIsInstance(response, APIResponse)
+        self.assertEqual(response.data, self._transport.decrypt_response.return_value)
+
+    def test_process_jose_request_success_unencrypted_response(self):
+        self._transport._http_client = MagicMock()
+        self._transport._http_client.get.return_value = APIResponse({"a": "response"}, ANY, 200)
+        response = self._transport._process_jose_request('GET', '/path', ANY)
+        self._transport.decrypt_response.assert_not_called()
+        self.assertIsInstance(response, APIResponse)
+        self.assertEqual(response.data, {"a": "response"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_process_jose_request_success_empty_response(self):
+        self._transport._http_client = MagicMock()
+        self._transport._http_client.get.return_value = APIResponse(None, ANY, 201)
+        response = self._transport._process_jose_request('GET', '/path', ANY)
+        self._transport.decrypt_response.assert_not_called()
+        self.assertIsInstance(response, APIResponse)
+        self.assertIsNone(response.data)
+        self.assertEqual(response.status_code, 201)
 
     @patch('requests.post')
     @patch('launchkey.transports.jose_auth.json')
-    def test_process_jose_request_data_success(self, requests_patch, json_patch):
+    def test_process_jose_request_data_json_success(self, json_patch, requests_patch):
         requests_patch.return_value = MagicMock()
         json_patch.return_value = MagicMock()
-        self.assertIsInstance(self._transport._process_jose_request('POST', '/path', ANY, ANY), APIResponse)
+        response = self._transport._process_jose_request('POST', '/path', ANY, ANY)
+        self.assertIsInstance(response, APIResponse)
+        json_patch.loads.assert_called_with(self._transport.decrypt_response.return_value)
+        self.assertEqual(response.data, json_patch.loads.return_value)
 
     def test_process_jose_request_error_response(self):
         self._transport._http_client = MagicMock()
         self._transport._http_client.put.return_value = APIErrorResponse(ANY, ANY, ANY)
         with self.assertRaises(LaunchKeyAPIException):
-            self.assertIsInstance(self._transport._process_jose_request('PUT', '/path', ANY), APIResponse)
+            self._transport._process_jose_request('PUT', '/path', ANY)
 
 
 class TestJOSETransportJWTResponse(unittest.TestCase):
@@ -179,7 +203,7 @@ class TestJOSETransportJWTResponse(unittest.TestCase):
                                  {"X-IOV-KEY-ID": "59:12:e2:f6:3f:79:d5:1e:18:75:c5:25:ff:b3:b7:f2"}, 200)
         self._transport.get.return_value = public_key
         self._transport._server_time_difference = 0, time()
-        self.issuer = ANY
+        self.issuer = "svc"
         self.issuer_id = uuid4()
         self._transport.set_issuer(self.issuer, self.issuer_id, valid_private_key)
         self._body = str(uuid4())
@@ -207,8 +231,21 @@ class TestJOSETransportJWTResponse(unittest.TestCase):
         self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
                                             self.jwt_response['sub'])
 
+    def test_verify_jwt_response_success_401_audience(self):
+        self.jwt_response['response']['status'] = 401
+        self.jwt_response['aud'] = "public"
+        self.jwt_response['sub'] = None
+        self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
+                                            self.jwt_response['sub'])
+
     def test_verify_jwt_response_invalid_audience(self):
         self.jwt_response['aud'] = MagicMock()
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
+                                                self.jwt_response['sub'])
+
+    def test_verify_jwt_response_invalid_audience_401(self):
+        self.jwt_response['response']['status'] = 401
         with self.assertRaises(JWTValidationFailure):
             self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
                                                 self.jwt_response['sub'])
@@ -228,6 +265,12 @@ class TestJOSETransportJWTResponse(unittest.TestCase):
                                                 self.jwt_response['sub'])
 
     def test_verify_jwt_response_invalid_sub(self):
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(), MagicMock())
+
+    def test_verify_jwt_response_invalid_sub_401(self):
+        self.jwt_response['response']['status'] = 401
+        self.jwt_response['aud'] = "public"
         with self.assertRaises(JWTValidationFailure):
             self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(), MagicMock())
 

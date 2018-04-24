@@ -5,7 +5,9 @@ CHANGELOG for LaunchKey Python SDK
 -----
 
 * Fixed geofence missing name bug
-* Added more expectd error conditions to pydocs
+* Added more expected error conditions to pydocs
+* Updated 401 errors to properly validate JWT headers
+* Removed version lock for pytz requirement
 
 3.1.1
 -----
