@@ -4,11 +4,12 @@ class APIResponse(object):
     status_code = None
     reason = None
 
-    def __init__(self, data, headers, status_code, reason=None):
+    def __init__(self, data, headers, status_code, reason=None, raw_data=None):
         self.data = data
         self.headers = headers
         self.status_code = status_code
         self.reason = reason
+        self.raw_data = raw_data
 
     def __str__(self):
         return super(APIResponse, self).__str__() + ": %s %s %s" % (self.status_code, self.reason, self.data)
