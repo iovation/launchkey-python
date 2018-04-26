@@ -118,7 +118,7 @@ You can also end all of a user's sessions
 Logging A User In
 *****************
 
-Create an auth request to initiated the login process
+Create an auth request to initiate the login process
 
 .. code-block:: python
 
