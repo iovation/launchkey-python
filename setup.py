@@ -12,6 +12,7 @@ requires = [
     'python-dateutil >= 2.4.2, < 3.0.0',
     'formencode >= 1.3.1, < 2.0.0',
     'pyjwkest >= 1.3.2, < 2.0.0',
+    'pycryptodomex >= 3.4.12, < 4.0.0',
     'pytz'
     ]
 
