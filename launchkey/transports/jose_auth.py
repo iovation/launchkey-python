@@ -9,8 +9,8 @@ from hashlib import sha256, sha384, sha512, md5
 from time import time
 from calendar import timegm
 from dateutil.parser import parse
-from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
+from Cryptodome.PublicKey import RSA
+from Cryptodome.Cipher import PKCS1_OAEP
 import json
 import six
 from jwkest.jwk import RSAKey, import_rsa_key
@@ -44,11 +44,11 @@ class JOSETransport(object):
         self._server_time_difference = None, None
         self._api_public_keys = [], None
 
-        self.jwt_algorithm = self.__verify_supported_algorith(jwt_algorithm, JOSE_SUPPORTED_JWT_ALGS)
-        self.jwe_cek_encryption = self.__verify_supported_algorith(jwe_cek_encryption, JOSE_SUPPORTED_JWE_ALGS)
-        self.jwe_claims_encryption = self.__verify_supported_algorith(jwe_claims_encryption, JOSE_SUPPORTED_JWE_ENCS)
-        self.content_hash_algorithm = self.__verify_supported_algorith(content_hash_algorithm,
-                                                                       JOSE_SUPPORTED_CONTENT_HASH_ALGS)
+        self.jwt_algorithm = self.__verify_supported_algorithm(jwt_algorithm, JOSE_SUPPORTED_JWT_ALGS)
+        self.jwe_cek_encryption = self.__verify_supported_algorithm(jwe_cek_encryption, JOSE_SUPPORTED_JWE_ALGS)
+        self.jwe_claims_encryption = self.__verify_supported_algorithm(jwe_claims_encryption, JOSE_SUPPORTED_JWE_ENCS)
+        self.content_hash_algorithm = self.__verify_supported_algorithm(content_hash_algorithm,
+                                                                        JOSE_SUPPORTED_CONTENT_HASH_ALGS)
 
         if self.content_hash_algorithm == "S256":
             self.content_hash_function = sha256
@@ -60,7 +60,7 @@ class JOSETransport(object):
         self._http_client = http_client if http_client is not None else RequestsTransport()
 
     @staticmethod
-    def __verify_supported_algorith(algorithm, supported_list):
+    def __verify_supported_algorithm(algorithm, supported_list):
         """Verifies an input string algorithm is in an input list, and raises the appropriate exception if it is not"""
         if algorithm not in supported_list:
             raise InvalidAlgorithm("Input algorithm {0} is not in the supported list of {1}"

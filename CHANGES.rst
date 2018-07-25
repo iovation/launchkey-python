@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.2.0
+-----
+
+* Remove PyCrypto
+
 3.1.2
 -----
 
