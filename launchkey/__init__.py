@@ -1,4 +1,4 @@
-SDK_VERSION = '3.1.2'
+SDK_VERSION = '3.2.0'
 LAUNCHKEY_PRODUCTION = "https://api.launchkey.com"
 VALID_JWT_ISSUER_LIST = ["svc", "dir", "org"]
 JOSE_SUPPORTED_JWE_ALGS = ['RSA-OAEP']

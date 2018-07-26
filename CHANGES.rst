@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.2.0
+-----
+
+* Remove PyCrypto and replace with pycryptodomex that is already required by PyJWKEST
+
 3.1.2
 -----
 

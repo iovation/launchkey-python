@@ -9,10 +9,10 @@ CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 requires = [
     'requests >= 2.5.1, < 3.0.0',
     'six >= 1.10.0, < 2.0.0',
-    'pycrypto >= 2.6.1, < 3.0.0',
     'python-dateutil >= 2.4.2, < 3.0.0',
     'formencode >= 1.3.1, < 2.0.0',
     'pyjwkest >= 1.3.2, < 2.0.0',
+    'pycryptodomex >= 3.4.12, < 4.0.0',
     'pytz'
     ]
 
