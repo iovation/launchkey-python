@@ -5,13 +5,8 @@ CHANGELOG for LaunchKey Python SDK
 -----
 
 * Remove PyCrypto and replace with pycryptodomex that is already required by PyJWKEST
-
-3.1.2
------
-
 * Fixed geofence missing name bug
 * Added more expected error conditions to pydocs
-* Updated 401 errors to properly validate JWT headers
 * Removed version lock for pytz requirement
 
 3.1.1

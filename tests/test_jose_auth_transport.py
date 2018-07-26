@@ -231,21 +231,8 @@ class TestJOSETransportJWTResponse(unittest.TestCase):
         self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
                                             self.jwt_response['sub'])
 
-    def test_verify_jwt_response_success_401_audience(self):
-        self.jwt_response['response']['status'] = 401
-        self.jwt_response['aud'] = "public"
-        self.jwt_response['sub'] = None
-        self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
-                                            self.jwt_response['sub'])
-
     def test_verify_jwt_response_invalid_audience(self):
         self.jwt_response['aud'] = MagicMock()
-        with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
-                                                self.jwt_response['sub'])
-
-    def test_verify_jwt_response_invalid_audience_401(self):
-        self.jwt_response['response']['status'] = 401
         with self.assertRaises(JWTValidationFailure):
             self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
                                                 self.jwt_response['sub'])
