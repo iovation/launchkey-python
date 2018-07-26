@@ -241,7 +241,8 @@ class JOSETransport(object):
             headers = {"content-type": "application/jwt", "Authorization": signature}
         response = getattr(self._http_client, method.lower())(path, data=body, headers=headers)
 
-        self.verify_jwt_response(response.headers, jti, response.raw_data, subject)
+        if response.status_code != 401:
+            self.verify_jwt_response(response.headers, jti, response.data, subject)
 
         if response.data and not isinstance(response.data, dict):
             jwe = self.decrypt_response(response.data)
@@ -284,19 +285,15 @@ class JOSETransport(object):
 
         now = time()
 
-        status_code = payload['response'].get('status')
-        expected_audience = self.issuer if status_code != 401 else "public"
-        expected_subject = subject if status_code != 401 else None
-
-        if payload.get('aud') != expected_audience:
+        if payload.get('aud') != self.issuer:
             raise JWTValidationFailure("Audience does not match: expected %s but got %s" %
-                                       (expected_audience, payload.get('aud')))
+                                       (self.issuer, payload.get('aud')))
         elif payload.get('nbf') > now + JOSE_JWT_LEEWAY:
             raise JWTValidationFailure("NBF failed by %s seconds" % (payload.get('nbf') - (now + JOSE_JWT_LEEWAY)))
         elif payload.get('exp') < now - JOSE_JWT_LEEWAY:
             raise JWTValidationFailure("EXP failed by %s seconds" % ((now - JOSE_JWT_LEEWAY) - payload.get('exp')))
-        elif payload.get('sub') != expected_subject:
-            raise JWTValidationFailure("Subject does not match: expected %s but got %s" % (expected_subject, payload.get('sub')))
+        elif payload.get('sub') != subject:
+            raise JWTValidationFailure("Subject does not match: expected %s but got %s" % (subject, payload.get('sub')))
         elif payload.get('iat') > now + JOSE_JWT_LEEWAY:
             raise JWTValidationFailure("IAT failed as its %s seconds in the future" % (payload.get('iat') -
                                                                                        (now + JOSE_JWT_LEEWAY)))
