@@ -1,3 +1,5 @@
+from jwkest import JWKESTException
+
 from launchkey.exceptions import InvalidEntityID, InvalidPrivateKey, InvalidIssuer, InvalidAlgorithm, \
     LaunchKeyAPIException, JWTValidationFailure, UnexpectedAPIResponse, NoIssuerKey, InvalidJWTResponse
 from launchkey import VALID_JWT_ISSUER_LIST, API_CACHE_TIME, JOSE_SUPPORTED_CONTENT_HASH_ALGS, JOSE_SUPPORTED_JWE_ALGS
@@ -281,7 +283,10 @@ class JOSETransport(object):
         :return: The JWT payload
         """
         auth = headers.get('X-IOV-JWT')
-        payload = self._get_jwt_payload(auth)
+        try:
+            payload = self._get_jwt_payload(auth)
+        except JWKESTException as e:
+            raise JWTValidationFailure("Unable to parse JWT", reason=e)
 
         now = time()
 

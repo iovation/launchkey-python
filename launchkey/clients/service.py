@@ -1,5 +1,8 @@
+from jwkest import JWKESTException
+
 from .base import BaseClient, api_call
-from launchkey.exceptions import InvalidParameters
+from launchkey.exceptions import InvalidParameters, UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
+    UnexpectedAPIResponse, UnexpectedWebhookRequest, JWTValidationFailure, InvalidJWTResponse
 from launchkey.entities.validation import AuthorizationResponseValidator, AuthorizeSSEValidator, AuthorizeValidator
 from launchkey.entities.service import AuthPolicy, AuthorizationResponse, SessionEndRequest
 from json import loads
@@ -94,11 +97,34 @@ class ServiceClient(BaseClient):
         :param body: The raw body that was send in the POST content
         :param headers: A generic map of response headers. These will be used to access and validate the JWT
         :return: launchkey.entities.service.SessionEndRequest or launchkey.entities.service.AuthorizationResponse
+        :raises launchkey.exceptions.UnexpectedWebhookRequest: when the request or its cannot be parsed or fails
+        validation.
+        :raises launchkey.exceptions.UnableToDecryptWebhookRequest: when the request is an authorization response
+        webhook and the request body cannot be decrypted
+        :raises launchkey.exceptions.UnexpectedAuthorizationResponse: when the decrypted auth package is missing
+        required data. This error is indicative of a non webhook request being sent to the method.
+        :raises launchkey.exceptions.UnexpectedKeyID: when the auth package in an authorization response
+        webhook request body is decrypted using a public key whose private key is not known by the client. This can be
+        a configuration issue.
+        :raises launchkey.exceptions.UnexpectedDeviceResponse: when the auth package received from the device is
+        invalid. This error is indicative of a man in the middle (MITM) attack.
         """
-        self._transport.verify_jwt_response(headers, None, body, self._subject)
+        try:
+            self._transport.verify_jwt_response(headers, None, body, self._subject)
+        except (JWTValidationFailure, InvalidJWTResponse) as e:
+            raise UnexpectedWebhookRequest(reason=e)
         if "service_user_hash" in body:
-            body = self._validate_response(loads(body), AuthorizeSSEValidator)
+            try:
+                body = self._validate_response(loads(body), AuthorizeSSEValidator)
+            except UnexpectedAPIResponse as e:
+                raise UnexpectedWebhookRequest(reason=e)
             return SessionEndRequest(body['service_user_hash'], self._transport.parse_api_time(body['api_time']))
         else:
-            body = loads(self._transport.decrypt_response(body))
-            return AuthorizationResponse(body, self._transport.loaded_issuer_private_keys)
+            try:
+                decrypted_body = self._transport.decrypt_response(body)
+                auth_response = loads(decrypted_body)
+                return AuthorizationResponse(auth_response, self._transport.loaded_issuer_private_keys)
+            except JWKESTException as e:
+                raise UnableToDecryptWebhookRequest(reason=e)
+            except KeyError as e:
+                raise UnexpectedAuthorizationResponse(reason=e)

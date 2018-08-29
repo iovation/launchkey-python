@@ -1,7 +1,7 @@
 from formencode import Invalid
 from launchkey.exceptions import UnexpectedKeyID, UnexpectedDeviceResponse, InvalidGeoFenceName, \
     InvalidTimeFenceEndTime, InvalidTimeFenceName, InvalidTimeFenceStartTime, MismatchedTimeFenceTimezones, \
-    DuplicateTimeFenceName, DuplicateGeoFenceName
+    DuplicateTimeFenceName, DuplicateGeoFenceName, UnexpectedAuthorizationResponse
 from base64 import b64decode
 from json import loads, dumps
 from launchkey.exceptions import InvalidPolicyFormat, InvalidParameters
@@ -254,12 +254,13 @@ class AuthorizationResponse(object):
     @staticmethod
     def _decrypt_auth_package(package, issuer_private_key):
         try:
-            return AuthorizationResponsePackageValidator.to_python(
-                loads(issuer_private_key.decrypt(b64decode(package)))
-            )
-        except (Invalid, ValueError, TypeError):
+            binary_package = b64decode(package)
+            decrypted_package = issuer_private_key.decrypt(binary_package)
+            unmarshalled_package = loads(decrypted_package)
+            return AuthorizationResponsePackageValidator.to_python(unmarshalled_package)
+        except (Invalid, TypeError, ValueError) as e:
             raise UnexpectedDeviceResponse("The device response was invalid. Please verify the same key that initiated"
-                                           " the auth request is being used to decrypt the current message.")
+                                           " the auth request is being used to decrypt the current message.", reason=e)
 
     def __init__(self, data, issuer_private_keys):
         if data.get('public_key_id') not in issuer_private_keys:

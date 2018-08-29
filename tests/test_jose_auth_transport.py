@@ -1,4 +1,7 @@
 import unittest
+
+from jwkest import JWKESTException
+from jwkest.jws import JWS
 from mock import MagicMock, ANY, patch
 from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse, APIErrorResponse
@@ -88,10 +91,21 @@ class TestJOSETransport3rdParty(unittest.TestCase):
         with self.assertRaises(InvalidJWTResponse):
             self._transport.verify_jwt_response(headers, ANY, ANY, ANY)
 
+    def test_jwt_response_error(self):
+        headers = {"X-IOV-JWT": 'invalid'}
+        with self.assertRaises(InvalidJWTResponse):
+            self._transport.verify_jwt_response(headers, ANY, ANY, ANY)
+
     def test_empty_jwt_response(self):
         headers = {}
         with self.assertRaises(InvalidJWTResponse):
             self._transport.verify_jwt_response(headers, ANY, ANY, ANY)
+
+    @patch.object(JWS, 'verify_compact')
+    def test_jwt_error_raises_expected_exception(self, verify_compact_patch):
+        verify_compact_patch.side_effect = JWKESTException
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_response({}, ANY, ANY, ANY)
 
 
 class TestJWKESTSupportedAlgs(unittest.TestCase):
