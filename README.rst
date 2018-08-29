@@ -8,6 +8,8 @@ Python SDK for LaunchKey API
 
 .. _docs: https://docs.launchkey.com/service-sdk/python/sdk-v3/
 
+.. _pyenv: https://github.com/pyenv/pyenv
+
 For use in implementing LaunchKey_.
 
 
@@ -192,13 +194,18 @@ You will use the same handle_webhook method for both login and logout.
 Running Tests
 -------------
 
-Mac/Linux:
+Tests require python 2.7, 3.4, 3.5, 2.6, and 3.7. The best way to manage these versions is with pyenv_. You will need
+to register all of the versions with pyenv. There are a couple ways to do that. An example of doing it globally is::
 
-    python setup.py test
+    pyenv global 2.7.15 3.4.9 3.5.6 3.6.6 3.7.0
 
-Windows:
+Install tox via PIP::
 
-    setup.py test
+    pip install tox
+
+Run tests::
+
+    tox
 
 Contributing
 ------------
