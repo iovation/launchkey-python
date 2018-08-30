@@ -1,4 +1,5 @@
 import re
+import warnings
 
 from jwkest import JWKESTException
 
@@ -285,7 +286,7 @@ class JOSETransport(object):
                     keys = [key]
         return JWE().decrypt(response, keys=keys).decode('utf-8')
 
-    def verify_jwt_response(self, headers, jti, content_body, subject):
+    def verify_jwt_response(self, headers, jti, content_body, subject, status_code=None):
         """
         Verifies a response's JWT header to be valid
         :param headers: Full header from the response
@@ -294,6 +295,11 @@ class JOSETransport(object):
         :param subject: Subject of the jwt response
         :return: The JWT payload
         """
+        if status_code is None:
+            warnings.warn("Not passing a status_code value has been deprecated and will not be allowed in "
+                          "the ext major version", DeprecationWarning)
+
+        ci_headers = {k.lower(): v for k, v in headers.items()}
         auth = headers.get('X-IOV-JWT')
         try:
             payload = self._get_jwt_payload(auth)
@@ -306,6 +312,26 @@ class JOSETransport(object):
             raise JWTValidationFailure("JTI does not match: expected {0} but got {1}".format(jti, payload.get("jti")))
         elif not payload.get('response'):
             raise JWTValidationFailure("Expected JWT to contain a response segment but there was none!")
+
+        response = payload['response']
+        if 'status' not in response:
+            raise JWTValidationFailure("Expected JWT to contain status in the response segment but there was none!")
+        elif status_code and status_code != response['status']:
+            raise JWTValidationFailure("Unexpected response status value")
+        elif 'location' in response and 'location' not in ci_headers:
+            raise JWTValidationFailure("Expected headers to location but there was none!")
+        elif 'location' not in response and 'location' in ci_headers:
+            raise JWTValidationFailure("Expected JWT to contain location in the response segment but there was none!")
+        elif 'location' in response and 'location' not in ci_headers:
+            raise JWTValidationFailure("Expected headers to location but there was none!")
+        elif 'location' in response and 'location' in ci_headers and response['location'] != ci_headers['location']:
+            raise JWTValidationFailure("Invalid location header!")
+        elif 'cache' in response and 'cache-control' not in ci_headers:
+            raise JWTValidationFailure("Expected headers to contain cache-control but there was none!")
+        elif 'cache' not in response and 'cache-control' in ci_headers:
+            raise JWTValidationFailure("Expected JWT to contain cache in the response segment but there was none!")
+        elif 'cache' in response and 'cache-control' in ci_headers and response['cache'] != ci_headers['cache-control']:
+            raise JWTValidationFailure("Invalid cache-control header!")
 
         self._verify_jwt_content_hash(content_body, payload.get('response'))
         return payload
