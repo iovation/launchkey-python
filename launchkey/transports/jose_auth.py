@@ -54,12 +54,8 @@ class JOSETransport(object):
         self.content_hash_algorithm = self.__verify_supported_algorithm(content_hash_algorithm,
                                                                         JOSE_SUPPORTED_CONTENT_HASH_ALGS)
 
-        if self.content_hash_algorithm == "S256":
-            self.content_hash_function = sha256
-        elif self.content_hash_algorithm == "S384":
-            self.content_hash_function = sha384
-        elif self.content_hash_algorithm == "S512":
-            self.content_hash_function = sha512
+        if self.content_hash_algorithm not in ("S256", "S384", "S512"):
+            raise InvalidAlgorithm("Invalid hash algorithm provided!")
 
         self._http_client = http_client if http_client is not None else RequestsTransport()
 
@@ -207,22 +203,21 @@ class JOSETransport(object):
         except (AttributeError, BadSyntax):
             raise InvalidJWTResponse("Received JWT response is not valid: %s" % auth)
 
-    def _get_content_hash(self, body, hash_function=None):
+    def _get_content_hash(self, body, hash_function):
         """
         Retrieves a hash using the stored content_hash_function
         :param body: string body
+        :param hash_function: function identifier hash the body
         :return: hash based on the content_hash_function
         """
-        if hash_function is None:
-            hasher = self.content_hash_function
-        elif hash_function == "S256":
+        if hash_function == "S256":
             hasher = sha256
-        elif self.content_hash_algorithm == "S384":
+        elif hash_function == "S384":
             hasher = sha384
-        elif self.content_hash_algorithm == "S512":
+        elif hash_function == "S512":
             hasher = sha512
         else:
-            raise ValueError("Invalid hash algorithm!")
+            raise InvalidAlgorithm("Invalid hash algorithm {}!".format(hash_function))
 
         return hasher(six.b(body)).hexdigest()
 
@@ -248,7 +243,7 @@ class JOSETransport(object):
         body = None
         if data:
             body = self._encrypt_request(data)
-            content_hash = self._get_content_hash(body)
+            content_hash = self._get_content_hash(body, self.content_hash_algorithm)
             signature = self._build_jwt_signature(method, path, jti, subject, content_hash=content_hash)
             headers = {"content-type": "application/jwe", "Authorization": signature}
         else:
@@ -346,11 +341,11 @@ class JOSETransport(object):
 
         if 'request' not in payload:
             raise JWTValidationFailure("Expected JWT to contain a request segment but there was none!")
-        elif 'method' not in payload['request']:
+        elif 'meth' not in payload['request']:
             raise JWTValidationFailure("Expected method attribute but there was none!")
-        elif method is not None and payload['request']['method'] != method:
+        elif method is not None and payload['request']['meth'] != method:
             raise JWTValidationFailure("Method does not match: expected {} but got {}".format(
-                payload['request']['method'], method))
+                payload['request']['meth'], method))
         elif 'path' not in payload['request']:
             raise JWTValidationFailure("Expected path attribute but there was none!")
         elif path is not None and payload['request']['path'] != path:
@@ -397,7 +392,10 @@ class JOSETransport(object):
         elif content and not custom_segment.get('func'):
             raise JWTValidationFailure("Expected JWT to contain a func attribute but there was none!")
         elif content:
-            expected_hash = self._get_content_hash(content, custom_segment.get('func'))
+            try:
+                expected_hash = self._get_content_hash(content, custom_segment.get('func'))
+            except InvalidAlgorithm as e:
+                raise JWTValidationFailure("Invalid algorithm in JWT", reason=e)
             received_hash = custom_segment.get('hash')
             if received_hash != expected_hash:
                 raise JWTValidationFailure("Content hash does not match: expected %s but got %s" %

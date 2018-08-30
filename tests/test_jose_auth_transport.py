@@ -147,12 +147,25 @@ class TestJWKESTSupportedAlgs(unittest.TestCase):
 
 class TestHashlibSupportedAlgs(unittest.TestCase):
 
-    def test_supported_content_hash_algorithm_success(self):
+    def test_supported_content_hash_algorithm_success_in_construct(self):
         for alg in JOSE_SUPPORTED_CONTENT_HASH_ALGS:
-            transport = JOSETransport(content_hash_algorithm=alg)
+            JOSETransport(content_hash_algorithm=alg)
+
+    def test_unsupported_content_hash_algorithm_success_in_construct_raises_invalid_algorithm_error(self):
+        with self.assertRaises(InvalidAlgorithm):
+            JOSETransport(content_hash_algorithm="bad")
+
+    def test_supported_content_hash_algorithm_success_in_get_content_hash(self):
+        for alg in JOSE_SUPPORTED_CONTENT_HASH_ALGS:
+            transport = JOSETransport()
             to_hash = str(uuid4())
-            result = transport._get_content_hash(to_hash)
+            result = transport._get_content_hash(to_hash, alg)
             self.assertNotEqual(to_hash, result)
+
+    def test_unsupported_content_hash_algorithm_success_in_get_content_hash_raises_invalid_algorithm_error(self):
+            transport = JOSETransport()
+            with self.assertRaises(InvalidAlgorithm):
+                transport._get_content_hash(None, "invalid")
 
 
 class TestJOSEProcessJOSERequest(unittest.TestCase):
@@ -162,20 +175,19 @@ class TestJOSEProcessJOSERequest(unittest.TestCase):
         self._transport = JOSETransport(http_client=self._http_transport)
         self._transport.verify_jwt_response = MagicMock()
         self._transport._build_jwt_signature = MagicMock()
-        self._transport.content_hash_function = MagicMock()
-        self._transport.decrypt_response = MagicMock()
-        self._transport._encrypt_request = MagicMock()
+        self._transport.decrypt_response = MagicMock(return_value="Decrypted Response")
+        self._transport._encrypt_request = MagicMock(return_value="Encrypted Response")
 
     @patch('requests.get')
     def test_process_jose_request_success_encrypted_response(self, requests_patch):
         requests_patch.return_value = MagicMock()
-        response = self._transport._process_jose_request('GET', '/path', ANY)
+        response = self._transport._process_jose_request('GET', '/path', 'subject', 'body')
         self._transport.decrypt_response.assert_called_once()
         self.assertEqual(response.data, self._transport.decrypt_response.return_value)
 
     def test_process_jose_request_success_unencrypted_response(self):
         self._transport._http_client = MagicMock()
-        self._transport._http_client.get.return_value = APIResponse({"a": "response"}, ANY, 200)
+        self._transport._http_client.get.return_value = APIResponse({"a": "response"}, {}, 200)
         response = self._transport._process_jose_request('GET', '/path', ANY)
         self._transport.decrypt_response.assert_not_called()
         self.assertIsInstance(response, APIResponse)
@@ -184,8 +196,8 @@ class TestJOSEProcessJOSERequest(unittest.TestCase):
 
     def test_process_jose_request_success_empty_response(self):
         self._transport._http_client = MagicMock()
-        self._transport._http_client.get.return_value = APIResponse(None, ANY, 201)
-        response = self._transport._process_jose_request('GET', '/path', ANY)
+        self._transport._http_client.get.return_value = APIResponse(None, {}, 201)
+        response = self._transport._process_jose_request('GET', '/path', 'subject')
         self._transport.decrypt_response.assert_not_called()
         self.assertIsInstance(response, APIResponse)
         self.assertIsNone(response.data)
@@ -193,8 +205,8 @@ class TestJOSEProcessJOSERequest(unittest.TestCase):
 
     @patch('launchkey.transports.jose_auth.json')
     def test_process_jose_request_data_json_success(self, json_patch):
-        json_patch.return_value = MagicMock()
-        response = self._transport._process_jose_request('POST', '/path', ANY, ANY)
+        json_patch.return_value = "{\"json\": true}"
+        response = self._transport._process_jose_request('POST', '/path', 'subject', 'data')
         json_patch.loads.assert_called_with(self._transport.decrypt_response.return_value)
         self.assertEqual(response.data, json_patch.loads.return_value)
 
@@ -202,7 +214,7 @@ class TestJOSEProcessJOSERequest(unittest.TestCase):
         self._transport._http_client = MagicMock()
         self._transport._http_client.put.return_value = APIErrorResponse(ANY, ANY, ANY)
         with self.assertRaises(LaunchKeyAPIException):
-            self._transport._process_jose_request('PUT', '/path', ANY)
+            self._transport._process_jose_request('PUT', '/path', 'subject')
 
 
 class TestJOSETransportJWTResponse(unittest.TestCase):
@@ -395,8 +407,12 @@ class TestJOSETransportJWTRequest(unittest.TestCase):
         patched.return_value.hexdigest.return_value = self._content_hash
         self.addCleanup(patcher.stop)
 
+    def _verify_jwt_request(self, compact_jwt="compact.jtw.value", subscriber=None, method='POST', path='/', body="body"):
+        subscriber = self.jwt_payload['sub'] if subscriber is None else subscriber
+        return self._transport.verify_jwt_request(compact_jwt, subscriber, method, path, body)
+
     def test_all_params_returns_payload(self):
-        actual = self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST', '/', MagicMock())
+        actual = self._verify_jwt_request()
         self.assertEqual(actual, self.jwt_payload)
 
     def test_none_path_returns_payload(self):
@@ -406,95 +422,85 @@ class TestJOSETransportJWTRequest(unittest.TestCase):
     def test_none_path_still_requires_jwt_request_path(self):
         del self.jwt_payload['request']['path']
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST', None, MagicMock())
+            self._verify_jwt_request(path=None)
 
     def test_none_method_returns_payload(self):
-        actual = self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], None, '/', MagicMock())
+        actual = self._verify_jwt_request(method=None)
         self.assertEqual(actual, self.jwt_payload)
 
     def test_none_method_still_requires_jwt_request_path(self):
         del self.jwt_payload['request']['meth']
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], None, '/', MagicMock())
+            self._verify_jwt_request(method=None)
 
     def test_invalid_audience_raises_validation_failure(self):
         self.jwt_payload['aud'] = MagicMock()
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST', '/', MagicMock())
+            self._verify_jwt_request()
 
     def test_no_authoprization_raises_validation_failure(self):
         self.jwt_payload['aud'] = MagicMock()
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
-                                               '/', MagicMock())
+            self._verify_jwt_request()
 
     @patch("launchkey.transports.jose_auth.time")
     def test_invalid_nbf_raises_validation_failure(self, time_patch):
         time_patch.return_value = self.jwt_payload['nbf'] - JOSE_JWT_LEEWAY - 1
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
-                                               '/', MagicMock())
+            self._verify_jwt_request()
 
     @patch("launchkey.transports.jose_auth.time")
     def test_invalid_exp_raises_validation_failure(self, time_patch):
         time_patch.return_value = self.jwt_payload['exp'] + JOSE_JWT_LEEWAY + 1
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
-                                               '/', MagicMock())
+            self._verify_jwt_request()
 
     def test_invalid_sub_raises_validation_failure(self):
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), 'other', 'POST', '/', MagicMock())
+            self._verify_jwt_request(subscriber='other')
 
     def test_invalid_iat_raises_validation_failure(self):
         self.jwt_payload['iat'] = time() + JOSE_JWT_LEEWAY + 1
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
-                                               '/', MagicMock())
+            self._verify_jwt_request()
 
     def test_invalid_content_body_raises_validation_failure(self):
         self.jwt_payload['request']['hash'] = MagicMock()
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
-                                               '/', MagicMock())
+            self._verify_jwt_request()
 
     def test_no_body_but_response_body_hash_algorithm_raises_validation_failure(self):
         del self.jwt_payload['request']['hash']
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
-                                               '/', None)
+            self._verify_jwt_request(body=None)
 
     def test_no_body_but_response_body_hash_raises_validation_failure(self):
         del self.jwt_payload['request']['func']
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
-                                               '/', None)
+            self._verify_jwt_request(body=None)
 
     def test_no_request_raises_validation_failure(self):
         del self.jwt_payload['request']
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'INV', '/', None)
+            self._verify_jwt_request(method='INV')
 
     def test_no_method_raises_validation_failure(self):
         del self.jwt_payload['request']['meth']
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'INV',
-                                               '/', MagicMock())
+            self._verify_jwt_request(method='INV')
 
     def test_invalid_method_raises_validation_failure(self):
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'INV',
-                                               '/', MagicMock())
+            self._verify_jwt_request(method='INV')
 
     def test_no_path_raises_validation_failure(self):
         del self.jwt_payload['request']['path']
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'INV', '/', None)
+            self._verify_jwt_request(path='/invalid')
 
     def test_invalid_path_raises_validation_failure(self):
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
-                                               '/invalid', MagicMock())
+            self._verify_jwt_request(path='/invalid')
 
 
 class TestJOSETransportJWT(unittest.TestCase):
