@@ -3,7 +3,7 @@ import unittest
 from jwkest import JWKESTException
 from jwkest.jws import JWS
 from mock import MagicMock, ANY, patch
-from launchkey.transports import JOSETransport
+from launchkey.transports import JOSETransport, RequestsTransport
 from launchkey.transports.base import APIResponse, APIErrorResponse
 from launchkey.exceptions import InvalidAlgorithm, UnexpectedAPIResponse, InvalidEntityID, InvalidIssuer, \
     InvalidPrivateKey, NoIssuerKey, InvalidJWTResponse, JWTValidationFailure, LaunchKeyAPIException
@@ -158,7 +158,8 @@ class TestHashlibSupportedAlgs(unittest.TestCase):
 class TestJOSEProcessJOSERequest(unittest.TestCase):
 
     def setUp(self):
-        self._transport = JOSETransport()
+        self._http_transport = MagicMock(spec=RequestsTransport)
+        self._transport = JOSETransport(http_client=self._http_transport)
         self._transport.verify_jwt_response = MagicMock()
         self._transport._build_jwt_signature = MagicMock()
         self._transport.content_hash_function = MagicMock()
@@ -170,7 +171,6 @@ class TestJOSEProcessJOSERequest(unittest.TestCase):
         requests_patch.return_value = MagicMock()
         response = self._transport._process_jose_request('GET', '/path', ANY)
         self._transport.decrypt_response.assert_called_once()
-        self.assertIsInstance(response, APIResponse)
         self.assertEqual(response.data, self._transport.decrypt_response.return_value)
 
     def test_process_jose_request_success_unencrypted_response(self):
@@ -191,13 +191,10 @@ class TestJOSEProcessJOSERequest(unittest.TestCase):
         self.assertIsNone(response.data)
         self.assertEqual(response.status_code, 201)
 
-    @patch('requests.post')
     @patch('launchkey.transports.jose_auth.json')
-    def test_process_jose_request_data_json_success(self, json_patch, requests_patch):
-        requests_patch.return_value = MagicMock()
+    def test_process_jose_request_data_json_success(self, json_patch):
         json_patch.return_value = MagicMock()
         response = self._transport._process_jose_request('POST', '/path', ANY, ANY)
-        self.assertIsInstance(response, APIResponse)
         json_patch.loads.assert_called_with(self._transport.decrypt_response.return_value)
         self.assertEqual(response.data, json_patch.loads.return_value)
 
@@ -474,42 +471,31 @@ class TestJOSETransportJWT(unittest.TestCase):
 class TestJOSETransportRESTCalls(unittest.TestCase):
 
     def setUp(self):
-        self._transport = JOSETransport()
+        self._http_client = MagicMock(spec=RequestsTransport)
+        self._transport = JOSETransport(http_client=self._http_client)
         self._transport.verify_jwt_response = MagicMock()
         self._transport._build_jwt_signature = MagicMock()
         self._transport.content_hash_function = MagicMock()
         self._transport.decrypt_response = MagicMock()
         self._transport._encrypt_request = MagicMock()
 
-    @patch('requests.get')
-    def test_get(self, requests_patch):
-        requests_patch.return_value = MagicMock()
-        self.assertIsInstance(self._transport.get('/path'), APIResponse)
+    def test_get(self):
+        self.assertEqual(self._transport.get('/path'), self._http_client.get.return_value)
 
-    @patch('requests.get')
-    def test_get_with_subject(self, requests_patch):
-        requests_patch.return_value = MagicMock()
-        self.assertIsInstance(self._transport.get('/path', ANY), APIResponse)
+    def test_get_with_subject(self):
+        self.assertEqual(self._transport.get('/path', ANY), self._http_client.get.return_value)
 
-    @patch('requests.post')
-    def test_post(self, requests_patch):
-        requests_patch.return_value = MagicMock()
-        self.assertIsInstance(self._transport.post('/path', ANY), APIResponse)
+    def test_post(self):
+        self.assertEqual(self._transport.post('/path', ANY), self._http_client.post.return_value)
 
-    @patch('requests.put')
-    def test_put(self, requests_patch):
-        requests_patch.return_value = MagicMock()
-        self.assertIsInstance(self._transport.put('/path', ANY), APIResponse)
+    def test_put(self):
+        self.assertEqual(self._transport.put('/path', ANY), self._http_client.put.return_value)
 
-    @patch('requests.delete')
-    def test_delete(self, requests_patch):
-        requests_patch.return_value = MagicMock()
-        self.assertIsInstance(self._transport.delete('/path', ANY), APIResponse)
+    def test_delete(self):
+        self.assertEqual(self._transport.delete('/path', ANY), self._http_client.delete.return_value)
 
-    @patch('requests.patch')
-    def test_patch(self, requests_patch):
-        requests_patch.return_value = MagicMock()
-        self.assertIsInstance(self._transport.patch('/path', ANY), APIResponse)
+    def test_patch(self):
+        self.assertEqual(self._transport.patch('/path', ANY), self._http_client.patch.return_value)
 
 
 class TestJOSETransportIssuers(unittest.TestCase):

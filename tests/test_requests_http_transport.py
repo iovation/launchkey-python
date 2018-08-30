@@ -59,6 +59,9 @@ class TestRequestsHTTPTransportParseResponse(unittest.TestCase):
 class TestRequestsHTTPTransport(unittest.TestCase):
 
     def setUp(self):
+        patcher = patch('requests.session')
+        self._session_patch = patcher.start()
+        self.addCleanup(patcher.stop)
         self._transport = RequestsTransport()
 
     def test_defaults(self):
@@ -75,27 +78,22 @@ class TestRequestsHTTPTransport(unittest.TestCase):
         self.assertEqual(self._transport.testing, testing)
         self.assertEqual(self._transport.verify_ssl, not testing)
 
-    @patch("requests.get")
-    def test_get(self, requests_patch):
+    def test_get(self):
         self._transport.get(MagicMock())
-        requests_patch.assert_called_once()
+        self._session_patch.return_value.get.assert_called_once()
 
-    @patch("requests.post")
-    def test_post(self, requests_patch):
+    def test_post(self):
         self._transport.post(MagicMock())
-        requests_patch.assert_called_once()
+        self._session_patch.return_value.post.assert_called_once()
 
-    @patch("requests.put")
-    def test_put(self, requests_patch):
+    def test_put(self):
         self._transport.put(MagicMock())
-        requests_patch.assert_called_once()
+        self._session_patch.return_value.put.assert_called_once()
 
-    @patch("requests.delete")
-    def test_delete(self, requests_patch):
+    def test_delete(self):
         self._transport.delete(MagicMock())
-        requests_patch.assert_called_once()
+        self._session_patch.return_value.delete.assert_called_once()
         
-    @patch("requests.patch")
-    def test_patch(self, requests_patch):
+    def test_patch(self):
         self._transport.patch(MagicMock())
-        requests_patch.assert_called_once()
+        self._session_patch.return_value.patch.assert_called_once()
