@@ -1,14 +1,19 @@
+import re
+import warnings
+
 from jwkest import JWKESTException
 
 from .base import BaseClient, api_call
 from launchkey.exceptions import InvalidParameters, UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
-    UnexpectedAPIResponse, UnexpectedWebhookRequest, JWTValidationFailure, InvalidJWTResponse
+    UnexpectedAPIResponse, UnexpectedWebhookRequest, JWTValidationFailure, InvalidJWTResponse, WebhookAuthorizationError
 from launchkey.entities.validation import AuthorizationResponseValidator, AuthorizeSSEValidator, AuthorizeValidator
 from launchkey.entities.service import AuthPolicy, AuthorizationResponse, SessionEndRequest
 from json import loads
 
 
 class ServiceClient(BaseClient):
+
+    AUTHORIZATION_HEADER_RE = re.compile("^IOV-JWT (.+)$")
 
     def __init__(self, subject_id, transport):
         super(ServiceClient, self).__init__('svc', subject_id, transport)
@@ -88,14 +93,16 @@ class ServiceClient(BaseClient):
         """
         self._transport.delete("/service/v3/sessions", self._subject, username=user)
 
-    def handle_webhook(self, body, headers):
+    def handle_webhook(self, body, headers, method=None, path=None):
         """
         Handle a webhook callback
         In the event of a Logout webhook, be sure to call session_end() when you complete the process of ending the
         user's session in your implementation.  This will remove the corresponding Application from the authorization
         list on all of the the user's mobile devices.
         :param body: The raw body that was send in the POST content
-        :param headers: A generic map of response headers. These will be used to access and validate the JWT
+        :param headers: A generic map of response headers. These will be used to access and validate authorization
+        :param path:  The path of the request
+        :param method: The HTTP method of the request
         :return: launchkey.entities.service.SessionEndRequest or launchkey.entities.service.AuthorizationResponse
         :raises launchkey.exceptions.UnexpectedWebhookRequest: when the request or its cannot be parsed or fails
         validation.
@@ -108,9 +115,33 @@ class ServiceClient(BaseClient):
         a configuration issue.
         :raises launchkey.exceptions.UnexpectedDeviceResponse: when the auth package received from the device is
         invalid. This error is indicative of a man in the middle (MITM) attack.
+        :raises launchkey.exceptions.WebhookAuthorizationError: when the "Authorization" header in the headers.
         """
+        if method is None:
+            warnings.warn("Not passing a valid request method string is deprecated and will be required in the next "
+                          "major version", PendingDeprecationWarning)
+
+        if path is None:
+            warnings.warn("Not passing a valid request path string is deprecated and will be required in the next "
+                          "major version", PendingDeprecationWarning)
+
+        authorization_header = None
+        for header_key, authorization_header in headers.items():
+            if header_key.lower() == 'authorization':
+                authorization_header = authorization_header
+
+        if authorization_header is None:
+            raise WebhookAuthorizationError(
+                "The authorization header was not found in the supplied headers from the request!")
+
+        m = self.AUTHORIZATION_HEADER_RE.match(authorization_header)
+        if not m:
+            raise WebhookAuthorizationError(
+                "The authorization header was invalid!")
+        compact_jwt = m.group(1)
+
         try:
-            self._transport.verify_jwt_response(headers, None, body, self._subject)
+            self._transport.verify_jwt_request(compact_jwt, self._subject, method, path, body)
         except (JWTValidationFailure, InvalidJWTResponse) as e:
             raise UnexpectedWebhookRequest(reason=e)
         if "service_user_hash" in body:

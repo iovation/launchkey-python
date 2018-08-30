@@ -223,7 +223,7 @@ class TestJOSETransportJWTResponse(unittest.TestCase):
         self._body = str(uuid4())
         self._content_hash = '16793293daadb5a03b7cbbb9d15a1a705b22e762a1a751bc8625dec666101ff2'
 
-        self.jwt_response = {
+        self.jwt_payload = {
             'aud': '%s:%s' % (self.issuer, self.issuer_id),
             'iss': 'lka',
             'cty': 'application/json',
@@ -237,59 +237,219 @@ class TestJOSETransportJWTResponse(unittest.TestCase):
                 'func': 'S256'},
             'sub': '%s:%s' % (self.issuer, self.issuer_id)
         }
-        self._transport._get_jwt_payload = MagicMock(return_value=self.jwt_response)
+        self._transport._get_jwt_payload = MagicMock(return_value=self.jwt_payload)
         self._transport.content_hash_function = MagicMock()
-        self._transport.content_hash_function().hexdigest.return_value = self._content_hash
+        self._transport.content_hash_function.return_value.hexdigest.return_value = self._content_hash
 
-    def test_verify_jwt_response_success(self):
-        self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
-                                            self.jwt_response['sub'])
+        patcher = patch('launchkey.transports.jose_auth.sha256')
+        patched = patcher.start()
+        patched.return_value = MagicMock()
+        patched.return_value.hexdigest.return_value = self._content_hash
+        self.addCleanup(patcher.stop)
+
+    def test_verify_jwt_response_success_returns_payload(self):
+        actual = self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], MagicMock(),
+                                                     self.jwt_payload['sub'])
+        self.assertEqual(actual, self.jwt_payload)
 
     def test_verify_jwt_response_invalid_audience(self):
-        self.jwt_response['aud'] = MagicMock()
+        self.jwt_payload['aud'] = MagicMock()
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
-                                                self.jwt_response['sub'])
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], MagicMock(),
+                                                self.jwt_payload['sub'])
 
     @patch("launchkey.transports.jose_auth.time")
     def test_verify_jwt_response_invalid_nbf(self, time_patch):
-        time_patch.return_value = self.jwt_response['nbf'] - JOSE_JWT_LEEWAY - 1
+        time_patch.return_value = self.jwt_payload['nbf'] - JOSE_JWT_LEEWAY - 1
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
-                                                self.jwt_response['sub'])
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], MagicMock(),
+                                                self.jwt_payload['sub'])
 
     @patch("launchkey.transports.jose_auth.time")
     def test_verify_jwt_response_invalid_exp(self, time_patch):
-        time_patch.return_value = self.jwt_response['exp'] + JOSE_JWT_LEEWAY + 1
+        time_patch.return_value = self.jwt_payload['exp'] + JOSE_JWT_LEEWAY + 1
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
-                                                self.jwt_response['sub'])
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], MagicMock(),
+                                                self.jwt_payload['sub'])
 
     def test_verify_jwt_response_invalid_sub(self):
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(), MagicMock())
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], MagicMock(), MagicMock())
 
     def test_verify_jwt_response_invalid_sub_401(self):
-        self.jwt_response['response']['status'] = 401
-        self.jwt_response['aud'] = "public"
+        self.jwt_payload['response']['status'] = 401
+        self.jwt_payload['aud'] = "public"
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(), MagicMock())
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], MagicMock(), MagicMock())
 
     def test_verify_jwt_response_invalid_iat(self):
-        self.jwt_response['iat'] = time() + JOSE_JWT_LEEWAY + 1
+        self.jwt_payload['iat'] = time() + JOSE_JWT_LEEWAY + 1
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
-                                                self.jwt_response['sub'])
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], MagicMock(),
+                                                self.jwt_payload['sub'])
 
     def test_verify_jwt_response_invalid_content_body(self):
-        self.jwt_response['response']['hash'] = MagicMock()
+        self.jwt_payload['response']['hash'] = MagicMock()
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_response(MagicMock(), self.jwt_response['jti'], MagicMock(),
-                                                self.jwt_response['sub'])
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], MagicMock(),
+                                                self.jwt_payload['sub'])
 
     def test_verify_jwt_response_invalid_content_jti(self):
         with self.assertRaises(JWTValidationFailure):
-            self._transport.verify_jwt_response(MagicMock(), 'InvalidJTI', MagicMock(), self.jwt_response['sub'])
+            self._transport.verify_jwt_response(MagicMock(), 'InvalidJTI', MagicMock(), self.jwt_payload['sub'])
+
+    def test_verify_no_body_but_response_body_hash_algorithm_raises_validation_failure(self):
+        del self.jwt_payload['response']['hash']
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], None, self.jwt_payload['sub'])
+
+    def test_verify_no_body_but_response_body_hash_raises_validation_failure(self):
+        del self.jwt_payload['response']['func']
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_response(MagicMock(), self.jwt_payload['jti'], None, self.jwt_payload['sub'])
+
+
+class TestJOSETransportJWTRequest(unittest.TestCase):
+
+    def setUp(self):
+        self._transport = JOSETransport()
+        self._transport.get = MagicMock(return_value=MagicMock(spec=APIResponse))
+        public_key = APIResponse(valid_private_key,
+                                 {"X-IOV-KEY-ID": "59:12:e2:f6:3f:79:d5:1e:18:75:c5:25:ff:b3:b7:f2"}, 200)
+        self._transport.get.return_value = public_key
+        self._transport._server_time_difference = 0, time()
+        self.issuer = "svc"
+        self.issuer_id = uuid4()
+        self._transport.set_issuer(self.issuer, self.issuer_id, valid_private_key)
+        self._body = str(uuid4())
+        self._content_hash = '16793293daadb5a03b7cbbb9d15a1a705b22e762a1a751bc8625dec666101ff2'
+
+        self.jwt_payload = {
+            'aud': '%s:%s' % (self.issuer, self.issuer_id),
+            'iss': 'lka',
+            'cty': 'application/json',
+            'nbf': time(),
+            'jti': str(uuid4()),
+            'exp': time() + 30,
+            'iat': time(),
+            'request': {
+                'method': 'POST',
+                'path': '/',
+                'hash': self._content_hash,
+                'func': 'S256'},
+            'sub': '%s:%s' % (self.issuer, self.issuer_id)
+        }
+        self._transport._get_jwt_payload = MagicMock(return_value=self.jwt_payload)
+        self._transport.content_hash_function = MagicMock()
+
+        self._transport.content_hash_function().hexdigest.return_value = self._content_hash
+
+        patcher = patch('launchkey.transports.jose_auth.sha256')
+        patched = patcher.start()
+        patched.return_value = MagicMock()
+        patched.return_value.hexdigest.return_value = self._content_hash
+        self.addCleanup(patcher.stop)
+
+    def test_all_params_returns_payload(self):
+        actual = self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST', '/', MagicMock())
+        self.assertEqual(actual, self.jwt_payload)
+
+    def test_none_path_returns_payload(self):
+        actual = self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST', None, MagicMock())
+        self.assertEqual(actual, self.jwt_payload)
+
+    def test_none_path_still_requires_jwt_request_path(self):
+        del self.jwt_payload['request']['path']
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST', None, MagicMock())
+
+    def test_none_method_returns_payload(self):
+        actual = self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], None, '/', MagicMock())
+        self.assertEqual(actual, self.jwt_payload)
+
+    def test_none_method_still_requires_jwt_request_path(self):
+        del self.jwt_payload['request']['method']
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], None, '/', MagicMock())
+
+    def test_invalid_audience_raises_validation_failure(self):
+        self.jwt_payload['aud'] = MagicMock()
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST', '/', MagicMock())
+
+    def test_no_authoprization_raises_validation_failure(self):
+        self.jwt_payload['aud'] = MagicMock()
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
+                                               '/', MagicMock())
+
+    @patch("launchkey.transports.jose_auth.time")
+    def test_invalid_nbf_raises_validation_failure(self, time_patch):
+        time_patch.return_value = self.jwt_payload['nbf'] - JOSE_JWT_LEEWAY - 1
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
+                                               '/', MagicMock())
+
+    @patch("launchkey.transports.jose_auth.time")
+    def test_invalid_exp_raises_validation_failure(self, time_patch):
+        time_patch.return_value = self.jwt_payload['exp'] + JOSE_JWT_LEEWAY + 1
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
+                                               '/', MagicMock())
+
+    def test_invalid_sub_raises_validation_failure(self):
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), 'other', 'POST', '/', MagicMock())
+
+    def test_invalid_iat_raises_validation_failure(self):
+        self.jwt_payload['iat'] = time() + JOSE_JWT_LEEWAY + 1
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
+                                               '/', MagicMock())
+
+    def test_invalid_content_body_raises_validation_failure(self):
+        self.jwt_payload['request']['hash'] = MagicMock()
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
+                                               '/', MagicMock())
+
+    def test_no_body_but_response_body_hash_algorithm_raises_validation_failure(self):
+        del self.jwt_payload['request']['hash']
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
+                                               '/', None)
+
+    def test_no_body_but_response_body_hash_raises_validation_failure(self):
+        del self.jwt_payload['request']['func']
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
+                                               '/', None)
+
+    def test_no_request_raises_validation_failure(self):
+        del self.jwt_payload['request']
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'INV', '/', None)
+
+    def test_no_method_raises_validation_failure(self):
+        del self.jwt_payload['request']['method']
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'INV',
+                                               '/', MagicMock())
+
+    def test_invalid_method_raises_validation_failure(self):
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'INV',
+                                               '/', MagicMock())
+
+    def test_no_path_raises_validation_failure(self):
+        del self.jwt_payload['request']['path']
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'INV', '/', None)
+
+    def test_invalid_path_raises_validation_failure(self):
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST',
+                                               '/invalid', MagicMock())
 
 
 class TestJOSETransportJWT(unittest.TestCase):
@@ -372,7 +532,8 @@ class TestJOSETransportIssuers(unittest.TestCase):
 
     def test_generate_key_id(self):
         self._transport.add_issuer_key(valid_private_key)
-        self.assertEqual(self._transport.issuer_private_keys[0].kid, '59:12:e2:f6:3f:79:d5:1e:18:75:c5:25:ff:b3:b7:f2')
+        self.assertEqual(self._transport.issuer_private_keys[0].kid,
+                         '59:12:e2:f6:3f:79:d5:1e:18:75:c5:25:ff:b3:b7:f2')
 
     def test_set_url(self):
         self._transport._http_client = MagicMock()
@@ -399,7 +560,6 @@ class TestJOSETransportIssuers(unittest.TestCase):
         self._transport.add_issuer_key = MagicMock()
         for issuer in VALID_JWT_ISSUER_LIST:
             self._transport.set_issuer(issuer, uuid4(), ANY)
-
 
 class TestJOSETransportAPIPing(unittest.TestCase):
 
@@ -479,7 +639,6 @@ class TestJOSETransportAPIPing(unittest.TestCase):
             self._transport.api_public_keys
             time_patch.return_value += API_CACHE_TIME + 1
         self.assertEqual(self._transport.get.call_count, call_count)
-
 
 class TestJOSETransportSupportedAlgorithms(unittest.TestCase):
 

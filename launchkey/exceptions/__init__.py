@@ -177,12 +177,16 @@ class UnexpectedWebhookRequest(LaunchKeyAPIException):
 
 
 class UnableToDecryptWebhookRequest(LaunchKeyAPIException):
-    """There was an decrypting the body of the webhook request."""
+    """There was an error decrypting the body of the webhook request."""
 
 
 class UnableToDecryptAuthorizationResponse(LaunchKeyAPIException):
-    """There was an decrypting the response package of the authorization response webhook request."""
+    """There was an error decrypting the response package of the authorization response webhook request."""
 
 
 class UnexpectedAuthorizationResponse(LaunchKeyAPIException):
-    """There was an decrypting the response package of the authorization response webhook request."""
+    """There was an issue with the response package of the authorization response webhook request."""
+
+
+class WebhookAuthorizationError(LaunchKeyAPIException):
+    """There was an issue with validating hte authorization provided by the webhook request."""
