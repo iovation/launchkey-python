@@ -248,6 +248,14 @@ class AuthPolicy(object):
                         self.jailbreak_protection = True
 
 
+class AuthorizationRequest(object):
+    """Authorization Response object containing decrypted auth response and other related information"""
+
+    def __init__(self, auth_request, push_package):
+        self.auth_request = auth_request
+        self.push_package = push_package
+
+
 class AuthorizationResponse(object):
     """Authorization Response object containing decrypted auth response and other related information"""
 

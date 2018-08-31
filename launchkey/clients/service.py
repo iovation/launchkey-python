@@ -7,7 +7,7 @@ from .base import BaseClient, api_call
 from launchkey.exceptions import InvalidParameters, UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
     UnexpectedAPIResponse, UnexpectedWebhookRequest, JWTValidationFailure, InvalidJWTResponse, WebhookAuthorizationError
 from launchkey.entities.validation import AuthorizationResponseValidator, AuthorizeSSEValidator, AuthorizeValidator
-from launchkey.entities.service import AuthPolicy, AuthorizationResponse, SessionEndRequest
+from launchkey.entities.service import AuthPolicy, AuthorizationResponse, SessionEndRequest, AuthorizationRequest
 from json import loads
 
 
@@ -40,6 +40,32 @@ class ServiceClient(BaseClient):
         Please wait and try again.
         :return: String - Unique identifier for tracking status of the authorization request
         """
+        warnings.warn('This method has been deprecated and will be removed in a future major release!',
+                      DeprecationWarning)
+        return self.authorization_request(user, context, policy)['auth_request']
+
+    @api_call
+    def authorization_request(self, user, context=None, policy=None):
+        """
+        Authorize a transaction for the provided user. This get_service_service method would be utilized if you are
+        using this as a secondary factor for user login or authorizing a single transaction within your application.
+        This will NOT begin a user session.
+        :param user: LaunchKey Username, User Push ID, or Directory User ID for the End User
+        :param context: Arbitrary string of data up to 400 characters to be presented to the End User during
+        authorization to provide context regarding the individual request
+        :param policy: Authorization policy override for this authorization. The policy can only increase the security
+        level any existing policy in the Service Profile. It can never reduce the security level of the Service
+        Profile's policy.
+        :raise: launchkey.exceptions.InvalidParameters - Input parameters were not correct
+        :raise: launchkey.exceptions.InvalidPolicyInput - Input policy was not valid
+        :raise: launchkey.exceptions.PolicyFailure - Auth creation failed due to user not passing policy
+        :raise: launchkey.exceptions.EntityNotFound - Username was invalid or the user does not have any valid devices
+        :raise: launchkey.exceptions.RateLimited - Too many authorization requests have been created for this user
+        :raise: launchkey.exceptions.InvalidPolicy - The input policy is not valid. It should be a
+        launchkey.clients.service.AuthPolicy.
+        Please wait and try again.
+        :return AuthorizationResponse: Unique identifier for tracking status of the authorization request
+        """
         kwargs = {'username': user}
         if context is not None:
             kwargs['context'] = context
@@ -50,7 +76,8 @@ class ServiceClient(BaseClient):
             kwargs['policy'] = policy.get_policy()
 
         response = self._transport.post("/service/v3/auths", self._subject, **kwargs)
-        return self._validate_response(response, AuthorizeValidator)['auth_request']
+        data = self._validate_response(response, AuthorizeValidator)
+        return AuthorizationRequest(data.get('auth_request'), data.get('push_package'))
 
     @api_call
     def get_authorization_response(self, authorization_request_id):

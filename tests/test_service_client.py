@@ -34,44 +34,64 @@ class TestServiceClient(unittest.TestCase):
         self._service_client = ServiceClient(uuid4(), self._transport)
         self._service_client._transport._verify_jwt_response = MagicMock()
 
-    def test_authorize_success(self):
-        self._response.data = {"auth_request": ANY}
-        self._service_client.authorize(ANY, ANY, MagicMock(spec=AuthPolicy))
+    def test_authorize_calls_authorization_request(self):
+        policy = AuthPolicy()
+        self._service_client.authorization_request = MagicMock(return_value={"auth_request": str(uuid4())})
+        self._service_client.authorize('user', 'context', policy)
+        self._service_client.authorization_request.assert_called_once_with('user', 'context', policy)
 
-    def test_authorize_invalid_policy_input(self):
+    def test_authorize_returns_auth_request_id_from_authorization_request_response(self):
+        expected = str(uuid4())
+        self._service_client.authorization_request = MagicMock(return_value={"auth_request": expected})
+        actual = self._service_client.authorize('user', 'context', AuthPolicy())
+        self.assertEqual(actual, expected)
+
+    def test_authorization_request_success(self):
+        self._response.data = {"auth_request": "value"}
+        self._service_client.authorization_request(ANY, ANY, MagicMock(spec=AuthPolicy))
+
+    def test_authorization_request_response_has_auth_request(self):
+        self._response.data = {"auth_request": "expected value"}
+        self.assertEqual('expected value', self._service_client.authorization_request(ANY).auth_request)
+
+    def test_authorization_request_response_has_push_package(self):
+        self._response.data = {"auth_request": "auth", "push_package": "expected package"}
+        self.assertEqual('expected package', self._service_client.authorization_request(ANY).push_package)
+
+    def test_authorization_request_invalid_policy_input(self):
         self._response.data = {"auth_request": ANY}
         with self.assertRaises(InvalidParameters):
-            self._service_client.authorize(ANY, ANY, ANY)
+            self._service_client.authorization_request(ANY, ANY, ANY)
 
-    def test_authorize_unexpected_result(self):
+    def test_authorization_request_unexpected_result(self):
         self._response.data = {MagicMock(spec=str): ANY}
         with self.assertRaises(UnexpectedAPIResponse):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_invalid_params(self):
+    def test_authorization_request_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
         with self.assertRaises(InvalidParameters):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_invalid_policy(self):
+    def test_authorization_request_invalid_policy(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "SVC-002", "error_detail": ""}, 400)
         with self.assertRaises(InvalidPolicyInput):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_policy_failure(self):
+    def test_authorization_request_policy_failure(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "SVC-003", "error_detail": ""}, 400)
         with self.assertRaises(PolicyFailure):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_entity_not_found(self):
+    def test_authorization_request_entity_not_found(self):
         self._transport.post.side_effect = LaunchKeyAPIException({}, 404)
         with self.assertRaises(EntityNotFound):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_rate_limited(self):
+    def test_authorization_request_rate_limited(self):
         self._transport.post.side_effect = LaunchKeyAPIException({}, 429)
         with self.assertRaises(RateLimited):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
     @patch("launchkey.entities.service.b64decode")
     @patch("launchkey.entities.service.loads")
