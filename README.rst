@@ -194,10 +194,10 @@ You will use the same handle_webhook method for both login and logout.
 Running Tests
 -------------
 
-Tests require python 2.7, 3.4, 3.5, 2.6, and 3.7. The best way to manage these versions is with pyenv_. You will need
+Tests require a number of Python versions. The best way to manage these versions is with pyenv_. You will need
 to register all of the versions with pyenv. There are a couple ways to do that. An example of doing it globally is::
 
-    pyenv global 2.7.15 3.4.9 3.5.6 3.6.6 3.7.0
+    pyenv global 2.7.15 3.4.9 3.5.6 3.6.6 3.7.0 pypy3.5-6.0.0 pypy2.7-6.0.0
 
 Install tox via PIP::
 
