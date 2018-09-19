@@ -53,10 +53,6 @@ class JOSETransport(object):
         self.jwe_claims_encryption = self.__verify_supported_algorithm(jwe_claims_encryption, JOSE_SUPPORTED_JWE_ENCS)
         self.content_hash_algorithm = self.__verify_supported_algorithm(content_hash_algorithm,
                                                                         JOSE_SUPPORTED_CONTENT_HASH_ALGS)
-
-        if self.content_hash_algorithm not in ("S256", "S384", "S512"):
-            raise InvalidAlgorithm("Invalid hash algorithm provided!")
-
         self._http_client = http_client if http_client is not None else RequestsTransport()
 
     @staticmethod
@@ -317,8 +313,6 @@ class JOSETransport(object):
             raise JWTValidationFailure("Expected headers to location but there was none!")
         elif 'location' not in response and 'location' in ci_headers:
             raise JWTValidationFailure("Expected JWT to contain location in the response segment but there was none!")
-        elif 'location' in response and 'location' not in ci_headers:
-            raise JWTValidationFailure("Expected headers to location but there was none!")
         elif 'location' in response and 'location' in ci_headers and response['location'] != ci_headers['location']:
             raise JWTValidationFailure("Invalid location header!")
         elif 'cache' in response and 'cache-control' not in ci_headers:
