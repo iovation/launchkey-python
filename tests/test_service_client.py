@@ -11,10 +11,14 @@ from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse
 from launchkey.clients import ServiceClient
 from launchkey.clients.service import AuthorizationResponse, SessionEndRequest, AuthPolicy
-from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, InvalidPolicyInput, PolicyFailure, \
-    EntityNotFound, RateLimited, RequestTimedOut, UnexpectedAPIResponse, UnexpectedDeviceResponse, UnexpectedKeyID, \
-    InvalidGeoFenceName, InvalidPolicyFormat, InvalidJWTResponse, UnexpectedWebhookRequest, \
-    UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, JWTValidationFailure
+from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
+    InvalidPolicyInput, PolicyFailure, \
+    EntityNotFound, RateLimited, RequestTimedOut, UnexpectedAPIResponse, \
+    UnexpectedDeviceResponse, UnexpectedKeyID, \
+    InvalidGeoFenceName, InvalidPolicyFormat, InvalidJWTResponse, \
+    UnexpectedWebhookRequest, \
+    UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
+    JWTValidationFailure, WebhookAuthorizationError
 from datetime import datetime
 from ddt import ddt, data, unpack
 
@@ -251,6 +255,17 @@ class TestHandleWebhook(unittest.TestCase):
         self._transport.decrypt_response.return_value = '{"public_key_id":"' + self.PUBLIC_KEY_ID + '"}'
         with self.assertRaises(UnexpectedAuthorizationResponse):
             self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_no_authorization_header_raises_webhook_authorization_error(self):
+        del self._headers['authorization']
+        with self.assertRaises(WebhookAuthorizationError):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_wrong_authorization_header__type_raises_webhook_authorization_error(self):
+        self._headers['authorization'] = 'Basic ksjdhfksdhfksjhfskhfsdkjh'
+        with self.assertRaises(WebhookAuthorizationError):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
+
 
 
 class TestAuthorizationResponse(unittest.TestCase):

@@ -1,5 +1,6 @@
 import unittest
 
+from ddt import data, ddt
 from jwkest import JWKESTException
 from jwkest.jws import JWS
 from mock import MagicMock, ANY, patch
@@ -312,6 +313,11 @@ class TestJOSETransportJWTResponse(unittest.TestCase):
         with self.assertRaises(JWTValidationFailure):
             self._verify_jwt_response(jti='InvalidJTI')
 
+    def test_verify_no_response_raises_validation_failure(self):
+        del self.jwt_payload['response']
+        with self.assertRaises(JWTValidationFailure):
+            self._verify_jwt_response(body=None)
+
     def test_verify_no_body_but_response_body_hash_algorithm_raises_validation_failure(self):
         del self.jwt_payload['response']['hash']
         with self.assertRaises(JWTValidationFailure):
@@ -438,8 +444,8 @@ class TestJOSETransportJWTRequest(unittest.TestCase):
         with self.assertRaises(JWTValidationFailure):
             self._verify_jwt_request()
 
-    def test_no_authoprization_raises_validation_failure(self):
-        self.jwt_payload['aud'] = MagicMock()
+    def test_invalid_issuer_raises_validation_failure(self):
+        self.jwt_payload['iss'] = MagicMock()
         with self.assertRaises(JWTValidationFailure):
             self._verify_jwt_request()
 
@@ -470,14 +476,29 @@ class TestJOSETransportJWTRequest(unittest.TestCase):
             self._verify_jwt_request()
 
     def test_no_body_but_response_body_hash_algorithm_raises_validation_failure(self):
-        del self.jwt_payload['request']['hash']
+        del self.jwt_payload['request']['func']
         with self.assertRaises(JWTValidationFailure):
             self._verify_jwt_request(body=None)
 
     def test_no_body_but_response_body_hash_raises_validation_failure(self):
-        del self.jwt_payload['request']['func']
+        del self.jwt_payload['request']['hash']
         with self.assertRaises(JWTValidationFailure):
             self._verify_jwt_request(body=None)
+
+    def test_body_but_no_response_body_hash_algorithm_raises_validation_failure(self):
+        del self.jwt_payload['request']['hash']
+        with self.assertRaises(JWTValidationFailure):
+            self._verify_jwt_request()
+
+    def test_body_but_no_response_body_hash_raises_validation_failure(self):
+        del self.jwt_payload['request']['func']
+        with self.assertRaises(JWTValidationFailure):
+            self._verify_jwt_request()
+
+    def test_invalid_hash_func_raises_validation_failure(self):
+        self.jwt_payload['request']['func'] = 'INVALID'
+        with self.assertRaises(JWTValidationFailure):
+            self._verify_jwt_request()
 
     def test_no_request_raises_validation_failure(self):
         del self.jwt_payload['request']
@@ -501,6 +522,11 @@ class TestJOSETransportJWTRequest(unittest.TestCase):
     def test_invalid_path_raises_validation_failure(self):
         with self.assertRaises(JWTValidationFailure):
             self._verify_jwt_request(path='/invalid')
+
+    def test_invalid_jwt_raises_validation_failure(self):
+        self._transport._get_jwt_payload.side_effect = JWKESTException
+        with self.assertRaises(JWTValidationFailure):
+            self._verify_jwt_request()
 
 
 class TestJOSETransportJWT(unittest.TestCase):
@@ -680,40 +706,42 @@ class TestJOSETransportAPIPing(unittest.TestCase):
             time_patch.return_value += API_CACHE_TIME + 1
         self.assertEqual(self._transport.get.call_count, call_count)
 
+
+@ddt
 class TestJOSETransportSupportedAlgorithms(unittest.TestCase):
 
-    def test_supported_jwt_algorithms_success(self):
-        for alg in JOSE_SUPPORTED_JWT_ALGS:
-            transport = JOSETransport(jwt_algorithm=alg)
-            self.assertEqual(transport.jwt_algorithm, alg)
+    @data("RS256", "RS384", "RS512")
+    def test_supported_jwt_algorithms_success(self, alg):
+        transport = JOSETransport(jwt_algorithm=alg)
+        self.assertEqual(transport.jwt_algorithm, alg)
 
     def test_supported_jwt_algorithms_failure(self):
         with self.assertRaises(InvalidAlgorithm):
-            JOSETransport(jwt_algorithm=MagicMock(spec=str))
+            JOSETransport(jwt_algorithm="Invalid")
 
-    def test_supported_jwe_algorithms_success(self):
-        for alg in JOSE_SUPPORTED_JWE_ALGS:
-            transport = JOSETransport(jwe_cek_encryption=alg)
-            self.assertEqual(transport.jwe_cek_encryption, alg)
+    @data('RSA-OAEP')
+    def test_supported_jwe_algorithms_success(self, alg):
+        transport = JOSETransport(jwe_cek_encryption=alg)
+        self.assertEqual(transport.jwe_cek_encryption, alg)
 
     def test_supported_jwe_algorithms_failure(self):
         with self.assertRaises(InvalidAlgorithm):
-            JOSETransport(jwe_cek_encryption=MagicMock(spec=str))
+            JOSETransport(jwe_cek_encryption="Invalie")
 
-    def test_supported_jwe_encryptions_success(self):
-        for enc in JOSE_SUPPORTED_JWE_ENCS:
-            transport = JOSETransport(jwe_claims_encryption=enc)
-            self.assertEqual(transport.jwe_claims_encryption, enc)
+    @data('A256CBC-HS512')
+    def test_supported_jwe_encryptions_success(self, enc):
+        transport = JOSETransport(jwe_claims_encryption=enc)
+        self.assertEqual(transport.jwe_claims_encryption, enc)
 
     def test_supported_jwe_encryptions_failure(self):
         with self.assertRaises(InvalidAlgorithm):
-            JOSETransport(jwe_claims_encryption=MagicMock(spec=str))
+            JOSETransport(jwe_claims_encryption="Invalid")
 
-    def test_supported_content_hash_algorithm_success(self):
-        for alg in JOSE_SUPPORTED_CONTENT_HASH_ALGS:
-            transport = JOSETransport(content_hash_algorithm=alg)
-            self.assertEqual(transport.content_hash_algorithm, alg)
+    @data("S256", "S384", "S512")
+    def test_supported_content_hash_algorithm_success(self, alg):
+        transport = JOSETransport(content_hash_algorithm=alg)
+        self.assertEqual(transport.content_hash_algorithm, alg)
 
     def test_supported_content_hash_algorithm_failure(self):
         with self.assertRaises(InvalidAlgorithm):
-            JOSETransport(content_hash_algorithm=MagicMock(spec=str))
+            JOSETransport(content_hash_algorithm="Invalid")
