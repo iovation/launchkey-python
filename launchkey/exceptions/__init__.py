@@ -189,4 +189,4 @@ class UnexpectedAuthorizationResponse(LaunchKeyAPIException):
 
 
 class WebhookAuthorizationError(LaunchKeyAPIException):
-    """There was an issue with validating hte authorization provided by the webhook request."""
+    """There was an issue with validating the authorization provided by the webhook request."""

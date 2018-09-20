@@ -280,15 +280,16 @@ class JOSETransport(object):
     def verify_jwt_response(self, headers, jti, content_body, subject, status_code=None):
         """
         Verifies a response's JWT header to be valid
-        :param headers: Full header from the response
-        :param jti: The input JTI value in the initial request
-        :param content_body: The body of the request
-        :param subject: Subject of the jwt response
-        :return: The JWT payload
+        :param headers: Full headers of the response
+        :param jti: The input JTI value in the initial request that returned the response
+        :param content_body: The body of the response
+        :param subject: Expected subject of the JWT
+        :param status_code: Status code of the response
+        :return: The JWT claims
         """
         if status_code is None:
             warnings.warn("Not passing a status_code value has been deprecated and will not be allowed in "
-                          "the ext major version", DeprecationWarning)
+                          "the next major version", DeprecationWarning)
 
         ci_headers = {k.lower(): v for k, v in headers.items()}
         auth = headers.get('X-IOV-JWT')
@@ -326,6 +327,15 @@ class JOSETransport(object):
         return payload
 
     def verify_jwt_request(self, compact_jwt, subject, method, path, body):
+        """
+        Verify a request's JWT
+        :param compact_jwt:  The compact JWT to verify
+        :param subject: The expected subject of the JWT
+        :param method: The method of the request
+        :param path: The path of the request
+        :param body: The body of the request
+        :return: The claims of the JWT
+        """
         try:
             payload = self._get_jwt_payload(compact_jwt)
         except JWKESTException as e:
@@ -352,11 +362,12 @@ class JOSETransport(object):
     @staticmethod
     def _verify_jwt_payload(payload, issuer, audience, subject):
         """
-        Verifies a response's JWT header to be valid
+        Verifies a JWT's payload to be valid
         :param payload: JTW payload to verify
-        :param jti: The input JTI value in the initial request
-        :param subject: Subject of the jwt response
-        :return: The JWT payload
+        :param issuer: Expected issuer of the JWT payload
+        :param audience: Expected audience of the JWT payload
+        :param subject: Expected subject of the JWT payload
+        :return: The JWT claims
         """
         now = time()
 

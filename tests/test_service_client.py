@@ -7,6 +7,7 @@ from uuid import uuid4
 from json import dumps
 from formencode import Invalid
 
+from launchkey.entities.service import AuthorizationRequest
 from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse
 from launchkey.clients import ServiceClient
@@ -40,13 +41,14 @@ class TestServiceClient(unittest.TestCase):
 
     def test_authorize_calls_authorization_request(self):
         policy = AuthPolicy()
-        self._service_client.authorization_request = MagicMock(return_value={"auth_request": str(uuid4())})
+        auth_response = AuthorizationRequest(str(uuid4()), None)
+        self._service_client.authorization_request = MagicMock(return_value=auth_response)
         self._service_client.authorize('user', 'context', policy)
         self._service_client.authorization_request.assert_called_once_with('user', 'context', policy)
 
     def test_authorize_returns_auth_request_id_from_authorization_request_response(self):
         expected = str(uuid4())
-        self._service_client.authorization_request = MagicMock(return_value={"auth_request": expected})
+        self._response.data = {"auth_request": expected}
         actual = self._service_client.authorize('user', 'context', AuthPolicy())
         self.assertEqual(actual, expected)
 
@@ -172,7 +174,7 @@ class TestHandleWebhook(unittest.TestCase):
         self._transport = MagicMock(spec=JOSETransport)
         self._transport.decrypt_response.return_value = '{"public_key_id":"' + self.PUBLIC_KEY_ID + '", "auth": null}'
         self._service_client = ServiceClient(self._subject_id, self._transport)
-        self._headers = {"authorization": "IOV-JWT jwt"}
+        self._headers = {"authorization": "IOV-JWT jwt", "Other Header": "IOV-JWT jwt"}
 
         self._issuer_private_key = MagicMock()
         self._transport.loaded_issuer_private_keys = {self.PUBLIC_KEY_ID: self._issuer_private_key}
@@ -265,7 +267,6 @@ class TestHandleWebhook(unittest.TestCase):
         self._headers['authorization'] = 'Basic ksjdhfksdhfksjhfskhfsdkjh'
         with self.assertRaises(WebhookAuthorizationError):
             self._service_client.handle_webhook(MagicMock(), self._headers)
-
 
 
 class TestAuthorizationResponse(unittest.TestCase):

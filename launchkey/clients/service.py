@@ -42,7 +42,7 @@ class ServiceClient(BaseClient):
         """
         warnings.warn('This method has been deprecated and will be removed in a future major release!',
                       DeprecationWarning)
-        return self.authorization_request(user, context, policy)['auth_request']
+        return self.authorization_request(user, context, policy).auth_request
 
     @api_call
     def authorization_request(self, user, context=None, policy=None):
@@ -153,9 +153,9 @@ class ServiceClient(BaseClient):
                           "major version", PendingDeprecationWarning)
 
         authorization_header = None
-        for header_key, authorization_header in headers.items():
+        for header_key, header_value in headers.items():
             if header_key.lower() == 'authorization':
-                authorization_header = authorization_header
+                authorization_header = header_value
 
         if authorization_header is None:
             raise WebhookAuthorizationError(
