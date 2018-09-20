@@ -135,7 +135,7 @@ Using Dynamic Policies
     policy = AuthPolicy(any=2, jailbreak_protection=True)
     # Also make it so the user can only log in from the Portland area
     policy.add_geofence(latitude=45.48805749706375, longitude=-122.70492553710936, radius=27500)
-    auth_request_id = service_client.authorize(user, policy=policy)
+    auth_request_id = service_client.authorization_request(user, policy=policy)
 
 
 Check whether a response has been received and check whether it has been authorized
