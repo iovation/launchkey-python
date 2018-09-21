@@ -152,20 +152,14 @@ class ServiceClient(BaseClient):
             warnings.warn("Not passing a valid request path string is deprecated and will be required in the next "
                           "major version", PendingDeprecationWarning)
 
-        authorization_header = None
+        compact_jwt = None
         for header_key, header_value in headers.items():
-            if header_key.lower() == 'authorization':
-                authorization_header = header_value
+            if header_key.lower() == 'x-iov-jwt':
+                compact_jwt = header_value
 
-        if authorization_header is None:
+        if compact_jwt is None:
             raise WebhookAuthorizationError(
-                "The authorization header was not found in the supplied headers from the request!")
-
-        m = self.AUTHORIZATION_HEADER_RE.match(authorization_header)
-        if not m:
-            raise WebhookAuthorizationError(
-                "The authorization header was invalid!")
-        compact_jwt = m.group(1)
+                "The X-IOV-JWT header was not found in the supplied headers from the request!")
 
         try:
             self._transport.verify_jwt_request(compact_jwt, self._subject, method, path, body)

@@ -174,7 +174,7 @@ class TestHandleWebhook(unittest.TestCase):
         self._transport = MagicMock(spec=JOSETransport)
         self._transport.decrypt_response.return_value = '{"public_key_id":"' + self.PUBLIC_KEY_ID + '", "auth": null}'
         self._service_client = ServiceClient(self._subject_id, self._transport)
-        self._headers = {"authorization": "IOV-JWT jwt", "Other Header": "IOV-JWT jwt"}
+        self._headers = {"X-IOV-JWT": "jwt", "Other Header": "jwt"}
 
         self._issuer_private_key = MagicMock()
         self._transport.loaded_issuer_private_keys = {self.PUBLIC_KEY_ID: self._issuer_private_key}
@@ -217,10 +217,9 @@ class TestHandleWebhook(unittest.TestCase):
         self.assertIsInstance(self._service_client.handle_webhook(MagicMock(), self._headers), AuthorizationResponse)
 
     def test_calls_verify_jwt_request_with_expected_parameters(self):
-        self._headers['authorization'] = 'IOV-JWT compact.jwt.string'
+        self._headers['X-IOV-JWT'] = 'compact.jwt.string'
         self._service_client.handle_webhook('body', self._headers, 'method', 'path')
         self._transport.verify_jwt_request.assert_called_with("compact.jwt.string", 'svc:' + str(self._subject_id), 'method', 'path', 'body')
-        ""
 
     def test_handle_webhook_handles_jwt_validation_errors(self):
         self._transport.verify_jwt_request.side_effect = InvalidJWTResponse
@@ -258,13 +257,8 @@ class TestHandleWebhook(unittest.TestCase):
         with self.assertRaises(UnexpectedAuthorizationResponse):
             self._service_client.handle_webhook(MagicMock(), self._headers)
 
-    def test_no_authorization_header_raises_webhook_authorization_error(self):
-        del self._headers['authorization']
-        with self.assertRaises(WebhookAuthorizationError):
-            self._service_client.handle_webhook(MagicMock(), self._headers)
-
-    def test_wrong_authorization_header__type_raises_webhook_authorization_error(self):
-        self._headers['authorization'] = 'Basic ksjdhfksdhfksjhfskhfsdkjh'
+    def test_no_jwt_header_raises_webhook_authorization_error(self):
+        del self._headers['X-IOV-JWT']
         with self.assertRaises(WebhookAuthorizationError):
             self._service_client.handle_webhook(MagicMock(), self._headers)
 
