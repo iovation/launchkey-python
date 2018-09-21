@@ -19,7 +19,7 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     InvalidGeoFenceName, InvalidPolicyFormat, InvalidJWTResponse, \
     UnexpectedWebhookRequest, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
-    JWTValidationFailure, WebhookAuthorizationError
+    WebhookAuthorizationError
 from datetime import datetime
 from ddt import ddt, data, unpack
 
@@ -43,8 +43,8 @@ class TestServiceClient(unittest.TestCase):
         policy = AuthPolicy()
         auth_response = AuthorizationRequest(str(uuid4()), None)
         self._service_client.authorization_request = MagicMock(return_value=auth_response)
-        self._service_client.authorize('user', 'context', policy)
-        self._service_client.authorization_request.assert_called_once_with('user', 'context', policy)
+        self._service_client.authorize('user', 'context', policy, 'title', 30)
+        self._service_client.authorization_request.assert_called_once_with('user', 'context', policy, 'title', 30)
 
     def test_authorize_returns_auth_request_id_from_authorization_request_response(self):
         expected = str(uuid4())
@@ -98,6 +98,26 @@ class TestServiceClient(unittest.TestCase):
         self._transport.post.side_effect = LaunchKeyAPIException({}, 429)
         with self.assertRaises(RateLimited):
             self._service_client.authorization_request(ANY)
+
+    def test_authorization_request_default(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user")
+
+    def test_authorization_request_context(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user", context="Here's some context!")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user", context="Here's some context!")
+
+    def test_authorization_request_title(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user", title="Here's a title!")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user", title="Here's a title!")
+
+    def test_authorization_request_ttl(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user", ttl=336)
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user", ttl=336)
 
     @patch("launchkey.entities.service.b64decode")
     @patch("launchkey.entities.service.loads")
