@@ -193,11 +193,11 @@ class JOSETransport(object):
 
         return "IOV-JWT %s" % self._get_jwt_signature(params)
 
-    def _get_jwt_payload(self, auth):
+    def _get_jwt_payload(self, compact_jwt):
         try:
-            return JWS().verify_compact(auth, keys=self.api_public_keys)
+            return JWS().verify_compact(compact_jwt, keys=self.api_public_keys)
         except (AttributeError, BadSyntax):
-            raise InvalidJWTResponse("Received JWT response is not valid: %s" % auth)
+            raise InvalidJWTResponse("Received JWT is not valid: %s" % compact_jwt)
 
     def _get_content_hash(self, body, hash_function):
         """
