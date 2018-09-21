@@ -76,7 +76,8 @@ class AuthorizationResponsePackageValidator(Schema):
 
 
 class AuthorizeValidator(Schema):
-    auth_request = validators.String()
+    auth_request = validators.String(not_empty=True)
+    push_package = validators.String(if_missing=None, not_empty=True)
     allow_extra_fields = True
 
 

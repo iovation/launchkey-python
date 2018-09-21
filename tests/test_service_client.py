@@ -1,14 +1,25 @@
+import json
 import unittest
+
+from jwkest import JWKESTException
 from mock import MagicMock, ANY, patch
 from uuid import uuid4
 from json import dumps
 from formencode import Invalid
+
+from launchkey.entities.service import AuthorizationRequest
+from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse
 from launchkey.clients import ServiceClient
 from launchkey.clients.service import AuthorizationResponse, SessionEndRequest, AuthPolicy
-from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, InvalidPolicyInput, PolicyFailure, \
-    EntityNotFound, RateLimited, RequestTimedOut, UnexpectedAPIResponse, UnexpectedDeviceResponse, UnexpectedKeyID, \
-    InvalidGeoFenceName, InvalidPolicyFormat
+from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
+    InvalidPolicyInput, PolicyFailure, \
+    EntityNotFound, RateLimited, RequestTimedOut, UnexpectedAPIResponse, \
+    UnexpectedDeviceResponse, UnexpectedKeyID, \
+    InvalidGeoFenceName, InvalidPolicyFormat, InvalidJWTResponse, \
+    UnexpectedWebhookRequest, \
+    UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
+    JWTValidationFailure, WebhookAuthorizationError
 from datetime import datetime
 from ddt import ddt, data, unpack
 
@@ -28,44 +39,65 @@ class TestServiceClient(unittest.TestCase):
         self._service_client = ServiceClient(uuid4(), self._transport)
         self._service_client._transport._verify_jwt_response = MagicMock()
 
-    def test_authorize_success(self):
-        self._response.data = {"auth_request": ANY}
-        self._service_client.authorize(ANY, ANY, MagicMock(spec=AuthPolicy))
+    def test_authorize_calls_authorization_request(self):
+        policy = AuthPolicy()
+        auth_response = AuthorizationRequest(str(uuid4()), None)
+        self._service_client.authorization_request = MagicMock(return_value=auth_response)
+        self._service_client.authorize('user', 'context', policy)
+        self._service_client.authorization_request.assert_called_once_with('user', 'context', policy)
 
-    def test_authorize_invalid_policy_input(self):
+    def test_authorize_returns_auth_request_id_from_authorization_request_response(self):
+        expected = str(uuid4())
+        self._response.data = {"auth_request": expected}
+        actual = self._service_client.authorize('user', 'context', AuthPolicy())
+        self.assertEqual(actual, expected)
+
+    def test_authorization_request_success(self):
+        self._response.data = {"auth_request": "value"}
+        self._service_client.authorization_request(ANY, ANY, MagicMock(spec=AuthPolicy))
+
+    def test_authorization_request_response_has_auth_request(self):
+        self._response.data = {"auth_request": "expected value"}
+        self.assertEqual('expected value', self._service_client.authorization_request(ANY).auth_request)
+
+    def test_authorization_request_response_has_push_package(self):
+        self._response.data = {"auth_request": "auth", "push_package": "expected package"}
+        self.assertEqual('expected package', self._service_client.authorization_request(ANY).push_package)
+
+    def test_authorization_request_invalid_policy_input(self):
         self._response.data = {"auth_request": ANY}
         with self.assertRaises(InvalidParameters):
-            self._service_client.authorize(ANY, ANY, ANY)
+            self._service_client.authorization_request(ANY, ANY, ANY)
 
-    def test_authorize_unexpected_result(self):
+    def test_authorization_request_unexpected_result(self):
         self._response.data = {MagicMock(spec=str): ANY}
         with self.assertRaises(UnexpectedAPIResponse):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_invalid_params(self):
+    def test_authorization_request_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
         with self.assertRaises(InvalidParameters):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_invalid_policy(self):
+    def test_authorization_request_invalid_policy(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "SVC-002", "error_detail": ""}, 400)
         with self.assertRaises(InvalidPolicyInput):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_policy_failure(self):
+    def test_authorization_request_policy_failure(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "SVC-003", "error_detail": ""}, 400)
         with self.assertRaises(PolicyFailure):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_entity_not_found(self):
+    def test_authorization_request_entity_not_found(self):
         self._transport.post.side_effect = LaunchKeyAPIException({}, 404)
         with self.assertRaises(EntityNotFound):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
-    def test_authorize_rate_limited(self):
+    def test_authorization_request_rate_limited(self):
         self._transport.post.side_effect = LaunchKeyAPIException({}, 429)
         with self.assertRaises(RateLimited):
-            self._service_client.authorize(ANY)
+            self._service_client.authorization_request(ANY)
 
     @patch("launchkey.entities.service.b64decode")
     @patch("launchkey.entities.service.loads")
@@ -131,30 +163,110 @@ class TestServiceClient(unittest.TestCase):
         with self.assertRaises(EntityNotFound):
             self._service_client.session_end(ANY)
 
+
+class TestHandleWebhook(unittest.TestCase):
+
+    _subject_id = uuid4()
+
+    PUBLIC_KEY_ID = "Public Key ID"
+
+    def setUp(self):
+        self._transport = MagicMock(spec=JOSETransport)
+        self._transport.decrypt_response.return_value = '{"public_key_id":"' + self.PUBLIC_KEY_ID + '", "auth": null}'
+        self._service_client = ServiceClient(self._subject_id, self._transport)
+        self._headers = {"authorization": "IOV-JWT jwt", "Other Header": "IOV-JWT jwt"}
+
+        self._issuer_private_key = MagicMock()
+        self._transport.loaded_issuer_private_keys = {self.PUBLIC_KEY_ID: self._issuer_private_key}
+
+        patcher = patch("launchkey.entities.validation.AuthorizationResponsePackageValidator.to_python")
+        self._authorization_response_validator_patch = patcher.start()
+        self._authorization_response_validator_patch.return_value = MagicMock(spec=dict)
+
+        patcher = patch("launchkey.entities.service.b64decode")
+        self._b64decode_patch = patcher.start()
+        self.addCleanup(patcher.stop)
+        self._b64decode_patch.return_value = MagicMock(spec=str)
+
+        patcher = patch("launchkey.clients.service.loads")
+        self._service_client_loads_patch = patcher.start()
+        self.addCleanup(patcher.stop)
+        self._service_client_loads_patch.side_effect = json.loads
+
+        patcher = patch("launchkey.entities.service.loads")
+        self._service_entity_loads_patch = patcher.start()
+        self.addCleanup(patcher.stop)
+        self._service_entity_loads_patch.return_value = MagicMock(spec=dict)
+
+        patcher = patch("launchkey.entities.validation.AuthorizeSSEValidator")
+        self._authorize_sse_validator_patch = patcher.start()
+        self.addCleanup(patcher.stop)
+        self._authorize_sse_validator_patch.return_value = MagicMock(spec=dict)
+
     def test_webhook_session_end(self):
         request = dumps({"service_user_hash": str(uuid4()),
                          "api_time": str(datetime.utcnow())[:19].replace(" ", "T") + "Z"})
-        self.assertIsInstance(self._service_client.handle_webhook(request, ANY), SessionEndRequest)
+        self.assertIsInstance(self._service_client.handle_webhook(request, self._headers), SessionEndRequest)
 
     def test_webhook_session_end_invalid_input(self):
         request = dumps({"service_user_hash": str(uuid4())})
-        with self.assertRaises(UnexpectedAPIResponse):
-            self.assertIsInstance(self._service_client.handle_webhook(request, ANY), SessionEndRequest)
+        with self.assertRaises(UnexpectedWebhookRequest):
+            self.assertIsInstance(self._service_client.handle_webhook(request, self._headers), SessionEndRequest)
 
-    @patch("launchkey.entities.service.b64decode")
-    @patch("launchkey.clients.service.loads")
-    @patch("launchkey.entities.service.loads")
-    @patch("launchkey.entities.validation.AuthorizeSSEValidator")
-    @patch("launchkey.entities.service.AuthorizationResponsePackageValidator")
-    def test_webhook_authorization_response(self, auth_response_package_validator_patch,
-                                            auth_sse_validator_patch, json_loads_patch, json_loads_patch_2, b64decode_patch):
-        b64decode_patch.return_value = MagicMock(spec=str)
-        json_loads_patch.return_value = MagicMock(spec=dict)
-        json_loads_patch_2.return_value = MagicMock(spec=dict)
-        auth_sse_validator_patch.return_value = MagicMock(spec=dict)
-        auth_response_package_validator_patch.return_value = MagicMock(spec=dict)
-        self._transport.loaded_issuer_private_keys = {json_loads_patch_2().get(): MagicMock()}
-        self.assertIsInstance(self._service_client.handle_webhook(MagicMock(), ANY), AuthorizationResponse)
+    def test_webhook_authorization_response_returns_authorization_response(self):
+        self.assertIsInstance(self._service_client.handle_webhook(MagicMock(), self._headers), AuthorizationResponse)
+
+    def test_calls_verify_jwt_request_with_expected_parameters(self):
+        self._headers['authorization'] = 'IOV-JWT compact.jwt.string'
+        self._service_client.handle_webhook('body', self._headers, 'method', 'path')
+        self._transport.verify_jwt_request.assert_called_with("compact.jwt.string", 'svc:' + str(self._subject_id), 'method', 'path', 'body')
+        ""
+
+    def test_handle_webhook_handles_jwt_validation_errors(self):
+        self._transport.verify_jwt_request.side_effect = InvalidJWTResponse
+        with self.assertRaises(UnexpectedWebhookRequest):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_handle_webhook_session_end_requests_handles_data_validation_errors(self):
+        self._authorize_sse_validator_patch.to_python.side_effect = Invalid
+        with self.assertRaises(UnexpectedWebhookRequest):
+            self._service_client.handle_webhook(dumps({"service_user_hash": str(uuid4())}), self._headers)
+
+    def test_handle_webhook_auth_response_handles_json_loads_errors(self):
+        self._transport.decrypt_response.return_value = '{"public_key_id":"' + self.PUBLIC_KEY_ID + '","auth":null}'
+        self._service_entity_loads_patch.side_effect = ValueError
+        with self.assertRaises(UnexpectedDeviceResponse):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_handle_webhook_auth_response_requests_handles_unexpected_key(self,):
+        self._transport.decrypt_response.side_effect = UnexpectedKeyID
+        with self.assertRaises(UnexpectedKeyID):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_handle_webhook_for_authorization_response_handles_jwe_decryption_errors(self):
+        self._transport.decrypt_response.side_effect = JWKESTException
+        with self.assertRaises(UnableToDecryptWebhookRequest):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_handle_webhook_for_invalid_response_when_validating_auth_response(self):
+        self._authorization_response_validator_patch.side_effect = Invalid
+        with self.assertRaises(UnexpectedDeviceResponse):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_handle_webhook_for_response_without_auth_package_parsing_auth_response(self):
+        self._transport.decrypt_response.return_value = '{"public_key_id":"' + self.PUBLIC_KEY_ID + '"}'
+        with self.assertRaises(UnexpectedAuthorizationResponse):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_no_authorization_header_raises_webhook_authorization_error(self):
+        del self._headers['authorization']
+        with self.assertRaises(WebhookAuthorizationError):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_wrong_authorization_header__type_raises_webhook_authorization_error(self):
+        self._headers['authorization'] = 'Basic ksjdhfksdhfksjhfskhfsdkjh'
+        with self.assertRaises(WebhookAuthorizationError):
+            self._service_client.handle_webhook(MagicMock(), self._headers)
 
 
 class TestAuthorizationResponse(unittest.TestCase):

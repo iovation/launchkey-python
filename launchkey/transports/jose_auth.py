@@ -1,3 +1,8 @@
+import re
+import warnings
+
+from jwkest import JWKESTException
+
 from launchkey.exceptions import InvalidEntityID, InvalidPrivateKey, InvalidIssuer, InvalidAlgorithm, \
     LaunchKeyAPIException, JWTValidationFailure, UnexpectedAPIResponse, NoIssuerKey, InvalidJWTResponse
 from launchkey import VALID_JWT_ISSUER_LIST, API_CACHE_TIME, JOSE_SUPPORTED_CONTENT_HASH_ALGS, JOSE_SUPPORTED_JWE_ALGS
@@ -20,7 +25,6 @@ from jwkest.jwt import BadSyntax
 
 
 class JOSETransport(object):
-
     audience = JOSE_AUDIENCE
 
     def __init__(self, jwt_algorithm="RS512", jwe_cek_encryption="RSA-OAEP", jwe_claims_encryption="A256CBC-HS512",
@@ -49,14 +53,6 @@ class JOSETransport(object):
         self.jwe_claims_encryption = self.__verify_supported_algorithm(jwe_claims_encryption, JOSE_SUPPORTED_JWE_ENCS)
         self.content_hash_algorithm = self.__verify_supported_algorithm(content_hash_algorithm,
                                                                         JOSE_SUPPORTED_CONTENT_HASH_ALGS)
-
-        if self.content_hash_algorithm == "S256":
-            self.content_hash_function = sha256
-        elif self.content_hash_algorithm == "S384":
-            self.content_hash_function = sha384
-        elif self.content_hash_algorithm == "S512":
-            self.content_hash_function = sha512
-
         self._http_client = http_client if http_client is not None else RequestsTransport()
 
     @staticmethod
@@ -203,13 +199,23 @@ class JOSETransport(object):
         except (AttributeError, BadSyntax):
             raise InvalidJWTResponse("Received JWT response is not valid: %s" % auth)
 
-    def _get_content_hash(self, body):
+    def _get_content_hash(self, body, hash_function):
         """
         Retrieves a hash using the stored content_hash_function
         :param body: string body
+        :param hash_function: function identifier hash the body
         :return: hash based on the content_hash_function
         """
-        return self.content_hash_function(six.b(body)).hexdigest()
+        if hash_function == "S256":
+            hasher = sha256
+        elif hash_function == "S384":
+            hasher = sha384
+        elif hash_function == "S512":
+            hasher = sha512
+        else:
+            raise InvalidAlgorithm("Invalid hash algorithm {}!".format(hash_function))
+
+        return hasher(six.b(body)).hexdigest()
 
     def _encrypt_request(self, data):
         """
@@ -233,7 +239,7 @@ class JOSETransport(object):
         body = None
         if data:
             body = self._encrypt_request(data)
-            content_hash = self._get_content_hash(body)
+            content_hash = self._get_content_hash(body, self.content_hash_algorithm)
             signature = self._build_jwt_signature(method, path, jti, subject, content_hash=content_hash)
             headers = {"content-type": "application/jwe", "Authorization": signature}
         else:
@@ -271,23 +277,106 @@ class JOSETransport(object):
                     keys = [key]
         return JWE().decrypt(response, keys=keys).decode('utf-8')
 
-    def verify_jwt_response(self, headers, jti, content_body, subject):
+    def verify_jwt_response(self, headers, jti, content_body, subject, status_code=None):
         """
         Verifies a response's JWT header to be valid
-        :param headers: Full header from the response
-        :param jti: The input JTI value in the initial request
-        :param content_body: The body of the request
-        :param subject: Subject of the jwt response
-        :return: The JWT payload
+        :param headers: Full headers of the response
+        :param jti: The input JTI value in the initial request that returned the response
+        :param content_body: The body of the response
+        :param subject: Expected subject of the JWT
+        :param status_code: Status code of the response
+        :return: The JWT claims
         """
-        auth = headers.get('X-IOV-JWT')
-        payload = self._get_jwt_payload(auth)
+        if status_code is None:
+            warnings.warn("Not passing a status_code value has been deprecated and will not be allowed in "
+                          "the next major version", DeprecationWarning)
 
+        ci_headers = {k.lower(): v for k, v in headers.items()}
+        auth = headers.get('X-IOV-JWT')
+        try:
+            payload = self._get_jwt_payload(auth)
+        except JWKESTException as e:
+            raise JWTValidationFailure("Unable to parse JWT", reason=e)
+
+        self._verify_jwt_payload(payload, self.audience, self.issuer, subject)
+
+        if payload.get("jti") != jti:
+            raise JWTValidationFailure("JTI does not match: expected {0} but got {1}".format(jti, payload.get("jti")))
+        elif not payload.get('response'):
+            raise JWTValidationFailure("Expected JWT to contain a response segment but there was none!")
+
+        response = payload['response']
+        if 'status' not in response:
+            raise JWTValidationFailure("Expected JWT to contain status in the response segment but there was none!")
+        elif status_code and status_code != response['status']:
+            raise JWTValidationFailure("Unexpected response status value")
+        elif 'location' in response and 'location' not in ci_headers:
+            raise JWTValidationFailure("Expected headers to location but there was none!")
+        elif 'location' not in response and 'location' in ci_headers:
+            raise JWTValidationFailure("Expected JWT to contain location in the response segment but there was none!")
+        elif 'location' in response and 'location' in ci_headers and response['location'] != ci_headers['location']:
+            raise JWTValidationFailure("Invalid location header!")
+        elif 'cache' in response and 'cache-control' not in ci_headers:
+            raise JWTValidationFailure("Expected headers to contain cache-control but there was none!")
+        elif 'cache' not in response and 'cache-control' in ci_headers:
+            raise JWTValidationFailure("Expected JWT to contain cache in the response segment but there was none!")
+        elif 'cache' in response and 'cache-control' in ci_headers and response['cache'] != ci_headers['cache-control']:
+            raise JWTValidationFailure("Invalid cache-control header!")
+
+        self._verify_jwt_content_hash(content_body, payload.get('response'))
+        return payload
+
+    def verify_jwt_request(self, compact_jwt, subject, method, path, body):
+        """
+        Verify a request's JWT
+        :param compact_jwt:  The compact JWT to verify
+        :param subject: The expected subject of the JWT
+        :param method: The method of the request
+        :param path: The path of the request
+        :param body: The body of the request
+        :return: The claims of the JWT
+        """
+        try:
+            payload = self._get_jwt_payload(compact_jwt)
+        except JWKESTException as e:
+            raise JWTValidationFailure("Unable to parse JWT", reason=e)
+
+        self._verify_jwt_payload(payload, self.audience, self.issuer, subject)
+
+        if 'request' not in payload:
+            raise JWTValidationFailure("Expected JWT to contain a request segment but there was none!")
+        elif 'meth' not in payload['request']:
+            raise JWTValidationFailure("Expected method attribute but there was none!")
+        elif method is not None and payload['request']['meth'] != method:
+            raise JWTValidationFailure("Method does not match: expected {} but got {}".format(
+                payload['request']['meth'], method))
+        elif 'path' not in payload['request']:
+            raise JWTValidationFailure("Expected path attribute but there was none!")
+        elif path is not None and payload['request']['path'] != path:
+            raise JWTValidationFailure("Path does not match: expected {} but got {}".format(
+                payload['request']['path'], path))
+
+        self._verify_jwt_content_hash(body, payload['request'])
+        return payload
+
+    @staticmethod
+    def _verify_jwt_payload(payload, issuer, audience, subject):
+        """
+        Verifies a JWT's payload to be valid
+        :param payload: JTW payload to verify
+        :param issuer: Expected issuer of the JWT payload
+        :param audience: Expected audience of the JWT payload
+        :param subject: Expected subject of the JWT payload
+        :return: The JWT claims
+        """
         now = time()
 
-        if payload.get('aud') != self.issuer:
-            raise JWTValidationFailure("Audience does not match: expected %s but got %s" %
-                                       (self.issuer, payload.get('aud')))
+        if payload.get('iss') != issuer:
+            raise JWTValidationFailure(
+                "Issuer does not match: expected %s but got %s" % (issuer, payload.get('iss')))
+        if payload.get('aud') != audience:
+            raise JWTValidationFailure(
+                "Audience does not match: expected %s but got %s" % (audience, payload.get('aud')))
         elif payload.get('nbf') > now + JOSE_JWT_LEEWAY:
             raise JWTValidationFailure("NBF failed by %s seconds" % (payload.get('nbf') - (now + JOSE_JWT_LEEWAY)))
         elif payload.get('exp') < now - JOSE_JWT_LEEWAY:
@@ -297,16 +386,25 @@ class JOSETransport(object):
         elif payload.get('iat') > now + JOSE_JWT_LEEWAY:
             raise JWTValidationFailure("IAT failed as its %s seconds in the future" % (payload.get('iat') -
                                                                                        (now + JOSE_JWT_LEEWAY)))
-        elif jti and payload.get("jti") != jti:
-            raise JWTValidationFailure("JTI does not match: expected {0} but got {1}".format(jti, payload.get("jti")))
-        elif content_body:
-            expected_hash = self._get_content_hash(content_body)
-            received_hash = payload.get('response').get('hash') if payload.get('response') \
-                else payload.get('request').get('hash')
+
+        return payload
+
+    def _verify_jwt_content_hash(self, content, custom_segment):
+        if not content and (custom_segment.get('hash') or custom_segment.get('func')):
+            raise JWTValidationFailure("JWT expected response body but was none!")
+        elif content and not custom_segment.get('hash'):
+            raise JWTValidationFailure("Expected JWT to contain a hash attribute but there was none!")
+        elif content and not custom_segment.get('func'):
+            raise JWTValidationFailure("Expected JWT to contain a func attribute but there was none!")
+        elif content:
+            try:
+                expected_hash = self._get_content_hash(content, custom_segment.get('func'))
+            except InvalidAlgorithm as e:
+                raise JWTValidationFailure("Invalid algorithm in JWT", reason=e)
+            received_hash = custom_segment.get('hash')
             if received_hash != expected_hash:
                 raise JWTValidationFailure("Content hash does not match: expected %s but got %s" %
                                            (expected_hash, received_hash))
-        return payload
 
     def get(self, path, subject=None, **kwargs):
         """

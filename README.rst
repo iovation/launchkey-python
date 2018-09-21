@@ -8,6 +8,8 @@ Python SDK for LaunchKey API
 
 .. _docs: https://docs.launchkey.com/service-sdk/python/sdk-v3/
 
+.. _pyenv: https://github.com/pyenv/pyenv
+
 For use in implementing LaunchKey_.
 
 
@@ -133,7 +135,7 @@ Using Dynamic Policies
     policy = AuthPolicy(any=2, jailbreak_protection=True)
     # Also make it so the user can only log in from the Portland area
     policy.add_geofence(latitude=45.48805749706375, longitude=-122.70492553710936, radius=27500)
-    auth_request_id = service_client.authorize(user, policy=policy)
+    auth_request_id = service_client.authorization_request(user, policy=policy)
 
 
 Check whether a response has been received and check whether it has been authorized
@@ -192,13 +194,18 @@ You will use the same handle_webhook method for both login and logout.
 Running Tests
 -------------
 
-Mac/Linux:
+Tests require a number of Python versions. The best way to manage these versions is with pyenv_. You will need
+to register all of the versions with pyenv. There are a couple ways to do that. An example of doing it globally is::
 
-    python setup.py test
+    pyenv global 2.7.15 3.4.9 3.5.6 3.6.6 3.7.0 pypy3.5-6.0.0 pypy2.7-6.0.0
 
-Windows:
+Install tox via PIP::
 
-    setup.py test
+    pip install tox
+
+Run tests::
+
+    tox
 
 Contributing
 ------------

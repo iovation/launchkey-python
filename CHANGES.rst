@@ -8,6 +8,12 @@ CHANGELOG for LaunchKey Python SDK
 * Fixed geofence missing name bug
 * Added more expected error conditions to pydocs
 * Removed version lock for pytz requirement
+* Added 3rd party push enhancements
+* Added tox config for local testing in multiple versions of Python
+* Added missing response validation
+* Added full webhook validation
+* Cleaned up error handling and raising for webhooks
+* Switch RequestsTransport to use session in order to provide connection sharing between requests
 
 3.1.1
 -----

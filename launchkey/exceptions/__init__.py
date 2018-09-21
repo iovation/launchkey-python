@@ -170,3 +170,23 @@ class InvalidSDKKey(LaunchKeyAPIException):
 
 class DirectoryNameInUse(LaunchKeyAPIException):
     """The input Directory name is already in use."""
+
+
+class UnexpectedWebhookRequest(LaunchKeyAPIException):
+    """There was an error processing the webhook request."""
+
+
+class UnableToDecryptWebhookRequest(LaunchKeyAPIException):
+    """There was an error decrypting the body of the webhook request."""
+
+
+class UnableToDecryptAuthorizationResponse(LaunchKeyAPIException):
+    """There was an error decrypting the response package of the authorization response webhook request."""
+
+
+class UnexpectedAuthorizationResponse(LaunchKeyAPIException):
+    """There was an issue with the response package of the authorization response webhook request."""
+
+
+class WebhookAuthorizationError(LaunchKeyAPIException):
+    """There was an issue with validating the authorization provided by the webhook request."""
