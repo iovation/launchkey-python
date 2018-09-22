@@ -40,14 +40,17 @@ Usage
 Using LaunchKey Clients
 ***********************
 
-The LaunchKey SDK is broken into credential based factories with access to functionality based clients.
+The LaunchKey SDK is broken into credential based factories with access to
+functionality based clients.
 
 **Factories**
 
-Factories are based on the credentials supplied. The Organization Factory uses Organization credentials, the Directory
-Factory uses Directory credentials, and the Service Factory uses Service credentials. Each factory provides clients
-which are accessible to the factory. The availability is based on the hierarchy of the entities themselves. Below is a
-matrix of available services for each factory.
+Factories are based on the credentials supplied. The Organization Factory uses
+Organization credentials, the Directory Factory uses Directory credentials,
+and the Service Factory uses Service credentials. Each factory provides clients
+which are accessible to the factory. The availability is based on the hierarchy
+of the entities themselves. Below is a matrix of available services for each
+factory.
 
 +--------------+---------------------+------------------+----------------+
 | Factory      | Organization Client | Directory Client | Service Client |
@@ -88,15 +91,16 @@ matrix of available services for each factory.
     service_id = "9ecc57e0-fb0f-4971-ba12-399b630158b0"
     user = "my_unique_internal_identifier"
 
-    organization_factory = OrganizationFactory(organization_id, organization_private_key)
+    organization_factory = OrganizationFactory(
+        organization_id, organization_private_key)
     directory_client = organization_factory.make_directory_client(directory_id)
     service_client = organization_factory.make_service_client(service_id)
 
 Linking And Managing Users
 **************************
 
-In order to link a user you will need to start the linking process then display the qrcode to them, give them the code,
-or both.
+In order to link a user you will need to start the linking process then display
+the qrcode to them, give them the code, or both.
 
 .. code-block:: python
 
@@ -104,7 +108,8 @@ or both.
     linking_code = link_data.code
     qr_url = link_data.qrcode
 
-If desired you can retrieve the user's devices and unlink then directly from the SDK
+If desired you can retrieve the user's devices and unlink then directly from
+the SDK
 
 .. code-block:: python
 
@@ -134,11 +139,13 @@ Using Dynamic Policies
     # Require 2 factors and don't allow any jailbroken or rooted devices
     policy = AuthPolicy(any=2, jailbreak_protection=True)
     # Also make it so the user can only log in from the Portland area
-    policy.add_geofence(latitude=45.48805749706375, longitude=-122.70492553710936, radius=27500)
+    policy.add_geofence(
+        latitude=45.48805749706375, longitude=-122.70492553710936, radius=27500)
     auth_request_id = service_client.authorization_request(user, policy=policy)
 
 
-Check whether a response has been received and check whether it has been authorized
+Check whether a response has been received and check whether it has been
+authorized
 
 .. code-block:: python
 
@@ -168,8 +175,8 @@ When a user logs out
 Dealing with Webhooks
 *********************
 
-Webhooks can be used in opposition to polling. This means we will hit your app on either an auth response or
-logout request.
+Webhooks can be used in opposition to polling. This means we will hit your app
+on either an auth response or logout request.
 
 You will use the same handle_webhook method for both login and logout.
 
@@ -178,7 +185,8 @@ You will use the same handle_webhook method for both login and logout.
 .. code-block:: python
 
     from flask import request
-    from launchkey.entities.service import AuthorizationResponse, SessionEndRequest
+    from launchkey.entities.service import AuthorizationResponse, \
+        SessionEndRequest
     package = service_client.handle_webhook(request.data, request.headers)
     if isinstance(package, AuthorizationResponse):
         if package.authorized is True:
@@ -187,15 +195,26 @@ You will use the same handle_webhook method for both login and logout.
         else:
             # User denied the auth
     elif isinstance(package, SessionEndRequest):
-        # The package will have the user hash, so use it to log the user out based on however you are handling it
+        # The package will have the user hash, so use it to log the user out
+        # based on however you are handling it
         logout_user_from_my_app(package.service_user_hash)
-
 
 Running Tests
 -------------
 
-Tests require a number of Python versions. The best way to manage these versions is with pyenv_. You will need
-to register all of the versions with pyenv. There are a couple ways to do that. An example of doing it globally is::
+Running tests is as simple as::
+
+    python setup.py test
+
+
+Validating Code
+---------------
+
+The LaunchKey Service SDK supports and number of python versions and has
+fairly strict coding guidelines.
+Tests require a number of Python versions. The best way to manage these
+versions is with pyenv_. You will need to register all of the versions with
+pyenv. There are a couple ways to do that. An example of doing it globally is::
 
     pyenv global 2.7.15 3.4.9 3.5.6 3.6.6 3.7.0 pypy3.5-6.0.0 pypy2.7-6.0.0
 
@@ -212,6 +231,9 @@ Contributing
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+3. Verify your code passes unit tests (`python setup.py test`)
+4. Verify your code passes tests, linting, and PEP-8 on all supported python
+    versions (`tox`)
+5. Commit your changes (`git commit -am 'Add some feature'`)
+6. Push to the branch (`git push origin my-new-feature`)
+7. Create new Pull Request

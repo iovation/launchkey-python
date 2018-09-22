@@ -6,9 +6,9 @@ python:
   - "3.5-dev"
   - "3.6"
   - "3.6-dev"
-  - "3.7-dev"
-  - "nightly"
   - "pypy3.5"
+env:
+  - MAKE_RUN=ci
 matrix:
   fast_finish: true
   allow_failures:
@@ -16,11 +16,23 @@ matrix:
   - python: 3.6-dev
   - python: 3.7-dev
   - python: nightly
+    env:
+    - MAKE_RUN=tests
   # Workaround TODO: put this in the standard list when it works properly - https://github.com/travis-ci/travis-ci/issues/9815
   include:
   - python: 3.7
     dist: xenial
     sudo: true
+    env:
+      - MAKE_RUN=ci-py37
+  # Workaround TODO: Put this back in the standard list when flake8 and pylint work with 3.7
+  - python: "3.7-dev"
+    env:
+    - MAKE_RUN=ci-py37
+  # Workaround TODO: Put this back in the standard list when flake8 and pylint work with 3.7
+  - python: "nightly"
+    env:
+    - MAKE_RUN=ci-py37
 branches:
   only:
     - master
@@ -31,4 +43,4 @@ notifications:
 install:
   - pip install -U 'setuptools>=32.2.0'
   - pip install .
-script: python setup.py test
+script: make ${MAKE_RUN}

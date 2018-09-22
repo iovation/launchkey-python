@@ -56,6 +56,10 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         with self.assertRaises(DuplicateGeoFenceName):
             policy.add_geofence(2, 2, 2, 'A fence')
 
+    def test_add_geofence_with_no_name_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            ServiceSecurityPolicy().add_geofence(2, 2, 2, None)
+
     def test_add_timefence_object(self):
         policy = ServiceSecurityPolicy()
         start_time = time(hour=12, minute=30, second=30)
@@ -204,6 +208,14 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         policy.add_timefence("Existing Timefence", time(), time())
         with self.assertRaises(InvalidTimeFenceName):
             policy.remove_timefence("Nonexistent Timefence")
+
+    def test_remove_partially_invalid_timefence(self):
+        policy = ServiceSecurityPolicy()
+        policy.add_timefence("name", time(), time())
+        policy.timefences.pop()
+        with self.assertRaises(InvalidTimeFenceName):
+            policy.remove_timefence("name")
+
 
     def test_import_timefence_from_policy(self):
         policy = ServiceSecurityPolicy()

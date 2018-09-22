@@ -1,3 +1,5 @@
-from .directory import DirectoryFactory
-from .organization import OrganizationFactory
-from .service import ServiceFactory
+"""Factories"""
+
+from .directory import DirectoryFactory  # noqa: F401
+from .organization import OrganizationFactory  # noqa: F401
+from .service import ServiceFactory  # noqa: F401
