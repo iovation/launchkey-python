@@ -184,20 +184,28 @@ You will use the same handle_webhook method for both login and logout.
 
 .. code-block:: python
 
-    from flask import request
+    from flask import Flask, request
     from launchkey.entities.service import AuthorizationResponse, \
         SessionEndRequest
-    package = service_client.handle_webhook(request.data, request.headers)
-    if isinstance(package, AuthorizationResponse):
-        if package.authorized is True:
-            # User accepted the auth, now create a session
-            service_client.session_start(user, auth_request_id)
-        else:
-            # User denied the auth
-    elif isinstance(package, SessionEndRequest):
-        # The package will have the user hash, so use it to log the user out
-        # based on however you are handling it
-        logout_user_from_my_app(package.service_user_hash)
+
+    app = Flask(__name__)
+
+    # Path defined in your Service Callback URL value
+    @app.route('/launchkey', methods = ['POST'])
+    def launchkey_webhook():
+        package = service_client.handle_webhook(request.data, request.headers,
+                                                request.method, request.path)
+        if isinstance(package, AuthorizationResponse):
+            if package.authorized is True:
+                # User accepted the auth, now create a session
+                service_client.session_start(user, auth_request_id)
+            else:
+                # User denied the auth
+                handle_denial()
+        elif isinstance(package, SessionEndRequest):
+            # The package will have the user hash, so use it to log the user out
+            # based on however you are handling it
+            logout_user_from_my_app(package.service_user_hash)
 
 Running Tests
 -------------
