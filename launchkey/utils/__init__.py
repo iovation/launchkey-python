@@ -34,10 +34,11 @@ class UUIDHelper(object):
     @staticmethod
     def validate_version(uuid_value, version):
         """
-
-        :param uuid_value: The string representation of a UUID
-        :param version: The version of the UUID
+        Validate the the provided UUID is the provided version
+        :param uuid_value: A UUID
+        :param version: The expected version of the UUID
         :return: None
+        :raises launchkey.exceptions.InvalidIssuerFormat: when uuid_value is not a UUID
         :raises launchkey.exceptions.InvalidIssuerVersion: when uuid_value
         is not the same version as version.
         """
