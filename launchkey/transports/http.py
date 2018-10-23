@@ -94,7 +94,7 @@ class RequestsTransport(object):
         :param path: Path or endpoint that will be hit
         :param headers: Headers to add onto the request
         :param data: Dictionary, bytes, or file-like object to send in the
-        \body of the request.
+        body of the request.
         :return:
         """
         response = self._session.delete(self.url + path, data=data,
@@ -108,7 +108,7 @@ class RequestsTransport(object):
         :param path: Path or endpoint that will be hit
         :param headers: Headers to add onto the request
         :param data: Dictionary, bytes, or file-like object to send in the
-        \body of the request.
+        body of the request.
         :return:
         """
         response = self._session.patch(self.url + path, data=data,
