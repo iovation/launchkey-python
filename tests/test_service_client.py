@@ -466,6 +466,13 @@ class TestPolicyObject(unittest.TestCase):
         with self.assertRaises(InvalidGeoFenceName):
             policy.remove_geofence(MagicMock(spec=str))
 
+    def test_remove_partially_invalid_geofence(self):
+        policy = AuthPolicy()
+        policy.add_geofence(1, 1, 2, 'name')
+        policy.geofences.pop()
+        with self.assertRaises(InvalidGeoFenceName):
+            policy.remove_geofence('name')
+
     def test_invalid_policy(self):
         policy = AuthPolicy()
         policy._policy['factors'].append(uuid4())
@@ -477,7 +484,7 @@ class TestPolicyObject(unittest.TestCase):
         policy.add_geofence(1, 2, 3, '123')
         policy2 = AuthPolicy()
         policy2.set_policy(policy.get_policy())
-        self.assertEqual(policy, policy2)
+        self.assertTrue(policy == policy2)
 
     def test_eq_mismatch(self):
         policy = AuthPolicy()
@@ -485,16 +492,16 @@ class TestPolicyObject(unittest.TestCase):
         policy2 = AuthPolicy()
         self.assertNotEqual(policy, policy2)
         policy2.add_geofence(1, 2, 2, '122')
-        self.assertNotEqual(policy, policy2)
+        self.assertFalse(policy == policy2)
 
     @data("test", {}, True, False, None)
     def test_eq_mismatch_non_object(self, value):
         policy = AuthPolicy()
-        self.assertNotEqual(policy, value)
+        self.assertFalse(policy == value)
 
     def test_eq_mismatch_non_object_matching_policy(self):
-        policy = AuthPolicy()
-        self.assertNotEqual(policy, policy.get_policy())
+        policy = AuthPolicy(any=1)
+        self.assertFalse(policy == AuthPolicy().get_policy())
 
     @data(True, False)
     def test_require_jailbreak_protection_new(self, status):

@@ -2,7 +2,7 @@ import unittest
 from mock import MagicMock, ANY
 from uuid import uuid4
 from formencode import Schema, Invalid
-from launchkey.clients.base import api_call, error_code_map, status_code_map, BaseClient
+from launchkey.clients.base import api_call, ERROR_CODE_MAP, STATUS_CODE_MAP, BaseClient
 from launchkey.exceptions import LaunchKeyAPIException, InvalidEntityID, UnexpectedAPIResponse
 from launchkey.transports.base import APIResponse
 import six
@@ -20,13 +20,13 @@ class TestAPICallDecorator(unittest.TestCase):
         self.assertEqual(api_call(method)(), method())
 
     def test_error_code_map(self):
-        for code, exception in six.iteritems(error_code_map):
+        for code, exception in six.iteritems(ERROR_CODE_MAP):
             self._failure_method.side_effect = LaunchKeyAPIException({"error_code": code, "error_detail": ANY}, 400)
             with self.assertRaises(exception):
                 api_call(self._failure_method)()
 
     def test_status_code_map(self):
-        for code, exception in six.iteritems(status_code_map):
+        for code, exception in six.iteritems(STATUS_CODE_MAP):
             self._failure_method.side_effect = LaunchKeyAPIException({}, code)
             with self.assertRaises(exception):
                 api_call(self._failure_method)()

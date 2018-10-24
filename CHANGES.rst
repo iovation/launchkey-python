@@ -1,5 +1,10 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
+3.3.0
+-----
+
+* Added tooling around code quality and ensured that CI build would fail
+without meeting expectations.
 
 3.3.0
 -----
