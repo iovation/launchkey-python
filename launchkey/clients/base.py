@@ -337,7 +337,7 @@ class ServiceManagingBaseClient(BaseClient):
     def update_service_public_key(self, service_id, key_id, expires=False,
                                   active=None):
         """
-        Removes a public key from a Service
+        Updates a public key from a Service
         :param service_id: Unique Service ID
         :param key_id: MD5 fingerprint of the public key,
         IE: e0:2f:a9:5a:76:92:6b:b5:4d:24:67:19:d1:8a:0a:75
