@@ -1,7 +1,14 @@
+"""Directory level entities"""
+
+# pylint: disable=invalid-name,too-few-public-methods,
+# pylint: disable=too-many-instance-attributes
+
+
 from launchkey.exceptions import InvalidDeviceStatus
 
 
 class Directory(object):
+    """Directory entity"""
     def __init__(self, data):
         self.service_ids = data['service_ids']
         self.sdk_keys = data['sdk_keys']
@@ -43,15 +50,24 @@ class DeviceStatus(object):
 
     def __init__(self, status_code):
         if status_code not in self._status_map:
-            raise InvalidDeviceStatus("Status code %s was not recognized" % status_code)
+            raise InvalidDeviceStatus(
+                "Status code %s was not recognized" % status_code)
         self._status_code = status_code
 
     @property
     def is_active(self):
+        """
+        Is the device active?
+        :return: active status
+        """
         return self._status_map[self._status_code][1]
 
     @property
     def status_code(self):
+        """
+        What's the status iof the device
+        :return: Status code
+        """
         return self._status_map[self._status_code][0]
 
 

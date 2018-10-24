@@ -1,20 +1,27 @@
+"""Validators"""
+
+# pylint: disable=too-few-public-methods
+
 from formencode import Schema, validators, FancyValidator, Invalid, ForEach
 from dateutil.parser import parse
 
 
 class ValidateISODate(FancyValidator):
+    """Validator for LaunchKey ISO dates"""
 
     @staticmethod
     def _to_python(value, state):
         try:
             val = parse(value)
         except ValueError:
-            raise Invalid("Date/time format is invalid, it must be ISO 8601 formatted "
-                          "for UTZ with no offset (i.e. 2010-01-01T01:01:01Z)", value, state)
+            raise Invalid("Date/time format is invalid, it must be ISO 8601 "
+                          "formatted  for UTZ with no offset (i.e. "
+                          "2010-01-01T01:01:01Z)", value, state)
         return val
 
 
 class PublicKeyValidator(Schema):
+    """Public Key entity Validator"""
     id = validators.String()
     active = validators.Bool()
     date_created = ValidateISODate()
@@ -24,12 +31,14 @@ class PublicKeyValidator(Schema):
 
 
 class DirectoryUserDeviceLinkResponseValidator(Schema):
+    """Directory User Device link response validator"""
     qrcode = validators.String()  # URL
     code = validators.String(min=7)
     allow_extra_fields = True
 
 
 class DirectoryGetDeviceResponseValidator(Schema):
+    """Directory get Device response validator"""
     id = validators.String()
     name = validators.String()
     status = validators.Int()
@@ -38,6 +47,7 @@ class DirectoryGetDeviceResponseValidator(Schema):
 
 
 class DirectoryGetSessionsValidator(Schema):
+    """Directory get Sessions validator"""
     auth_request = validators.String()
     date_created = ValidateISODate()
     service_icon = validators.String()
@@ -47,6 +57,7 @@ class DirectoryGetSessionsValidator(Schema):
 
 
 class DirectoryValidator(Schema):
+    """Directory entity validator"""
     id = validators.String()
     service_ids = ForEach(validators.String())
     sdk_keys = ForEach(validators.String())
@@ -59,6 +70,7 @@ class DirectoryValidator(Schema):
 
 
 class AuthorizationResponseValidator(Schema):
+    """Authorization Response entity validator"""
     auth = validators.String()
     service_user_hash = validators.String()
     org_user_hash = validators.String()
@@ -68,6 +80,7 @@ class AuthorizationResponseValidator(Schema):
 
 
 class AuthorizationResponsePackageValidator(Schema):
+    """Authorization Response Package entity validator"""
     service_pins = ForEach()
     auth_request = validators.String()  # UUID
     response = validators.Bool()
@@ -76,18 +89,21 @@ class AuthorizationResponsePackageValidator(Schema):
 
 
 class AuthorizeValidator(Schema):
+    """Authorize entity validator"""
     auth_request = validators.String(not_empty=True)
     push_package = validators.String(if_missing=None, not_empty=True)
     allow_extra_fields = True
 
 
 class AuthorizeSSEValidator(Schema):
+    """Authorize server-sent-event (webhook) validator"""
     service_user_hash = validators.String()
     api_time = validators.String()
     allow_extra_fields = True
 
 
 class ServiceValidator(Schema):
+    """Service entity validation"""
     id = validators.String()
     icon = validators.String()
     name = validators.String()
@@ -98,4 +114,5 @@ class ServiceValidator(Schema):
 
 
 class ServiceSecurityPolicyValidator(Schema):
+    """Service Security Policy entity validator"""
     allow_extra_fields = True

@@ -1,3 +1,9 @@
+"""LaunchKey Service SDK module"""
+from six import add_move, MovedAttribute
+add_move(MovedAttribute('encodebytes',
+                        'base64', 'base64',
+                        'encodestring', 'encodebytes'))
+
 SDK_VERSION = '3.3.0'
 LAUNCHKEY_PRODUCTION = "https://api.launchkey.com"
 VALID_JWT_ISSUER_LIST = ["svc", "dir", "org"]
