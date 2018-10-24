@@ -278,9 +278,9 @@ class ServiceManagingBaseClient(BaseClient):
             kwargs['date_expires'] = iso_format(expires)
         if active is not None:
             kwargs['active'] = active
-        key_id = self._transport.post(self.__service_base_path,
-                                      self._subject,
-                                      **kwargs).data['key_id']
+        key_id = self._transport.post(
+            "{}/keys".format(self.__service_base_path[0:-1]),
+            self._subject, **kwargs).data['key_id']
         return key_id
 
     @api_call
@@ -297,7 +297,7 @@ class ServiceManagingBaseClient(BaseClient):
         :return: List - launchkey.entities.shared.PublicKey
         """
         response = self._transport.post(
-            "{}/keys/list".format(self.__service_base_path),
+            "{}/keys/list".format(self.__service_base_path[0:-1]),
             self._subject, service_id=str(service_id))
 
         public_keys = []
@@ -329,9 +329,9 @@ class ServiceManagingBaseClient(BaseClient):
         either does not exist or you do not have sufficient permissions.
         :return:
         """
-        self._transport.delete("{}/keys".format(self.__service_base_path),
-                               self._subject, service_id=str(service_id),
-                               key_id=key_id)
+        self._transport.delete(
+            "{}/keys".format(self.__service_base_path[0:-1]),
+            self._subject, service_id=str(service_id), key_id=key_id)
 
     @api_call
     def update_service_public_key(self, service_id, key_id, expires=False,
@@ -357,8 +357,9 @@ class ServiceManagingBaseClient(BaseClient):
         if expires is not False:
             kwargs['date_expires'] = iso_format(expires)
 
-        self._transport.patch("{}/keys".format(self.__service_base_path),
-                              self._subject, **kwargs)
+        self._transport.patch(
+            "{}/keys".format(self.__service_base_path[0:-1]),
+            self._subject, **kwargs)
 
     @api_call
     def get_service_policy(self, service_id):
@@ -371,7 +372,7 @@ class ServiceManagingBaseClient(BaseClient):
         containing policy details
         """
         response = self._transport.post(
-            "{}/policy/item".format(self.__service_base_path),
+            "{}/policy/item".format(self.__service_base_path[0:-1]),
             self._subject, service_id=str(service_id))
 
         policy_data = self._validate_response(response.data,
@@ -393,9 +394,10 @@ class ServiceManagingBaseClient(BaseClient):
         found matching the input ID
         :return:
         """
-        self._transport.put("{}/policy".format(self.__service_base_path),
-                            self._subject, service_id=str(service_id),
-                            policy=policy.get_policy())
+        self._transport.put(
+            "{}/policy".format(self.__service_base_path[0:-1]),
+            self._subject, service_id=str(service_id),
+            policy=policy.get_policy())
 
     @api_call
     def remove_service_policy(self, service_id):
@@ -406,5 +408,6 @@ class ServiceManagingBaseClient(BaseClient):
         found matching the input ID
         :return:
         """
-        self._transport.delete("{}/policy".format(self.__service_base_path),
-                               self._subject, service_id=str(service_id))
+        self._transport.delete(
+            "{}/policy".format(self.__service_base_path[0:-1]),
+            self._subject, service_id=str(service_id))
