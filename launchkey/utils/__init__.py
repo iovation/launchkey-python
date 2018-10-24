@@ -38,7 +38,8 @@ class UUIDHelper(object):
         :param uuid_value: A UUID
         :param version: The expected version of the UUID
         :return: None
-        :raises launchkey.exceptions.InvalidIssuerFormat: when uuid_value is not a UUID
+        :raises launchkey.exceptions.InvalidIssuerFormat: when uuid_value
+        is not a UUID
         :raises launchkey.exceptions.InvalidIssuerVersion: when uuid_value
         is not the same version as version.
         """
