@@ -36,7 +36,9 @@ class TestServiceClient(unittest.TestCase):
         self._device_response = {"auth_request": str(uuid4()), "response": True, "device_id": str(uuid4()),
                                  "service_pins": ["1234", "3456", "5678"]}
         self._transport.loaded_issuer_private_key.decrypt.return_value = dumps(self._device_response)
-        self._service_client = ServiceClient(uuid4(), self._transport)
+        self._service_id = uuid4()
+        self._issuer = "svc:{}".format(self._service_id)
+        self._service_client = ServiceClient(self._service_id, self._transport)
         self._service_client._transport._verify_jwt_response = MagicMock()
 
     def test_authorize_calls_authorization_request(self):
@@ -54,7 +56,13 @@ class TestServiceClient(unittest.TestCase):
 
     def test_authorization_request_success(self):
         self._response.data = {"auth_request": "value"}
-        self._service_client.authorization_request(ANY, ANY, MagicMock(spec=AuthPolicy))
+        policy = MagicMock(spec=AuthPolicy)
+        policy.get_policy.return_value = "policy"
+        self._service_client.authorization_request("user", "context", policy)
+        self._transport.post.assert_called_once_with(
+            '/service/v3/auths', self._issuer, username="user",
+            context="context", policy="policy"
+        )
 
     def test_authorization_request_response_has_auth_request(self):
         self._response.data = {"auth_request": "expected value"}
@@ -122,8 +130,9 @@ class TestServiceClient(unittest.TestCase):
     @patch("launchkey.entities.service.b64decode")
     @patch("launchkey.entities.service.loads")
     @patch("launchkey.entities.service.AuthorizationResponsePackageValidator")
-    def test_get_authorization_response_success(self, b64decode_patch, json_loads_patch,
-                                                auth_response_package_validator_patch):
+    def test_get_authorization_response_success(
+            self, b64decode_patch, json_loads_patch,
+            auth_response_package_validator_patch):
         b64decode_patch.return_value = MagicMock(spec=str)
         json_loads_patch.return_value = MagicMock(spec=dict)
         auth_response_package_validator_patch.return_value = MagicMock(spec=dict)
@@ -136,7 +145,11 @@ class TestServiceClient(unittest.TestCase):
             "org_user_hash": ANY,
             "public_key_id": public_key_id
         }
-        self.assertIsInstance(self._service_client.get_authorization_response(ANY), AuthorizationResponse)
+        actual = self._service_client.get_authorization_response(
+            "auth-request-id")
+        self._transport.get.assert_called_once_with(
+            "/service/v3/auths/auth-request-id", self._issuer)
+        self.assertIsInstance(actual, AuthorizationResponse)
 
     def test_get_authorization_response_unexpected_response(self):
         self._response.data = {MagicMock(spec=str): ANY}
@@ -158,7 +171,10 @@ class TestServiceClient(unittest.TestCase):
             self._service_client.get_authorization_response(ANY)
 
     def test_session_start_success(self):
-        self.assertIsNone(self._service_client.session_start(ANY, ANY))
+        self._service_client.session_start("user-id", "auth-request-id")
+        self._transport.post.assert_called_once_with(
+            "/service/v3/sessions", self._issuer, username="user-id",
+            auth_request="auth-request-id")
 
     def test_session_start_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -171,7 +187,9 @@ class TestServiceClient(unittest.TestCase):
             self._service_client.session_start(ANY, ANY)
 
     def test_session_end_success(self):
-        self.assertIsNone(self._service_client.session_end(ANY))
+        self._service_client.session_end("user-id")
+        self._transport.delete.assert_called_once_with(
+            "/service/v3/sessions", self._issuer, username="user-id")
 
     def test_session_end_invalid_params(self):
         self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
