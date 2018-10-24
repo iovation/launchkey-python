@@ -1,5 +1,6 @@
 """Service Client"""
 
+# pylint: disable=too-many-arguments
 
 import warnings
 
@@ -23,7 +24,7 @@ class ServiceClient(BaseClient):
         super(ServiceClient, self).__init__('svc', subject_id, transport)
 
     @api_call
-    def authorize(self, user, context=None, policy=None):
+    def authorize(self, user, context=None, policy=None, title=None, ttl=None):
         """
         Authorize a transaction for the provided user. This
         get_service_service method would be utilized if you are
@@ -39,6 +40,11 @@ class ServiceClient(BaseClient):
         The policy can only increase the security level any existing policy
         in the Service Profile. It can never reduce the security level of
         the Service Profile's policy.
+        :param title: String of data up to 200 characters to be presented to
+        the End User during authorization as the title of the individual
+        authorization request
+        :param ttl: Time for this authorization request to be valid. If no
+        value is provided, the system default will be used.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.InvalidPolicyInput - Input policy was not
@@ -58,10 +64,12 @@ class ServiceClient(BaseClient):
         """
         warnings.warn('This method has been deprecated and will be removed'
                       ' in a future major release!', DeprecationWarning)
-        return self.authorization_request(user, context, policy).auth_request
+        auth = self.authorization_request(user, context, policy, title, ttl)
+        return auth.auth_request
 
     @api_call
-    def authorization_request(self, user, context=None, policy=None):
+    def authorization_request(self, user, context=None, policy=None,
+                              title=None, ttl=None):
         """
         Authorize a transaction for the provided user. This get_service_service
         method would be utilized if you are using this as a secondary factor
@@ -76,6 +84,11 @@ class ServiceClient(BaseClient):
         The policy can only increase the security
         level any existing policy in the Service Profile. It can never reduce
         the security level of the Service Profile's policy.
+        :param title: String of data up to 200 characters to be presented to
+        the End User during authorization as the title of the individual
+        authorization request
+        :param ttl: Time for this authorization request to be valid. If no
+        value is provided, the system default will be used.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.InvalidPolicyInput - Input policy was not
@@ -95,6 +108,10 @@ class ServiceClient(BaseClient):
         kwargs = {'username': user}
         if context is not None:
             kwargs['context'] = context
+        if title is not None:
+            kwargs['title'] = title
+        if ttl is not None:
+            kwargs['ttl'] = ttl
         if policy is not None:
             if not isinstance(policy, AuthPolicy):
                 raise InvalidParameters(
