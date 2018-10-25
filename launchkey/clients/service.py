@@ -24,7 +24,8 @@ class ServiceClient(BaseClient):
         super(ServiceClient, self).__init__('svc', subject_id, transport)
 
     @api_call
-    def authorize(self, user, context=None, policy=None, title=None, ttl=None):
+    def authorize(self, user, context=None, policy=None, title=None, ttl=None,
+                  push_title=None, push_body=None):
         """
         Authorize a transaction for the provided user. This
         get_service_service method would be utilized if you are
@@ -45,6 +46,12 @@ class ServiceClient(BaseClient):
         authorization request
         :param ttl: Time for this authorization request to be valid. If no
         value is provided, the system default will be used.
+        :param push_title: Title that will appear in the mobile authenticator's
+        push message. This feature is only available for Directory Services
+        that have push credentials configured.
+        :param push_body: Body that will appear in the mobile authenticator's
+        push message. This feature is only available for Directory Services
+        that have push credentials configured.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.InvalidPolicyInput - Input policy was not
@@ -64,12 +71,14 @@ class ServiceClient(BaseClient):
         """
         warnings.warn('This method has been deprecated and will be removed'
                       ' in a future major release!', DeprecationWarning)
-        auth = self.authorization_request(user, context, policy, title, ttl)
+        auth = self.authorization_request(user, context, policy, title, ttl,
+                                          push_title, push_body)
         return auth.auth_request
 
     @api_call
     def authorization_request(self, user, context=None, policy=None,
-                              title=None, ttl=None):
+                              title=None, ttl=None, push_title=None,
+                              push_body=None):
         """
         Authorize a transaction for the provided user. This get_service_service
         method would be utilized if you are using this as a secondary factor
@@ -89,6 +98,12 @@ class ServiceClient(BaseClient):
         authorization request
         :param ttl: Time for this authorization request to be valid. If no
         value is provided, the system default will be used.
+        :param push_title: Title that will appear in the mobile authenticator's
+        push message. This feature is only available for Directory Services
+        that have push credentials configured.
+        :param push_body: Body that will appear in the mobile authenticator's
+        push message. This feature is only available for Directory Services
+        that have push credentials configured.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.InvalidPolicyInput - Input policy was not
@@ -112,6 +127,10 @@ class ServiceClient(BaseClient):
             kwargs['title'] = title
         if ttl is not None:
             kwargs['ttl'] = ttl
+        if push_title is not None:
+            kwargs['push_title'] = push_title
+        if push_body is not None:
+            kwargs['push_body'] = push_body
         if policy is not None:
             if not isinstance(policy, AuthPolicy):
                 raise InvalidParameters(

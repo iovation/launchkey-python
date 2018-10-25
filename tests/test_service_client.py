@@ -45,8 +45,10 @@ class TestServiceClient(unittest.TestCase):
         policy = AuthPolicy()
         auth_response = AuthorizationRequest(str(uuid4()), None)
         self._service_client.authorization_request = MagicMock(return_value=auth_response)
-        self._service_client.authorize('user', 'context', policy, 'title', 30)
-        self._service_client.authorization_request.assert_called_once_with('user', 'context', policy, 'title', 30)
+        self._service_client.authorize('user', 'context', policy, 'title', 30,
+                                       'push_title', 'push_body')
+        self._service_client.authorization_request.assert_called_once_with(
+            'user', 'context', policy, 'title', 30, 'push_title', 'push_body')
 
     def test_authorize_returns_auth_request_id_from_authorization_request_response(self):
         expected = str(uuid4())
@@ -121,6 +123,20 @@ class TestServiceClient(unittest.TestCase):
         self._response.data = {"auth_request": "expected value"}
         self._service_client.authorization_request("my_user", title="Here's a title!")
         self._transport.post.assert_called_with(ANY, ANY, username="my_user", title="Here's a title!")
+
+    def test_authorization_request_push_title(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user",
+                                                   push_title="A Push Title")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user",
+                                                push_title="A Push Title")
+
+    def test_authorization_request_push_body(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user",
+                                                   push_body="Push Body")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user",
+                                                push_body="Push Body")
 
     def test_authorization_request_ttl(self):
         self._response.data = {"auth_request": "expected value"}
