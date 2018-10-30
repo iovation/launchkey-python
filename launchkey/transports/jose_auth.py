@@ -392,7 +392,14 @@ class JOSETransport(object):
                                        "was none!")
         elif status_code and status_code != response['status']:
             raise JWTValidationFailure("Unexpected response status value")
-        elif 'location' in response and 'location' not in ci_headers:
+
+        self._verify_jwt_response_headers(ci_headers, response)
+        self._verify_jwt_content_hash(content_body, response)
+        return payload
+
+    @staticmethod
+    def _verify_jwt_response_headers(ci_headers, response):
+        if 'location' in response and 'location' not in ci_headers:
             raise JWTValidationFailure(
                 "Expected headers to location but there was none!")
         elif 'location' not in response and 'location' in ci_headers:
@@ -411,9 +418,6 @@ class JOSETransport(object):
         elif 'cache' in response and 'cache-control' in ci_headers and \
                 response['cache'] != ci_headers['cache-control']:
             raise JWTValidationFailure("Invalid cache-control header!")
-
-        self._verify_jwt_content_hash(content_body, payload.get('response'))
-        return payload
 
     def verify_jwt_request(self, compact_jwt, subject, method, path, body):
         """
