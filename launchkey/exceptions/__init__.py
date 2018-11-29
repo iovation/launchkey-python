@@ -3,6 +3,9 @@
 # pylint: disable=keyword-arg-before-vararg
 
 
+from .validation import PreExistingAuthValidator
+
+
 class InsufficientRights(Exception):
     """The requesting client does not have sufficient rights for a service"""
 
@@ -69,12 +72,13 @@ class MismatchedTimeFenceTimezones(Exception):
 class LaunchKeyAPIException(Exception):
     """API Error (400+) was returned"""
 
-    def __init__(self, message=None, status_code=None, reason=None, *args,
-                 **kwargs):
+    def __init__(self, message=None, status_code=None, reason=None,
+                 error_data=None, *args, **kwargs):
         super(LaunchKeyAPIException, self).__init__(message, *args, **kwargs)
         self.message = message
         self.status_code = status_code
         self.reason = reason
+        self.data = error_data
 
 
 class InvalidParameters(LaunchKeyAPIException):
@@ -160,6 +164,28 @@ class ServiceNotFound(LaunchKeyAPIException):
     The requested Service does not exist. Likely invalid UUID or the service
     has been removed.
     """
+
+
+class AuthorizationInProgress(LaunchKeyAPIException):
+    """
+    An auth already exists for the given user. Another one cannot be created
+    until the current one is either responded to or expires.
+
+    Contains attributes to describe the blocking auth request:
+        :attr my_auth: Boolean stating whether the auth belongs to the
+        requesting Service or another one. This is necessary when the Service
+        may want to resume the current auth request.
+        :attr expires: datetime object stating when the auth request will
+        expire, and thus another auth can be created without user intervention.
+        :attr auth_request: Auth request ID associated with the blocking auth.
+        This ID can be used to resume polling for an auth request.
+    """
+    def __init__(self, message=None, *args, **kwargs):
+        super(AuthorizationInProgress, self).__init__(message, *args, **kwargs)
+        self.data = PreExistingAuthValidator().to_python(self.data)
+        self.my_authorization_request = self.data.get('my_auth')
+        self.expires = self.data.get('expires')
+        self.authorization_request_id = self.data.get('auth_request')
 
 
 class PublicKeyAlreadyInUse(LaunchKeyAPIException):
