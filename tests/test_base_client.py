@@ -24,21 +24,35 @@ class TestAPICallDecorator(unittest.TestCase):
         method.__name__ = str(uuid4())
         self.assertEqual(api_call(method)(), method())
 
+    def test_error_code_map_message_passthrough(self):
+        for code, exception in six.iteritems(ERROR_CODE_MAP):
+            self._failure_method.side_effect = LaunchKeyAPIException(
+                {"error_code": code, "error_detail": {"error": "details"}}, 400
+            )
+            with self.assertRaises(exception) as raised:
+                api_call(self._failure_method)()
+            self.assertEqual(raised.exception.message, {"error": "details"})
+            self.assertEqual(raised.exception.status_code, 400)
+            self.assertIsNone(raised.exception.reason)
+
     def test_error_code_map_without_error_data(self):
         for code, exception in six.iteritems(ERROR_CODE_MAP):
             self._failure_method.side_effect = LaunchKeyAPIException(
-                {"error_code": code, "error_detail": {}}, 400
+                {"error_code": code, "error_detail": {"error": "details"}}, 400
             )
-            with self.assertRaises(exception):
+            with self.assertRaises(exception) as raised:
                 api_call(self._failure_method)()
+            self.assertEqual(raised.exception.data, {})
 
     def test_error_code_map_with_error_data(self):
         for code, exception in six.iteritems(ERROR_CODE_MAP):
             self._failure_method.side_effect = LaunchKeyAPIException(
-                {"error_code": code, "error_detail": {}, "error_data": {}}, 400
+                {"error_code": code, "error_detail": {"error": "details"},
+                 "error_data": {"error": "data"}}, 400
             )
-            with self.assertRaises(exception):
+            with self.assertRaises(exception) as raised:
                 api_call(self._failure_method)()
+            self.assertEqual(raised.exception.data, {"error": "data"})
 
     def test_status_code_map(self):
         for code, exception in six.iteritems(STATUS_CODE_MAP):
