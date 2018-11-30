@@ -3,7 +3,11 @@
 # pylint: disable=keyword-arg-before-vararg
 
 
-from .validation import PreExistingAuthValidator
+import warnings
+
+from formencode import Invalid
+
+from .validation import AuthorizationInProgressValidator
 
 
 class InsufficientRights(Exception):
@@ -78,7 +82,7 @@ class LaunchKeyAPIException(Exception):
         self.message = message
         self.status_code = status_code
         self.reason = reason
-        self.data = error_data
+        self.data = error_data if error_data else {}
 
 
 class InvalidParameters(LaunchKeyAPIException):
@@ -111,6 +115,10 @@ class EntityNotFound(LaunchKeyAPIException):
 
 class RequestTimedOut(LaunchKeyAPIException):
     """Generic API 408 Error - Request timed out"""
+
+
+class Conflict(LaunchKeyAPIException):
+    """Generic API 409 Error - Conflict"""
 
 
 class RateLimited(LaunchKeyAPIException):
@@ -180,12 +188,23 @@ class AuthorizationInProgress(LaunchKeyAPIException):
         :attr auth_request: Auth request ID associated with the blocking auth.
         This ID can be used to resume polling for an auth request.
     """
+
+    my_authorization_request = None
+    expires = None
+    authorization_request_id = None
+
     def __init__(self, message=None, *args, **kwargs):
         super(AuthorizationInProgress, self).__init__(message, *args, **kwargs)
-        self.data = PreExistingAuthValidator().to_python(self.data)
-        self.my_authorization_request = self.data.get('my_auth')
-        self.expires = self.data.get('expires')
-        self.authorization_request_id = self.data.get('auth_request')
+
+        try:
+            self.data = AuthorizationInProgressValidator().to_python(self.data)
+            self.my_authorization_request = self.data['my_auth']
+            self.expires = self.data['expires']
+            self.authorization_request_id = self.data['auth_request']
+        except Invalid as exception:
+            warnings.warn("Failed to parse AuthorizationInProgress data: "
+                          "exception: {0} data: {1}".format(exception,
+                                                            self.data))
 
 
 class PublicKeyAlreadyInUse(LaunchKeyAPIException):

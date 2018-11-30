@@ -1,5 +1,7 @@
 """LaunchKey Service SDK module"""
 from six import add_move, MovedAttribute
+from .utils import *
+
 add_move(MovedAttribute('encodebytes',
                         'base64', 'base64',
                         'encodestring', 'encodebytes'))

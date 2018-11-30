@@ -19,7 +19,7 @@ from ..exceptions import InvalidEntityID, LaunchKeyAPIException, \
     ServiceNameTaken, ServiceNotFound, PublicKeyAlreadyInUse, \
     InvalidPublicKey, PublicKeyDoesNotExist, LastRemainingKey, \
     LastRemainingSDKKey, InvalidSDKKey, DirectoryNameInUse, \
-    AuthorizationInProgress
+    AuthorizationInProgress, Conflict
 from ..transports.base import APIResponse
 
 ERROR_CODE_MAP = {
@@ -45,6 +45,7 @@ STATUS_CODE_MAP = {
     403: Forbidden,
     404: EntityNotFound,
     408: RequestTimedOut,
+    409: Conflict,
     429: RateLimited
 }
 
