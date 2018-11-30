@@ -16,11 +16,16 @@ class TestAuthorizationInProgressException(unittest.TestCase):
         self.addCleanup(patch.stopall)
 
     def test_warning_thrown_when_data_is_not_expected(self):
-        self.validator_patch.side_effect = Invalid("Message", "Value", "State")
+        self.validator_patch.side_effect = Invalid("Error Message", "Value", "State")
         AuthorizationInProgress(
-            "Error Detail", 400
+            "Error Detail", 400,
+            error_data="Error Data"
         )
-        self.warnings_patch.warn.assert_called_once()
+        self.warnings_patch.warn.assert_called_with(
+            "Failed to parse AuthorizationInProgress data: "
+            "exception: Error Message "
+            "data: Error Data"
+        )
 
     def test_warning_not_thrown_when_data_is_expected(self):
         AuthorizationInProgress(

@@ -7,7 +7,7 @@ from functools import wraps
 from formencode import Invalid
 from launchkey.entities.shared import PublicKey
 
-from ..utils import iso_format
+from ..utils.shared import iso_format
 from ..entities.service import Service, ServiceSecurityPolicy
 from ..entities.validation import ServiceValidator, PublicKeyValidator, \
     ServiceSecurityPolicyValidator

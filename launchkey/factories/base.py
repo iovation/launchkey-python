@@ -2,8 +2,8 @@
 
 # pylint: disable=too-many-arguments,too-few-public-methods
 
-from launchkey.transports import JOSETransport
-from launchkey.utils import UUIDHelper
+from ..transports import JOSETransport
+from ..utils.shared import UUIDHelper
 
 
 class BaseFactory(object):
