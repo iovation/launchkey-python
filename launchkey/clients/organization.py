@@ -4,7 +4,7 @@
 
 from base64 import encodestring
 from .base import ServiceManagingBaseClient, api_call
-from ..utils import iso_format
+from ..utils.shared import iso_format
 from ..entities.shared import PublicKey
 from ..entities.directory import Directory
 from ..entities.validation import DirectoryValidator, PublicKeyValidator
