@@ -1,8 +1,12 @@
 from unittest import TestCase
+from datetime import datetime
 
+from dateutil.tz import tzutc
 from formencode import Invalid
+from ddt import data, ddt
 
 from launchkey.entities.validation import AuthorizeValidator
+from launchkey.exceptions.validation import AuthorizationInProgressValidator
 
 
 class TestAuthorizeValidator(TestCase):
@@ -55,3 +59,59 @@ class TestAuthorizeValidator(TestCase):
         actual = self._validator.to_python(self._data)
         self.assertIn('push_package', actual)
         self.assertEqual(actual['push_package'], expected)
+
+
+@ddt
+class TestAuthorizationInProgressValidator(TestCase):
+
+    def setUp(self):
+        self.data = {
+            "auth_request": "d57c6e0a-f436-11e8-ae2a-acde48001122",
+            "expires": "2018-11-28T22:04:44Z",
+            "my_auth": True
+        }
+
+    @data("0856e7cf-f437-11e8-9872-acde48001122", "Auth Request")
+    def test_auth_request_valid(self, auth_request):
+        self.data['auth_request'] = auth_request
+        parsed = AuthorizationInProgressValidator().to_python(self.data)
+        self.assertEqual(
+            parsed['auth_request'],
+            auth_request
+        )
+
+    def test_auth_request_missing(self):
+        del self.data['auth_request']
+        with self.assertRaises(Invalid):
+            AuthorizationInProgressValidator().to_python(self.data)
+
+    @data("0856e7cf-f437-11e8-9872-acde48001122", "Auth Request")
+    def test_auth_request_valid(self, auth_request):
+        self.data['auth_request'] = auth_request
+        parsed = AuthorizationInProgressValidator().to_python(self.data)
+        self.assertEqual(
+            parsed['auth_request'],
+            auth_request
+        )
+
+    def test_my_auth_missing(self):
+        del self.data['my_auth']
+        parsed = AuthorizationInProgressValidator().to_python(self.data)
+        self.assertFalse(parsed['my_auth'])
+
+    @data(True, False)
+    def test_my_auth_valid(self, my_auth):
+        self.data['my_auth'] = my_auth
+        parsed = AuthorizationInProgressValidator().to_python(self.data)
+        self.assertEqual(
+            parsed['my_auth'],
+            my_auth
+        )
+
+    def test_expires(self):
+        self.data['expires'] = "2018-11-28T22:04:44Z"
+        parsed = AuthorizationInProgressValidator().to_python(self.data)
+        self.assertEqual(
+            parsed['expires'],
+            datetime(2018, 11, 28, 22, 4, 44, tzinfo=tzutc())
+        )

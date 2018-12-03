@@ -1,11 +1,14 @@
 import unittest
-from mock import MagicMock, ANY
+from mock import MagicMock, ANY, patch
 from uuid import uuid4
 from formencode import Schema, Invalid
-from launchkey.clients.base import api_call, ERROR_CODE_MAP, STATUS_CODE_MAP, BaseClient
-from launchkey.exceptions import LaunchKeyAPIException, InvalidEntityID, UnexpectedAPIResponse
-from launchkey.transports.base import APIResponse
 import six
+
+from launchkey.clients.base import api_call, ERROR_CODE_MAP, STATUS_CODE_MAP, \
+    BaseClient
+from launchkey.exceptions import LaunchKeyAPIException, InvalidEntityID, \
+    UnexpectedAPIResponse
+from launchkey.transports.base import APIResponse
 
 
 class TestAPICallDecorator(unittest.TestCase):
@@ -13,17 +16,43 @@ class TestAPICallDecorator(unittest.TestCase):
     def setUp(self):
         self._failure_method = MagicMock()
         self._failure_method.__name__ = str(uuid4())
+        patch("launchkey.exceptions.warnings").start()
+        self.addCleanup(patch.stopall)
 
     def test_success(self):
         method = MagicMock()
         method.__name__ = str(uuid4())
         self.assertEqual(api_call(method)(), method())
 
-    def test_error_code_map(self):
+    def test_error_code_map_message_passthrough(self):
         for code, exception in six.iteritems(ERROR_CODE_MAP):
-            self._failure_method.side_effect = LaunchKeyAPIException({"error_code": code, "error_detail": ANY}, 400)
-            with self.assertRaises(exception):
+            self._failure_method.side_effect = LaunchKeyAPIException(
+                {"error_code": code, "error_detail": {"error": "details"}}, 400
+            )
+            with self.assertRaises(exception) as raised:
                 api_call(self._failure_method)()
+            self.assertEqual(raised.exception.message, {"error": "details"})
+            self.assertEqual(raised.exception.status_code, 400)
+            self.assertIsNone(raised.exception.reason)
+
+    def test_error_code_map_without_error_data(self):
+        for code, exception in six.iteritems(ERROR_CODE_MAP):
+            self._failure_method.side_effect = LaunchKeyAPIException(
+                {"error_code": code, "error_detail": {"error": "details"}}, 400
+            )
+            with self.assertRaises(exception) as raised:
+                api_call(self._failure_method)()
+            self.assertEqual(raised.exception.data, {})
+
+    def test_error_code_map_with_error_data(self):
+        for code, exception in six.iteritems(ERROR_CODE_MAP):
+            self._failure_method.side_effect = LaunchKeyAPIException(
+                {"error_code": code, "error_detail": {"error": "details"},
+                 "error_data": {"error": "data"}}, 400
+            )
+            with self.assertRaises(exception) as raised:
+                api_call(self._failure_method)()
+            self.assertEqual(raised.exception.data, {"error": "data"})
 
     def test_status_code_map(self):
         for code, exception in six.iteritems(STATUS_CODE_MAP):

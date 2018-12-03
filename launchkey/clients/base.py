@@ -7,7 +7,7 @@ from functools import wraps
 from formencode import Invalid
 from launchkey.entities.shared import PublicKey
 
-from ..utils import iso_format
+from ..utils.shared import iso_format
 from ..entities.service import Service, ServiceSecurityPolicy
 from ..entities.validation import ServiceValidator, PublicKeyValidator, \
     ServiceSecurityPolicyValidator
@@ -18,7 +18,8 @@ from ..exceptions import InvalidEntityID, LaunchKeyAPIException, \
     UnexpectedAPIResponse, Forbidden, Unauthorized, InvalidRoute, \
     ServiceNameTaken, ServiceNotFound, PublicKeyAlreadyInUse, \
     InvalidPublicKey, PublicKeyDoesNotExist, LastRemainingKey, \
-    LastRemainingSDKKey, InvalidSDKKey, DirectoryNameInUse
+    LastRemainingSDKKey, InvalidSDKKey, DirectoryNameInUse, \
+    AuthorizationInProgress, Conflict
 from ..transports.base import APIResponse
 
 ERROR_CODE_MAP = {
@@ -28,6 +29,7 @@ ERROR_CODE_MAP = {
     "SVC-002": InvalidPolicyInput,
     "SVC-003": PolicyFailure,
     "SVC-004": ServiceNotFound,
+    "SVC-005": AuthorizationInProgress,
     "DIR-001": InvalidDirectoryIdentifier,
     "KEY-001": InvalidPublicKey,
     "KEY-002": PublicKeyAlreadyInUse,
@@ -43,6 +45,7 @@ STATUS_CODE_MAP = {
     403: Forbidden,
     404: EntityNotFound,
     408: RequestTimedOut,
+    409: Conflict,
     429: RateLimited
 }
 
@@ -66,14 +69,18 @@ def api_call(function_):
                     or 'error_detail' not in cause.message:
                 error_code = "HTTP-%s" % cause.status_code
                 error_detail = "%s" % cause.reason
+                error_data = None
             else:
                 error_code = cause.message.get('error_code')
                 error_detail = cause.message.get('error_detail')
+                error_data = cause.message.get('error_data')
             status_code = cause.status_code
             if error_code in ERROR_CODE_MAP:
-                raise ERROR_CODE_MAP[error_code](error_detail, status_code)
+                raise ERROR_CODE_MAP[error_code](error_detail, status_code,
+                                                 error_data=error_data)
             elif status_code in STATUS_CODE_MAP:
-                raise STATUS_CODE_MAP[status_code](error_detail, status_code)
+                raise STATUS_CODE_MAP[status_code](error_detail, status_code,
+                                                   error_data=error_data)
             else:
                 raise
 
