@@ -81,7 +81,7 @@ class OrganizationClient(ServiceManagingBaseClient):
 
     @api_call
     def update_directory(self, directory_id, ios_p12=False, android_key=False,
-                         active=None):
+                         active=None, denial_context_inquiry_enabled=None):
         """
         Updates a Directories's settings. If an optional parameter is not
         included it will not be updated.
@@ -91,6 +91,9 @@ class OrganizationClient(ServiceManagingBaseClient):
         :param android_key: GCM Push Key
         :param active: Boolean. Status preventing Directory Service Auths as
         well as other Directory related calls.
+        :param denial_context_inquiry_enabled: Boolean. Should the user be
+        prompted for denial context when they deny authorization requests
+        for any and all child services.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :return:
@@ -103,6 +106,9 @@ class OrganizationClient(ServiceManagingBaseClient):
             kwargs['android_key'] = android_key
         if active is not None:
             kwargs['active'] = active
+        if denial_context_inquiry_enabled is not None:
+            kwargs['denial_context_inquiry_enabled'] = \
+                denial_context_inquiry_enabled
         self._transport.patch("/organization/v3/directories", self._subject,
                               **kwargs)
 

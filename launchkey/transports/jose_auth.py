@@ -5,6 +5,7 @@
 import warnings
 import json
 
+from base64 import b64decode
 from uuid import UUID, uuid4
 from hashlib import sha256, sha384, sha512, md5
 from time import time
@@ -23,7 +24,7 @@ import six
 from ..exceptions import InvalidEntityID, InvalidPrivateKey, \
     InvalidIssuer, InvalidAlgorithm, LaunchKeyAPIException, \
     JWTValidationFailure, UnexpectedAPIResponse, NoIssuerKey, \
-    InvalidJWTResponse
+    InvalidJWTResponse, UnexpectedKeyID
 from .. import VALID_JWT_ISSUER_LIST, API_CACHE_TIME, \
     JOSE_SUPPORTED_CONTENT_HASH_ALGS, JOSE_SUPPORTED_JWE_ALGS, \
     JOSE_SUPPORTED_JWE_ENCS, JOSE_SUPPORTED_JWT_ALGS, \
@@ -349,6 +350,20 @@ class JOSETransport(object):
                 if key.kid == package.headers['kid']:
                     keys = [key]
         return JWE().decrypt(response, keys=keys).decode('utf-8')
+
+    def decrypt_rsa_response(self, response, key_id):
+        """
+        Decrypts a RSA response using the stored issuer private keys
+        :param response: RSA encrypted string
+        :param key_id: Key ID designating who the response was encrypted for.
+        :return: Decrypted string
+        """
+        if key_id not in self.loaded_issuer_private_keys:
+            raise UnexpectedKeyID("The response was for a key id "
+                                  "%s which is not recognized" %
+                                  key_id)
+        binary_package = b64decode(response)
+        return self.loaded_issuer_private_keys[key_id].decrypt(binary_package)
 
     def verify_jwt_response(self, headers, jti, content_body, subject,
                             status_code=None):

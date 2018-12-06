@@ -4,17 +4,37 @@
 # pylint: disable=redefined-builtin,too-many-instance-attributes
 # pylint: disable=too-many-locals
 
-from base64 import b64decode
 import datetime
 from json import loads, dumps
 from formencode import Invalid
 import pytz
-from .validation import AuthorizationResponsePackageValidator
-from ..exceptions import UnexpectedKeyID, UnexpectedDeviceResponse, \
+from .validation import AuthorizationResponsePackageValidator, \
+    JWEAuthorizationResponsePackageValidator
+from ..exceptions import UnexpectedDeviceResponse, \
     InvalidGeoFenceName, InvalidTimeFenceEndTime, InvalidTimeFenceName, \
     InvalidTimeFenceStartTime, MismatchedTimeFenceTimezones, \
     DuplicateTimeFenceName, DuplicateGeoFenceName, InvalidPolicyFormat, \
     InvalidParameters
+from enum import Enum
+
+
+class AuthResponseReason(Enum):
+    APPROVED = "APPROVED"
+    DISAPPROVED = "DISAPPROVED"
+    FRAUDULENT = "FRAUDULENT"
+    POLICY = "POLICY"
+    PERMISSION = "PERMISSION"
+    AUTHENTICATION = "AUTHENTICATION"
+    CONFIGURATION = "CONFIGURATION"
+    BUSY_LOCAL = "BUSY_LOCAL"
+    OTHER = "OTHER"
+
+
+class AuthResponseType(Enum):
+    AUTHORIZED = "AUTHORIZED"
+    DENIED = "DENIED"
+    FAILED = "FAILED"
+    OTHER = "OTHER"
 
 
 class GeoFence(object):
@@ -64,6 +84,24 @@ class TimeFence(object):
         if self.sunday:
             self.days.append("Sunday")
         self.timezone = start_time.tzname() if start_time.tzname() else "UTC"
+
+
+class DenialReason(object):
+    """
+    Denial reason object to be passed in a list when creating an auth request
+
+    :param denial_id: String. Universally unique identifier for this reason.
+    This must be unique in an authorization request and should be unique
+    globally for proper tracking of user selections.
+    :param reason: String. Textual description of the reason that will be
+    presented in a list for the user to select.
+    :param fraud: Bool. Is the reason considered fraud.
+    """
+
+    def __init__(self, denial_id, reason, fraud):
+        self.denial_id = denial_id
+        self.reason = reason
+        self.fraud = fraud
 
 
 class AuthPolicy(object):
@@ -316,13 +354,32 @@ class AuthorizationResponse(object):
     """
 
     @staticmethod
-    def _decrypt_auth_package(package, issuer_private_key):
+    def _get_authorized_bool_from_auth_response_context(response_type,
+                                                        response_reason):
+        return True if \
+            response_type == AuthResponseType.AUTHORIZED and \
+            response_reason == AuthResponseReason.APPROVED else False
+
+    @staticmethod
+    def _retrieve_enum_from_value(enum_class, value):
         try:
-            binary_package = b64decode(package)
-            decrypted_package = issuer_private_key.decrypt(binary_package)
-            unmarshalled_package = loads(decrypted_package)
-            return AuthorizationResponsePackageValidator.to_python(
-                unmarshalled_package)
+            return enum_class(value)
+        except ValueError:
+            return enum_class.OTHER
+
+    def _parse_device_response_from_jwe(self, jwe_payload, transport):
+        """
+        Parses a Device auth response using a JWE input.
+        :param jwe_payload: JWE payload containing the device response.
+        :param transport: Transport that contains the decrypt_response
+                          method used to decrypt the Device response.
+        :return:
+        """
+        try:
+            data = transport.decrypt_response(jwe_payload)
+            unmarshalled_package = loads(data)
+            decrypted_jwe = JWEAuthorizationResponsePackageValidator().\
+                to_python(unmarshalled_package)
         except (Invalid, TypeError, ValueError) as e:
             raise UnexpectedDeviceResponse("The device response was invalid. "
                                            "Please verify the same key that "
@@ -330,21 +387,78 @@ class AuthorizationResponse(object):
                                            "being used to decrypt the current "
                                            "message.", reason=e)
 
-    def __init__(self, data, issuer_private_keys):
-        if data.get('public_key_id') not in issuer_private_keys:
-            raise UnexpectedKeyID("The auth response was for a key id "
-                                  "%s which is not recognized" %
-                                  data.get('public_key_id'))
-        decrypted_package = self._decrypt_auth_package(
-            data['auth'],
-            issuer_private_keys[data.get('public_key_id')])
-        self.authorization_request_id = decrypted_package.get('auth_request')
-        self.authorized = decrypted_package.get('response')
-        self.device_id = decrypted_package.get('device_id')
-        self.service_pins = decrypted_package.get('service_pins')
-        self.service_user_hash = data.get('service_user_hash')
-        self.organization_user_hash = data.get('org_user_hash')
-        self.user_push_id = data.get('user_push_id')
+        self.type = self._retrieve_enum_from_value(AuthResponseType,
+                                                   decrypted_jwe.get(
+                                                       "type"))
+        self.reason = self._retrieve_enum_from_value(AuthResponseReason,
+                                                     decrypted_jwe.get(
+                                                         "reason"))
+        self.denial_reason = decrypted_jwe.get("denial_reason")
+        self.fraud = decrypted_jwe.get("fraud")
+        self.authorization_request_id = decrypted_jwe.get("auth_request")
+        self.authorized = \
+            self._get_authorized_bool_from_auth_response_context(
+                self.type,
+                self.reason
+            )
+        self.device_id = decrypted_jwe.get("device_id")
+        self.service_pins = decrypted_jwe.get("service_pins")
+
+    def _parse_device_response_from_auth_package(self, auth_package, key_id,
+                                                 transport):
+        """
+        Parses a Device auth response using a legacy auth package.
+        :param auth_package: RSA Encrypted Device response.
+        :param key_id: Key ID designating the key that the response
+                       was encrypted to.
+        :param transport: Transport that contains the _decrypt_auth_package
+                          method used to decrypt the Device response.
+        :return:
+        """
+        try:
+            data = transport.decrypt_rsa_response(
+                auth_package, key_id)
+            unmarshalled_package = loads(data)
+            decrypted_package = AuthorizationResponsePackageValidator().\
+                to_python(unmarshalled_package)
+        except (Invalid, TypeError, ValueError) as e:
+            raise UnexpectedDeviceResponse("The device response was invalid. "
+                                           "Please verify the same key that "
+                                           "initiated the auth request is "
+                                           "being used to decrypt the current "
+                                           "message.", reason=e)
+        self.type = None
+        self.reason = None
+        self.denial_reason = None
+        self.fraud = None
+        self.authorization_request_id = \
+            decrypted_package.get("auth_request")
+        self.authorized = decrypted_package.get("response")
+        self.device_id = decrypted_package.get("device_id")
+        self.service_pins = decrypted_package.get("service_pins")
+
+    def _parse_device_response(self, data, transport):
+        """
+        Determines if a device has responded using JWE or legacy package format
+        and triggers the appropriate parsing steps.
+        :param data: Dictionary containing a LaunchKey Device's auth response
+        :param transport: Transport that contains the needed steps to decrypt
+                          A given Device response.
+        :return: None
+        """
+        if data.get("auth_jwe"):
+            self._parse_device_response_from_jwe(
+                data.get("auth_jwe"), transport)
+        else:
+            self._parse_device_response_from_auth_package(
+                data['auth'], data['public_key_id'], transport)
+
+        self.service_user_hash = data.get("service_user_hash")
+        self.organization_user_hash = data.get("org_user_hash")
+        self.user_push_id = data.get("user_push_id")
+
+    def __init__(self, data, transport):
+        self._parse_device_response(data, transport)
 
 
 class SessionEndRequest(object):
