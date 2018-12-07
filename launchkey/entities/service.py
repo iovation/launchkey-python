@@ -6,6 +6,7 @@
 
 import datetime
 from json import loads, dumps
+from enum import Enum
 from formencode import Invalid
 import pytz
 from .validation import AuthorizationResponsePackageValidator, \
@@ -15,10 +16,10 @@ from ..exceptions import UnexpectedDeviceResponse, \
     InvalidTimeFenceStartTime, MismatchedTimeFenceTimezones, \
     DuplicateTimeFenceName, DuplicateGeoFenceName, InvalidPolicyFormat, \
     InvalidParameters
-from enum import Enum
 
 
 class AuthResponseReason(Enum):
+    """Authentication Response Reason Enum"""
     APPROVED = "APPROVED"
     DISAPPROVED = "DISAPPROVED"
     FRAUDULENT = "FRAUDULENT"
@@ -31,6 +32,7 @@ class AuthResponseReason(Enum):
 
 
 class AuthResponseType(Enum):
+    """Authentication Response Type Enum"""
     AUTHORIZED = "AUTHORIZED"
     DENIED = "DENIED"
     FAILED = "FAILED"
@@ -419,7 +421,7 @@ class AuthorizationResponse(object):
             data = transport.decrypt_rsa_response(
                 auth_package, key_id)
             unmarshalled_package = loads(data)
-            decrypted_package = AuthorizationResponsePackageValidator().\
+            decrypted_package = AuthorizationResponsePackageValidator.\
                 to_python(unmarshalled_package)
         except (Invalid, TypeError, ValueError) as e:
             raise UnexpectedDeviceResponse("The device response was invalid. "
@@ -427,10 +429,6 @@ class AuthorizationResponse(object):
                                            "initiated the auth request is "
                                            "being used to decrypt the current "
                                            "message.", reason=e)
-        self.type = None
-        self.reason = None
-        self.denial_reason = None
-        self.fraud = None
         self.authorization_request_id = \
             decrypted_package.get("auth_request")
         self.authorized = decrypted_package.get("response")
@@ -458,6 +456,14 @@ class AuthorizationResponse(object):
         self.user_push_id = data.get("user_push_id")
 
     def __init__(self, data, transport):
+        self.device_id = None
+        self.type = None
+        self.authorization_request_id = None
+        self.service_pins = None
+        self.authorized = None
+        self.reason = None
+        self.denial_reason = None
+        self.fraud = None
         self._parse_device_response(data, transport)
 
 
