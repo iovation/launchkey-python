@@ -64,6 +64,9 @@ class TestAuthorizationResponse(unittest.TestCase):
         self.assertEqual(response.service_user_hash, "Service User Hash")
         self.assertEqual(response.organization_user_hash, "Org User Hash")
         self.assertEqual(response.user_push_id, "User Push ID")
+        self.assertEqual(response.type.value, "AUTHORIZED")
+        self.assertEqual(response.reason.value, "APPROVED")
+        self.assertEqual(response.denial_reason, "32")
 
     def test_authorization_response_response_jwe_authorized_true(self):
         self.json_loads_patch.return_value['type'] = "AUTHORIZED"
@@ -175,6 +178,10 @@ class TestAuthorizationResponse(unittest.TestCase):
         self.assertEqual(response.service_user_hash, "Service User Hash")
         self.assertEqual(response.organization_user_hash, "Org User Hash")
         self.assertEqual(response.user_push_id, "User Push ID")
+        self.assertIsNone(response.type)
+        self.assertIsNone(response.reason)
+        self.assertIsNone(response.denial_reason)
+        self.assertIsNone(response.fraud)
 
     def test_authorization_response_response_rsa_authorized_true(self):
         del self.data['auth_jwe']
