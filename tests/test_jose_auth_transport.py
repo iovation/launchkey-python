@@ -6,8 +6,10 @@ from jwkest.jws import JWS
 from mock import MagicMock, ANY, patch
 from launchkey.transports import JOSETransport, RequestsTransport
 from launchkey.transports.base import APIResponse, APIErrorResponse
-from launchkey.exceptions import InvalidAlgorithm, UnexpectedAPIResponse, InvalidEntityID, InvalidIssuer, \
-    InvalidPrivateKey, NoIssuerKey, InvalidJWTResponse, JWTValidationFailure, LaunchKeyAPIException
+from launchkey.exceptions import InvalidAlgorithm, UnexpectedAPIResponse, \
+    InvalidEntityID, InvalidIssuer, InvalidPrivateKey, NoIssuerKey, \
+    InvalidJWTResponse, JWTValidationFailure, LaunchKeyAPIException, \
+    UnexpectedKeyID
 from launchkey import JOSE_SUPPORTED_JWT_ALGS, JOSE_SUPPORTED_JWE_ALGS, JOSE_SUPPORTED_JWE_ENCS, \
     JOSE_SUPPORTED_CONTENT_HASH_ALGS, API_CACHE_TIME, VALID_JWT_ISSUER_LIST, JOSE_JWT_LEEWAY
 from datetime import datetime
@@ -107,6 +109,29 @@ class TestJOSETransport3rdParty(unittest.TestCase):
         verify_compact_patch.side_effect = JWKESTException
         with self.assertRaises(JWTValidationFailure):
             self._transport.verify_jwt_response({}, ANY, ANY, ANY)
+
+
+class TestDecryptRSAResponse(unittest.TestCase):
+
+    def setUp(self):
+        self._transport = JOSETransport()
+        patch.object(self._transport, 'loaded_issuer_private_keys',
+                     {"key_id": MagicMock()}).start()
+        self.addCleanup(patch.stopall)
+
+    def test_decrypt_rsa_response(self):
+        self._transport.loaded_issuer_private_keys['key_id'].decrypt.return_value = "response"
+        resp = self._transport.decrypt_rsa_response('dGVzdGluZw==', 'key_id')
+        self.assertEqual(resp, "response")
+
+    def test_decrypt_rsa_decrypt_input(self):
+        self._transport.loaded_issuer_private_keys['key_id'].decrypt.return_value = "response"
+        self._transport.decrypt_rsa_response('dGVzdGluZw==', 'key_id')
+        self._transport.loaded_issuer_private_keys['key_id'].decrypt.assert_called_with(b"testing")
+
+    def test_decrypt_rsa_response_invalid_key(self):
+        with self.assertRaises(UnexpectedKeyID):
+            self._transport.decrypt_rsa_response('response', 'wrong_key')
 
 
 class TestJWKESTSupportedAlgs(unittest.TestCase):

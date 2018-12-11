@@ -18,6 +18,8 @@ class Directory(object):
         self.ios_certificate_fingerprint = data['ios_certificate_fingerprint']
         self.active = data['active']
         self.id = data['id']
+        self.denial_context_inquiry_enabled = \
+            data['denial_context_inquiry_enabled']
 
 
 class Session(object):

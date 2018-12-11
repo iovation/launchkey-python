@@ -13,7 +13,7 @@ from launchkey.exceptions import InvalidParameters, \
 from launchkey.entities.validation import AuthorizationResponseValidator, \
     AuthorizeSSEValidator, AuthorizeValidator
 from launchkey.entities.service import AuthPolicy, AuthorizationResponse, \
-    SessionEndRequest, AuthorizationRequest
+    SessionEndRequest, AuthorizationRequest, DenialReason
 from .base import BaseClient, api_call
 
 
@@ -78,7 +78,7 @@ class ServiceClient(BaseClient):
     @api_call
     def authorization_request(self, user, context=None, policy=None,
                               title=None, ttl=None, push_title=None,
-                              push_body=None):
+                              push_body=None, denial_reasons=None):
         """
         Authorize a transaction for the provided user. This get_service_service
         method would be utilized if you are using this as a secondary factor
@@ -104,6 +104,13 @@ class ServiceClient(BaseClient):
         :param push_body: Body that will appear in the mobile authenticator's
         push message. This feature is only available for Directory Services
         that have push credentials configured.
+        :param denial_reasons: List of denial reasons to present to the user if
+        they deny the request. This list must include at least two items. At
+        least one of the items must have a fraud value of false and at least
+        one of the items must have a fraud value of true. If no denial_reasons
+        are given the defaults will be used. If a list is provided and denial
+        context inquiry is not enabled for the Directory, this request will
+        error. This feature is only available for Directory Services.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.InvalidPolicyInput - Input policy was not
@@ -135,8 +142,24 @@ class ServiceClient(BaseClient):
             if not isinstance(policy, AuthPolicy):
                 raise InvalidParameters(
                     "Please verify the input policy is a "
-                    "launchkey.clients.service.AuthPolicy class")
+                    "launchkey.entities.service.AuthPolicy class")
             kwargs['policy'] = policy.get_policy()
+        if denial_reasons is not None:
+            if not isinstance(denial_reasons, (list, set)):
+                raise InvalidParameters(
+                    "Please ensure that input denial_reasons are a list of "
+                    "launchkey.entities.service.DenialReason classes.")
+            parsed_reasons = []
+            for reason in denial_reasons:
+                if not isinstance(reason, DenialReason):
+                    raise InvalidParameters(
+                        "Please verify that denial_reasons are "
+                        "launchkey.entities.service.DenialReason classes.")
+                parsed_reasons.append(
+                    {"id": reason.denial_id, "reason": reason.reason,
+                     "fraud": reason.fraud}
+                )
+            kwargs['denial_reasons'] = parsed_reasons
 
         response = self._transport.post("/service/v3/auths",
                                         self._subject, **kwargs)
@@ -171,7 +194,9 @@ class ServiceClient(BaseClient):
                 response,
                 AuthorizationResponseValidator)
             authorization_response = AuthorizationResponse(
-                data, self._transport.loaded_issuer_private_keys)
+                data,
+                self._transport
+            )
 
         return authorization_response
 
@@ -287,7 +312,8 @@ class ServiceClient(BaseClient):
                 auth_response = loads(decrypted_body)
                 return AuthorizationResponse(
                     auth_response,
-                    self._transport.loaded_issuer_private_keys)
+                    self._transport
+                )
             except JWKESTException as reason:
                 raise UnableToDecryptWebhookRequest(reason=reason)
             except KeyError as reason:
