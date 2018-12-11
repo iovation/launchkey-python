@@ -396,7 +396,8 @@ class AuthorizationResponse(object):
                                                      decrypted_jwe.get(
                                                          "reason"))
         self.denial_reason = decrypted_jwe.get("denial_reason")
-        self.fraud = decrypted_jwe.get("fraud")
+        self.fraud = True if self.reason is AuthResponseReason.FRAUDULENT \
+            else False
         self.authorization_request_id = decrypted_jwe.get("auth_request")
         self.authorized = \
             self._get_authorized_bool_from_auth_response_context(
