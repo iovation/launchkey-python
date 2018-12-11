@@ -185,15 +185,26 @@ class TestOrganizationClientDirectories(unittest.TestCase):
             "/organization/v3/directories", self._expected_subject,
             directory_id="683e9dea-5128-471e-8264-6f8f6ba522ab", active=True)
 
+    def test_update_directory_denial_context_inquiry_enabled(self):
+        self._organization_client.update_directory(
+            "683e9dea-5128-471e-8264-6f8f6ba522ab",
+            denial_context_inquiry_enabled=True)
+        self._transport.patch.assert_called_once_with(
+            "/organization/v3/directories", self._expected_subject,
+            directory_id="683e9dea-5128-471e-8264-6f8f6ba522ab",
+            denial_context_inquiry_enabled=True)
+
     def test_update_directory_all(self):
         self._organization_client.update_directory(
             "683e9dea-5128-471e-8264-6f8f6ba522ab", ios_p12=b'An iOS P12',
-            android_key="465e74df-13a0-4049-8f31-a9715cb8c12b", active=True)
+            android_key="465e74df-13a0-4049-8f31-a9715cb8c12b", active=True,
+            denial_context_inquiry_enabled=False)
         self._transport.patch.assert_called_once_with(
             "/organization/v3/directories", self._expected_subject,
             directory_id="683e9dea-5128-471e-8264-6f8f6ba522ab",
             ios_p12=encodestring(b'An iOS P12').decode('utf-8'),
-            android_key="465e74df-13a0-4049-8f31-a9715cb8c12b", active=True)
+            android_key="465e74df-13a0-4049-8f31-a9715cb8c12b",
+            active=True, denial_context_inquiry_enabled=False)
 
     def test_update_directory_invalid_params(self):
         self._transport.patch.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)

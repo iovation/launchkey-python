@@ -52,12 +52,15 @@ class DirectoryValidator(Schema):
     android_key = validators.String()
     ios_certificate_fingerprint = validators.String()
     active = validators.Bool()
+    denial_context_inquiry_enabled = validators.Bool(if_empty=False,
+                                                     if_missing=False)
     allow_extra_fields = True
 
 
 class AuthorizationResponseValidator(Schema):
     """Authorization Response entity validator"""
     auth = validators.String()
+    auth_jwe = validators.String(if_missing=None, if_empty=None)
     service_user_hash = validators.String()
     org_user_hash = validators.String()
     user_push_id = validators.String()
@@ -71,6 +74,18 @@ class AuthorizationResponsePackageValidator(Schema):
     auth_request = validators.String()  # UUID
     response = validators.Bool()
     device_id = validators.String()
+    allow_extra_fields = True
+
+
+class JWEAuthorizationResponsePackageValidator(Schema):
+    """Authorization Response JWE payload entity validator"""
+    service_pins = ForEach()
+    auth_request = validators.String()  # UUID
+    type = validators.String()
+    reason = validators.String()
+    denial_reason = validators.String(if_missing=None, if_empty=None)
+    device_id = validators.String()
+    fraud = validators.Bool()
     allow_extra_fields = True
 
 
