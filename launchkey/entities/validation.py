@@ -85,7 +85,6 @@ class JWEAuthorizationResponsePackageValidator(Schema):
     reason = validators.String()
     denial_reason = validators.String(if_missing=None, if_empty=None)
     device_id = validators.String()
-    fraud = validators.Bool()
     allow_extra_fields = True
 
 
