@@ -145,6 +145,33 @@ class TestAuthorizationResponse(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType(resp_type))
         self.assertEqual(response.reason, AuthResponseReason.OTHER)
 
+    @data("AUTHORIZED", "DENIED", "FAILED")
+    def test_authorization_response_response_jwe_response_context_fraud(
+            self,
+            resp_type):
+        self.json_loads_patch.return_value['type'] = resp_type
+        self.json_loads_patch.return_value['reason'] = "FRAUDULENT"
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertTrue(response.fraud, True)
+
+    @data(
+        "APPROVED",
+        "DISAPPROVED",
+        "BUSY_LOCAL",
+        "PERMISSION",
+        "AUTHENTICATION",
+        "CONFIGURATION",
+        "BUSY_LOCAL",
+        "OTHER"
+    )
+    def test_authorization_response_response_jwe_response_context_not_fraud(
+            self,
+            resp_reason):
+        self.json_loads_patch.return_value['type'] = "UNKNOWN"
+        self.json_loads_patch.return_value['reason'] = resp_reason
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertFalse(response.fraud)
+
     @data(Invalid, TypeError, ValueError)
     def test_authorization_response_response_jwe_unexpected_device_response(
             self, exc):
