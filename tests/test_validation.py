@@ -68,7 +68,7 @@ class TestAuthorizationInProgressValidator(TestCase):
         self.data = {
             "auth_request": "d57c6e0a-f436-11e8-ae2a-acde48001122",
             "expires": "2018-11-28T22:04:44Z",
-            "my_auth": True
+            "from_same_service": True
         }
 
     @data("0856e7cf-f437-11e8-9872-acde48001122", "Auth Request")
@@ -94,18 +94,18 @@ class TestAuthorizationInProgressValidator(TestCase):
             auth_request
         )
 
-    def test_my_auth_missing(self):
-        del self.data['my_auth']
+    def test_from_same_service_missing(self):
+        del self.data['from_same_service']
         parsed = AuthorizationInProgressValidator().to_python(self.data)
-        self.assertFalse(parsed['my_auth'])
+        self.assertFalse(parsed['from_same_service'])
 
     @data(True, False)
-    def test_my_auth_valid(self, my_auth):
-        self.data['my_auth'] = my_auth
+    def test_from_same_service_valid(self, from_same_service):
+        self.data['from_same_service'] = from_same_service
         parsed = AuthorizationInProgressValidator().to_python(self.data)
         self.assertEqual(
-            parsed['my_auth'],
-            my_auth
+            parsed['from_same_service'],
+            from_same_service
         )
 
     def test_expires(self):
