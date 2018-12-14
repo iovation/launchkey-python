@@ -189,7 +189,7 @@ class AuthorizationInProgress(LaunchKeyAPIException):
         This ID can be used to resume polling for an auth request.
     """
 
-    my_authorization_request = None
+    from_same_service = None
     expires = None
     authorization_request_id = None
 
@@ -198,7 +198,7 @@ class AuthorizationInProgress(LaunchKeyAPIException):
 
         try:
             self.data = AuthorizationInProgressValidator().to_python(self.data)
-            self.my_authorization_request = self.data['my_auth']
+            self.from_same_service = self.data['from_same_service']
             self.expires = self.data['expires']
             self.authorization_request_id = self.data['auth_request']
         except Invalid as exception:

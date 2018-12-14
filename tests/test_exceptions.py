@@ -38,7 +38,7 @@ class TestAuthorizationInProgressException(unittest.TestCase):
         exception = AuthorizationInProgress(
             "Error Detail", 400
         )
-        self.assertIsNone(exception.my_authorization_request)
+        self.assertIsNone(exception.from_same_service)
         self.assertIsNone(exception.expires)
         self.assertIsNone(exception.authorization_request_id)
 
@@ -54,14 +54,14 @@ class TestAuthorizationInProgressException(unittest.TestCase):
 
     def test_parsed_data(self):
         self.validator_patch.return_value.to_python.return_value = {
-            "my_auth": True,
+            "from_same_service": True,
             "auth_request": "fdd7fd97-f432-11e8-a00c-acde48001122",
             "expires": datetime(2018, 1, 1, 1)
         }
         exception = AuthorizationInProgress(
             "Error Detail", 400
         )
-        self.assertTrue(exception.my_authorization_request)
+        self.assertTrue(exception.from_same_service)
         self.assertEqual(
             exception.expires,
             datetime(2018, 1, 1, 1)
