@@ -1,4 +1,6 @@
 language: python
+sudo: required
+dist: xenial
 python:
   - "2.7"
   - "3.4"
@@ -6,6 +8,7 @@ python:
   - "3.5-dev"
   - "3.6"
   - "3.6-dev"
+  - "3.7"
   - "3.7-dev"
   - "nightly"
   - "pypy3.5"
@@ -16,11 +19,6 @@ matrix:
   - python: 3.6-dev
   - python: 3.7-dev
   - python: nightly
-  # Workaround TODO: put this in the standard list when it works properly - https://github.com/travis-ci/travis-ci/issues/9815
-  include:
-  - python: 3.7
-    dist: xenial
-    sudo: true
 branches:
   only:
     - master
