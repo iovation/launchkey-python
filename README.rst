@@ -129,7 +129,8 @@ Create an auth request to initiate the login process
 
 .. code-block:: python
 
-    auth_request_id = service_client.authorize(user)
+    auth = service_client.authorization_request(user)
+    auth_request_id = auth.auth_request
 
 Using Dynamic Policies
 
