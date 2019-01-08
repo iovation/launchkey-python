@@ -14,6 +14,7 @@ requires = [
     'formencode >= 1.3.1, < 2.0.0',
     'pyjwkest >= 1.3.2, < 2.0.0',
     'pycryptodomex >= 3.4.12, < 4.0.0',
+    'enum34 >= 1.1.6, < 2.0.0',
     'pytz'
 ]
 
