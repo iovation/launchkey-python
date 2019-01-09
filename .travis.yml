@@ -9,6 +9,7 @@ python:
   - "3.6-dev"
   - "3.7"
   - "3.7-dev"
+  - "3.8-dev"
   - "nightly"
   - "pypy3.5"
 env:
@@ -19,25 +20,20 @@ matrix:
   - python: 3.5-dev
   - python: 3.6-dev
   - python: 3.7-dev
+  - python: 3.8-dev
   - python: nightly
-    env:
-    - MAKE_RUN=tests
-  # Workaround TODO: put this in the standard list when it works properly - https://github.com/travis-ci/travis-ci/issues/9815
+
   include:
-  - python: 3.7
-    env:
-    - MAKE_RUN=ci-py37
-  # Workaround TODO: Put this back in the standard list when flake8 and pylint work with 3.7
-  - python: "3.7-dev"
-    env:
-    - MAKE_RUN=ci-py37
-  # Workaround TODO: Put this back in the standard list when flake8 and pylint work with 3.7
-  - python: "nightly"
-    env:
-    - MAKE_RUN=ci-py37
-branches:
-  only:
-    - master
+    - python: 2.7
+      env:
+      - MAKE_RUN=ci-py2
+    - python: 3.8-dev
+      env:
+      - MAKE_RUN=tests-py3
+    - python: nightly
+      env:
+      - MAKE_RUN=tests-py3
+
 notifications:
   email:
     recipients:

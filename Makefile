@@ -1,6 +1,6 @@
-ci-py27: ci
+ci-py27: ci-py2
 
-ci-pypy: ci
+ci-pypy: ci-py2
 
 ci-py34: ci
 
@@ -8,23 +8,40 @@ ci-py35: ci
 
 ci-py36: ci
 
+ci-py37: ci
+
 ci-pypy3: ci
 
-ci-py37: tests  # flake8 and pylint need patches to work with python 3.7
 
 
+ci: dependencies-py3 tests-py3 flake8-py3 pylint-py3
 
-ci: tests flake8 pylint
+ci-py2: tests-py2 flake8-py2 pylint-py2
 
-dependencies:
+dependencies-py3:
 		pip install -r test_requirements.txt
 
-tests: dependencies
+dependencies-py2:
+		pip install -r test_requirements_py2.txt
+
+test:
 		coverage run --source="launchkey" setup.py nosetests
 		coverage report --fail-under=100
 
-flake8: dependencies
+tests-py2: dependencies-py2 test
+
+tests-py3: dependencies-py3 test
+
+flake8:
 		flake8 launchkey
 
-pylint: dependencies
+flake8-py2: dependencies-py2 flake8
+
+flake8-py3: dependencies-py3 flake8
+
+pylint:
 		pylint launchkey
+
+pylint-py2: dependencies-py2 pylint
+
+pylint-py3: dependencies-py3 pylint
