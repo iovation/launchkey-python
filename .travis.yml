@@ -1,5 +1,4 @@
 language: python
-sudo: required
 dist: xenial
 python:
   - "2.7"
@@ -21,7 +20,7 @@ matrix:
   - python: nightly
 branches:
   only:
-    - master
+    - update_travis_config
 notifications:
   email:
     recipients:
