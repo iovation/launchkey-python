@@ -20,7 +20,7 @@ matrix:
   - python: nightly
 branches:
   only:
-    - update_travis_config
+    - master
 notifications:
   email:
     recipients:
