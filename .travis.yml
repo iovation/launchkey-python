@@ -23,13 +23,13 @@ matrix:
   include:
     - python: 2.7
       env:
-      - MAKE_RUN=ci-py2
+      - MAKE_RUN=ci-py27
     - python: 3.8-dev
       env:
-      - MAKE_RUN=tests-py3
+      - MAKE_RUN=ci-py38
     - python: nightly
       env:
-      - MAKE_RUN=tests-py3
+      - MAKE_RUN=ci-py38
 
 notifications:
   email:

@@ -10,6 +10,8 @@ ci-py36: ci
 
 ci-py37: ci
 
+ci-py38: tests-py3
+
 ci-pypy3: ci
 
 
