@@ -303,14 +303,14 @@ class ServiceClient(BaseClient):
                     AuthorizeSSEValidator)
             except UnexpectedAPIResponse as reason:
                 raise UnexpectedWebhookRequest(reason=reason)
-            return SessionEndRequest(
+            result = SessionEndRequest(
                 body['service_user_hash'],
                 self._transport.parse_api_time(body['api_time']))
         else:
             try:
                 decrypted_body = self._transport.decrypt_response(body)
                 auth_response = loads(decrypted_body)
-                return AuthorizationResponse(
+                result = AuthorizationResponse(
                     auth_response,
                     self._transport
                 )
@@ -318,3 +318,5 @@ class ServiceClient(BaseClient):
                 raise UnableToDecryptWebhookRequest(reason=reason)
             except KeyError as reason:
                 raise UnexpectedAuthorizationResponse(reason=reason)
+
+        return result

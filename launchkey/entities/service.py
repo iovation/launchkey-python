@@ -222,7 +222,7 @@ class AuthPolicy(object):
         :return:
         """
         enabled = 1 if status else 0
-        self.jailbreak_protection = True if enabled else False
+        self.jailbreak_protection = enabled == 1
 
         for key, factor in enumerate(self._policy['factors']):
             if 'factor' in factor and factor['factor'] == 'device integrity':
@@ -358,9 +358,8 @@ class AuthorizationResponse(object):
     @staticmethod
     def _get_authorized_bool_from_auth_response_context(response_type,
                                                         response_reason):
-        return True if \
-            response_type == AuthResponseType.AUTHORIZED and \
-            response_reason == AuthResponseReason.APPROVED else False
+        return response_type == AuthResponseType.AUTHORIZED and \
+               response_reason == AuthResponseReason.APPROVED
 
     @staticmethod
     def _retrieve_enum_from_value(enum_class, value):
@@ -396,8 +395,7 @@ class AuthorizationResponse(object):
                                                      decrypted_jwe.get(
                                                          "reason"))
         self.denial_reason = decrypted_jwe.get("denial_reason")
-        self.fraud = True if self.reason is AuthResponseReason.FRAUDULENT \
-            else False
+        self.fraud = self.reason is AuthResponseReason.FRAUDULENT
         self.authorization_request_id = decrypted_jwe.get("auth_request")
         self.authorized = \
             self._get_authorized_bool_from_auth_response_context(
@@ -422,8 +420,13 @@ class AuthorizationResponse(object):
             data = transport.decrypt_rsa_response(
                 auth_package, key_id)
             unmarshalled_package = loads(data)
+            # pylint: disable=no-value-for-parameter
+            # noinspection PyArgumentList
+            # The statement below should not work but does and will not work
+            # when implemented properly. Disabling checks.
             decrypted_package = AuthorizationResponsePackageValidator.\
                 to_python(unmarshalled_package)
+            # pylint: enable=no-value-for-parameter
         except (Invalid, TypeError, ValueError) as e:
             raise UnexpectedDeviceResponse("The device response was invalid. "
                                            "Please verify the same key that "
