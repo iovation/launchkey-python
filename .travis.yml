@@ -1,7 +1,6 @@
 language: python
 dist: xenial
 python:
-  - "2.7"
   - "3.4"
   - "3.5"
   - "3.5-dev"
@@ -9,8 +8,6 @@ python:
   - "3.6-dev"
   - "3.7"
   - "3.7-dev"
-  - "3.8-dev"
-  - "nightly"
   - "pypy3.5"
 env:
   - MAKE_RUN=ci
