@@ -1,1 +1,2 @@
-# This is intentionally left blank
+[MASTER]
+disable=useless-object-inheritance
