@@ -7,7 +7,7 @@ from uuid import uuid4
 from json import dumps
 from formencode import Invalid
 
-from launchkey.entities.service import AuthorizationRequest
+from launchkey.entities.service import AuthorizationRequest, DenialReason
 from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse
 from launchkey.clients import ServiceClient
@@ -19,11 +19,12 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     InvalidGeoFenceName, InvalidPolicyFormat, InvalidJWTResponse, \
     UnexpectedWebhookRequest, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
-    JWTValidationFailure, WebhookAuthorizationError
+    WebhookAuthorizationError
 from datetime import datetime
 from ddt import ddt, data, unpack
 
 
+@ddt
 class TestServiceClient(unittest.TestCase):
 
     def setUp(self):
@@ -36,15 +37,19 @@ class TestServiceClient(unittest.TestCase):
         self._device_response = {"auth_request": str(uuid4()), "response": True, "device_id": str(uuid4()),
                                  "service_pins": ["1234", "3456", "5678"]}
         self._transport.loaded_issuer_private_key.decrypt.return_value = dumps(self._device_response)
-        self._service_client = ServiceClient(uuid4(), self._transport)
+        self._service_id = uuid4()
+        self._issuer = "svc:{}".format(self._service_id)
+        self._service_client = ServiceClient(self._service_id, self._transport)
         self._service_client._transport._verify_jwt_response = MagicMock()
 
     def test_authorize_calls_authorization_request(self):
         policy = AuthPolicy()
         auth_response = AuthorizationRequest(str(uuid4()), None)
         self._service_client.authorization_request = MagicMock(return_value=auth_response)
-        self._service_client.authorize('user', 'context', policy)
-        self._service_client.authorization_request.assert_called_once_with('user', 'context', policy)
+        self._service_client.authorize('user', 'context', policy, 'title', 30,
+                                       'push_title', 'push_body')
+        self._service_client.authorization_request.assert_called_once_with(
+            'user', 'context', policy, 'title', 30, 'push_title', 'push_body')
 
     def test_authorize_returns_auth_request_id_from_authorization_request_response(self):
         expected = str(uuid4())
@@ -54,7 +59,13 @@ class TestServiceClient(unittest.TestCase):
 
     def test_authorization_request_success(self):
         self._response.data = {"auth_request": "value"}
-        self._service_client.authorization_request(ANY, ANY, MagicMock(spec=AuthPolicy))
+        policy = MagicMock(spec=AuthPolicy)
+        policy.get_policy.return_value = "policy"
+        self._service_client.authorization_request("user", "context", policy)
+        self._transport.post.assert_called_once_with(
+            '/service/v3/auths', self._issuer, username="user",
+            context="context", policy="policy"
+        )
 
     def test_authorization_request_response_has_auth_request(self):
         self._response.data = {"auth_request": "expected value"}
@@ -99,12 +110,104 @@ class TestServiceClient(unittest.TestCase):
         with self.assertRaises(RateLimited):
             self._service_client.authorization_request(ANY)
 
-    @patch("launchkey.entities.service.b64decode")
+    def test_authorization_request_default(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user")
+
+    def test_authorization_request_context(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user", context="Here's some context!")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user", context="Here's some context!")
+
+    def test_authorization_request_title(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user", title="Here's a title!")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user", title="Here's a title!")
+
+    def test_authorization_request_push_title(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user",
+                                                   push_title="A Push Title")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user",
+                                                push_title="A Push Title")
+
+    def test_authorization_request_push_body(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user",
+                                                   push_body="Push Body")
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user",
+                                                push_body="Push Body")
+
+    def test_authorization_request_ttl(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user", ttl=336)
+        self._transport.post.assert_called_with(ANY, ANY, username="my_user", ttl=336)
+
+    def test_authorization_request_denial_reasons_as_list(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user", denial_reasons=[
+            DenialReason('fraud', 'Fraud Reason', True),
+            DenialReason('not', 'Not Fraud Reason', False)
+        ])
+        self._transport.post.assert_called_with(
+            ANY, ANY, username="my_user",
+            denial_reasons=[
+                {"id": 'fraud', "reason": 'Fraud Reason', "fraud": True},
+                {"id": 'not', "reason": 'Not Fraud Reason', "fraud": False}
+            ]
+        )
+
+    def test_authorization_request_denial_reasons_as_set(self):
+        self._response.data = {"auth_request": "expected value"}
+        self._service_client.authorization_request("my_user", denial_reasons={
+            DenialReason('fraud', 'Fraud Reason', True),
+            DenialReason('not', 'Not Fraud Reason', False)
+        })
+        denial_reasons = self._transport.post.call_args[1]['denial_reasons']
+        self.assertEqual(len(denial_reasons), 2)
+        self.assertIn(
+            {"id": 'fraud', "reason": 'Fraud Reason', "fraud": True},
+            denial_reasons
+        )
+        self.assertIn(
+            {"id": 'not', "reason": 'Not Fraud Reason', "fraud": False},
+            denial_reasons
+        )
+
+    @data(
+        "e6e809ab-9e83-47a2-924a-64ae3d424a45",
+        True,
+        False,
+        {"Test": "Data"},
+        DenialReason(1, 2, 3)
+    )
+    def test_authorization_request_denial_reasons_invalid_input(self, reasons):
+        with self.assertRaises(InvalidParameters):
+            self._service_client.authorization_request(
+                "my_user",
+                denial_reasons=reasons
+            )
+
+    @data(
+        "e6e809ab-9e83-47a2-924a-64ae3d424a45",
+        True,
+        False,
+        {"Test": "Data"}
+    )
+    def test_authorization_request_denial_reasons_invalid_reason(self,
+                                                                 reason):
+        with self.assertRaises(InvalidParameters):
+            self._service_client.authorization_request(
+                "my_user",
+                denial_reasons=[reason]
+            )
+
     @patch("launchkey.entities.service.loads")
     @patch("launchkey.entities.service.AuthorizationResponsePackageValidator")
-    def test_get_authorization_response_success(self, b64decode_patch, json_loads_patch,
-                                                auth_response_package_validator_patch):
-        b64decode_patch.return_value = MagicMock(spec=str)
+    def test_get_authorization_response_success(
+            self, json_loads_patch,
+            auth_response_package_validator_patch):
         json_loads_patch.return_value = MagicMock(spec=dict)
         auth_response_package_validator_patch.return_value = MagicMock(spec=dict)
         public_key_id = str(uuid4())
@@ -116,7 +219,11 @@ class TestServiceClient(unittest.TestCase):
             "org_user_hash": ANY,
             "public_key_id": public_key_id
         }
-        self.assertIsInstance(self._service_client.get_authorization_response(ANY), AuthorizationResponse)
+        actual = self._service_client.get_authorization_response(
+            "auth-request-id")
+        self._transport.get.assert_called_once_with(
+            "/service/v3/auths/auth-request-id", self._issuer)
+        self.assertIsInstance(actual, AuthorizationResponse)
 
     def test_get_authorization_response_unexpected_response(self):
         self._response.data = {MagicMock(spec=str): ANY}
@@ -138,7 +245,10 @@ class TestServiceClient(unittest.TestCase):
             self._service_client.get_authorization_response(ANY)
 
     def test_session_start_success(self):
-        self.assertIsNone(self._service_client.session_start(ANY, ANY))
+        self._service_client.session_start("user-id", "auth-request-id")
+        self._transport.post.assert_called_once_with(
+            "/service/v3/sessions", self._issuer, username="user-id",
+            auth_request="auth-request-id")
 
     def test_session_start_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -151,7 +261,9 @@ class TestServiceClient(unittest.TestCase):
             self._service_client.session_start(ANY, ANY)
 
     def test_session_end_success(self):
-        self.assertIsNone(self._service_client.session_end(ANY))
+        self._service_client.session_end("user-id")
+        self._transport.delete.assert_called_once_with(
+            "/service/v3/sessions", self._issuer, username="user-id")
 
     def test_session_end_invalid_params(self):
         self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -182,11 +294,6 @@ class TestHandleWebhook(unittest.TestCase):
         patcher = patch("launchkey.entities.validation.AuthorizationResponsePackageValidator.to_python")
         self._authorization_response_validator_patch = patcher.start()
         self._authorization_response_validator_patch.return_value = MagicMock(spec=dict)
-
-        patcher = patch("launchkey.entities.service.b64decode")
-        self._b64decode_patch = patcher.start()
-        self.addCleanup(patcher.stop)
-        self._b64decode_patch.return_value = MagicMock(spec=str)
 
         patcher = patch("launchkey.clients.service.loads")
         self._service_client_loads_patch = patcher.start()
@@ -261,62 +368,6 @@ class TestHandleWebhook(unittest.TestCase):
         del self._headers['X-IOV-JWT']
         with self.assertRaises(WebhookAuthorizationError):
             self._service_client.handle_webhook(MagicMock(), self._headers)
-
-
-class TestAuthorizationResponse(unittest.TestCase):
-
-    def setUp(self):
-        self.data = MagicMock()
-        key_id = MagicMock()
-        self.loaded_issuer_private_keys = {key_id: MagicMock()}
-        self.data.get.return_value = key_id
-
-    @patch("launchkey.entities.service.b64decode")
-    @patch("launchkey.entities.service.loads")
-    @patch("launchkey.entities.service.AuthorizationResponsePackageValidator")
-    def test_authorization_response_success(self, b64decode_patch, json_loads_patch,
-                                            auth_response_package_validator_patch):
-        b64decode_patch.return_value = MagicMock(spec=str)
-        json_loads_patch.return_value = MagicMock(spec=dict)
-        auth_response_package_validator_patch.return_value = MagicMock(spec=dict)
-        decrypted = b64decode_patch.to_python()
-        response = AuthorizationResponse(self.data, self.loaded_issuer_private_keys)
-        self.assertEqual(response.authorization_request_id, decrypted.get('auth_request'))
-        self.assertEqual(response.authorized, decrypted.get('response'))
-        self.assertEqual(response.device_id, decrypted.get('device_id'))
-        self.assertEqual(response.service_pins, decrypted.get('service_pins'))
-        self.assertEqual(response.service_user_hash, self.data.get('service_user_hash'))
-        self.assertEqual(response.organization_user_hash, self.data.get('org_user_hash'))
-        self.assertEqual(response.user_push_id, self.data.get('user_push_id'))
-
-    @patch("launchkey.entities.service.b64decode")
-    def test_decrypt_auth_package_base64_exception(self, b64decode_patch):
-        b64decode_patch.side_effect = TypeError()
-        with self.assertRaises(UnexpectedDeviceResponse):
-            AuthorizationResponse(self.data, self.loaded_issuer_private_keys)
-
-    @patch("launchkey.entities.service.b64decode")
-    @patch("launchkey.entities.service.loads")
-    def test_decrypt_auth_package_json_loads_exception(self, b64decode_patch, json_loads_patch):
-        b64decode_patch.return_value = MagicMock(spec=str)
-        json_loads_patch.side_effect = TypeError()
-        with self.assertRaises(UnexpectedDeviceResponse):
-            AuthorizationResponse(self.data, self.loaded_issuer_private_keys)
-
-    @patch("launchkey.entities.service.b64decode")
-    @patch("launchkey.entities.service.loads")
-    @patch("launchkey.entities.service.AuthorizationResponsePackageValidator")
-    def test_decrypt_auth_package_validator_exception(self, b64decode_patch, json_loads_patch,
-                                                      auth_response_package_validator_patch):
-        b64decode_patch.return_value = MagicMock(spec=str)
-        json_loads_patch.side_effect = MagicMock(spec=dict)
-        auth_response_package_validator_patch.side_effect = Invalid(ANY, ANY, ANY)
-        with self.assertRaises(UnexpectedDeviceResponse):
-            AuthorizationResponse(self.data, self.loaded_issuer_private_keys)
-
-    def test_decrypt_auth_unexpected_key_id(self):
-        with self.assertRaises(UnexpectedKeyID):
-            AuthorizationResponse(self.data, {MagicMock(): MagicMock()})
 
 
 @ddt
@@ -446,6 +497,13 @@ class TestPolicyObject(unittest.TestCase):
         with self.assertRaises(InvalidGeoFenceName):
             policy.remove_geofence(MagicMock(spec=str))
 
+    def test_remove_partially_invalid_geofence(self):
+        policy = AuthPolicy()
+        policy.add_geofence(1, 1, 2, 'name')
+        policy.geofences.pop()
+        with self.assertRaises(InvalidGeoFenceName):
+            policy.remove_geofence('name')
+
     def test_invalid_policy(self):
         policy = AuthPolicy()
         policy._policy['factors'].append(uuid4())
@@ -457,7 +515,7 @@ class TestPolicyObject(unittest.TestCase):
         policy.add_geofence(1, 2, 3, '123')
         policy2 = AuthPolicy()
         policy2.set_policy(policy.get_policy())
-        self.assertEqual(policy, policy2)
+        self.assertTrue(policy == policy2)
 
     def test_eq_mismatch(self):
         policy = AuthPolicy()
@@ -465,16 +523,16 @@ class TestPolicyObject(unittest.TestCase):
         policy2 = AuthPolicy()
         self.assertNotEqual(policy, policy2)
         policy2.add_geofence(1, 2, 2, '122')
-        self.assertNotEqual(policy, policy2)
+        self.assertFalse(policy == policy2)
 
     @data("test", {}, True, False, None)
     def test_eq_mismatch_non_object(self, value):
         policy = AuthPolicy()
-        self.assertNotEqual(policy, value)
+        self.assertFalse(policy == value)
 
     def test_eq_mismatch_non_object_matching_policy(self):
-        policy = AuthPolicy()
-        self.assertNotEqual(policy, policy.get_policy())
+        policy = AuthPolicy(any=1)
+        self.assertFalse(policy == AuthPolicy().get_policy())
 
     @data(True, False)
     def test_require_jailbreak_protection_new(self, status):

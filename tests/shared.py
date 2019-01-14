@@ -195,39 +195,50 @@ class SharedTests(object):
         def test_add_service_public_key_success(self):
             self._response.data = {"key_id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz"}
             key_id = self._client.add_service_public_key("5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public-key")
-            self._transport.post.assert_called_once()
-            self.assertIn({"service_id": "5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public_key": "public-key"},
-                          self._transport.post.call_args)
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + "/keys",
+                self._expected_subject,
+                service_id="5e49fc4c-ddcb-48db-8473-a5f996b85fbc",
+                public_key="public-key")
             self.assertEqual(key_id, "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz")
 
         def test_add_service_public_key_expires(self):
             self._response.data = {"key_id": ANY}
-            self._client.add_service_public_key("5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public-key",
-                                                expires=datetime(year=2017, month=10, day=3, hour=22,
-                                                                 minute=50, second=15))
-            self._transport.post.assert_called_once()
-            self.assertIn({"service_id": "5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public_key": "public-key",
-                           "date_expires": "2017-10-03T22:50:15Z"},
-                          self._transport.post.call_args)
+            self._client.add_service_public_key(
+                "5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public-key",
+                expires=datetime(year=2017, month=10, day=3, hour=22,
+                                 minute=50, second=15))
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + "/keys",
+                self._expected_subject,
+                service_id="5e49fc4c-ddcb-48db-8473-a5f996b85fbc",
+                public_key="public-key", date_expires="2017-10-03T22:50:15Z")
 
         @data(True, False)
         def test_add_service_public_key_active(self, active):
             self._response.data = {"key_id": ANY}
-            self._client.add_service_public_key("5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public-key",
-                                                active=active)
-            self.assertIn({"service_id": "5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public_key": "public-key",
-                           "active": active}, self._transport.post.call_args)
+            self._client.add_service_public_key(
+                "5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public-key",
+                active=active)
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + "/keys",
+                self._expected_subject,
+                service_id="5e49fc4c-ddcb-48db-8473-a5f996b85fbc",
+                public_key="public-key", active=active)
 
         @data(True, False)
         def test_add_service_public_key_all(self, active):
             self._response.data = {"key_id": ANY}
-            self._client.add_service_public_key("5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public-key",
-                                                expires=datetime(year=2017, month=10, day=3, hour=22,
-                                                                 minute=50, second=15), active=active)
-            self._transport.post.assert_called_once()
-            self.assertIn({"service_id": "5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public_key": "public-key",
-                           "date_expires": "2017-10-03T22:50:15Z", "active": active},
-                          self._transport.post.call_args)
+            self._client.add_service_public_key(
+                "5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public-key",
+                expires=datetime(year=2017, month=10, day=3, hour=22,
+                                 minute=50, second=15), active=active)
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + "/keys",
+                self._expected_subject,
+                service_id="5e49fc4c-ddcb-48db-8473-a5f996b85fbc",
+                public_key="public-key", date_expires="2017-10-03T22:50:15Z",
+                active=active)
 
         def test_add_service_public_key_invalid_params(self):
             self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -260,7 +271,14 @@ class SharedTests(object):
                     "public_key": "A Public Key"
                 }
             ]
-            public_keys = self._client.get_service_public_keys("3559a520-180f-4fee-ad52-75959286340d")
+            public_keys = self._client.get_service_public_keys(
+                "3559a520-180f-4fee-ad52-75959286340d")
+
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + "/keys/list",
+                self._expected_subject,
+                service_id="3559a520-180f-4fee-ad52-75959286340d")
+
             self.assertEqual(len(public_keys), 1)
             key = public_keys[0]
             self.assertEqual(key.id, "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz")
@@ -288,8 +306,14 @@ class SharedTests(object):
                 self._client.get_service_public_keys(ANY)
 
         def test_remove_service_public_key_success(self):
-            self._client.remove_service_public_key(ANY, ANY)
-            self._transport.delete.assert_called_once()
+            expected_service_id = "5e49fc4c-ddcb-48db-8473-a5f996b85fbc"
+            expected_key_id = "expected-public-key"
+            self._client.remove_service_public_key(expected_service_id[:],
+                                                   expected_key_id[:])
+            self._transport.delete.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + "/keys",
+                self._expected_subject, service_id=expected_service_id,
+                key_id=expected_key_id)
 
         def test_remove_service_invalid_params(self):
             self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""},
@@ -303,60 +327,68 @@ class SharedTests(object):
             with self.assertRaises(PublicKeyDoesNotExist):
                 self._client.remove_service_public_key(ANY, ANY)
 
-        def test_remove_service_last_remaining_key(self):
+        def test_remove_remove_service_public_key_last_remaining_key(self):
             self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "KEY-004", "error_detail": ""},
                                                                        400)
             with self.assertRaises(LastRemainingKey):
                 self._client.remove_service_public_key(ANY, ANY)
 
-        def test_remove_service_forbidden(self):
+        def test_remove_service_public_key_forbidden(self):
             self._transport.delete.side_effect = LaunchKeyAPIException({}, 403)
             with self.assertRaises(Forbidden):
                 self._client.remove_service_public_key(ANY, ANY)
 
         def test_update_service_public_key(self):
-            self._client.update_service_public_key("1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
-                                                   "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz")
-            self._transport.patch.assert_called_once()
-            self.assertIn({"service_id": "1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
-                           "key_id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz"},
-                          self._transport.patch.call_args)
+            self._client.update_service_public_key(
+                "1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
+                "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz")
+            self._transport.patch.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/keys',
+                self._expected_subject,
+                service_id="1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
+                key_id="ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz")
 
         def test_update_service_public_key_expires(self):
-            self._client.update_service_public_key("1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
-                                                   "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
-                                                   expires=datetime(year=2017, month=10, day=3, hour=22,
-                                                                    minute=50, second=15))
-            self._transport.patch.assert_called_once()
-            self.assertIn({"service_id": "1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
-                           "key_id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
-                           "date_expires": "2017-10-03T22:50:15Z"},
-                          self._transport.patch.call_args)
+            self._client.update_service_public_key(
+                "1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
+                "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                expires=datetime(year=2017, month=10, day=3, hour=22,
+                                 minute=50, second=15))
+            self._transport.patch.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/keys',
+                self._expected_subject,
+                service_id="1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
+                key_id="ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                date_expires="2017-10-03T22:50:15Z")
 
         @data(True, False)
         def test_update_service_public_key_active(self, active):
-            self._client.update_service_public_key("1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
-                                                   "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
-                                                   active=active)
-            self._transport.patch.assert_called_once()
-            self.assertIn({"service_id": "1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
-                           "key_id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
-                           "active": active},
-                          self._transport.patch.call_args)
+            self._client.update_service_public_key(
+                "1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
+                "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                active=active)
+            self._transport.patch.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/keys',
+                self._expected_subject,
+                service_id="1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
+                key_id="ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                active=active)
 
         @data(True, False)
         def test_update_service_public_key_all(self, active):
-            self._client.update_service_public_key("1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
-                                                   "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
-                                                   expires=datetime(year=2017, month=10, day=3, hour=22,
-                                                                    minute=50, second=15),
-                                                   active=active)
-            self._transport.patch.assert_called_once()
-            self.assertIn({"service_id": "1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
-                           "key_id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
-                           "date_expires": "2017-10-03T22:50:15Z",
-                           "active": active},
-                          self._transport.patch.call_args)
+            self._client.update_service_public_key(
+                "1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
+                "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                expires=datetime(year=2017, month=10, day=3, hour=22,
+                                 minute=50, second=15),
+                active=active)
+            self._transport.patch.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/keys',
+                self._expected_subject,
+                service_id="1fa129ee-bb63-4705-a8cb-1c5be8000a0e",
+                key_id="ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                date_expires="2017-10-03T22:50:15Z",
+                active=active)
 
         def test_update_service_public_key_public_key_invalid_params(self):
             self._transport.patch.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""},
@@ -388,8 +420,13 @@ class SharedTests(object):
                 ],
                 'factors': []
             }
-            policy = self._client.get_service_policy(ANY)
-            self._transport.post.assert_called_once()
+            expected_service_id = 'expected-service-id'
+            policy = self._client.get_service_policy(expected_service_id[:])
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/policy/item',
+                self._expected_subject,
+                service_id=expected_service_id
+            )
             self.assertIsInstance(policy, ServiceSecurityPolicy)
             self.assertEqual(policy.minimum_amount, 1)
             self.assertIn('possession', policy.minimum_requirements)
@@ -407,8 +444,21 @@ class SharedTests(object):
                 self._client.get_service_policy(ANY)
 
         def test_set_service_policy_success(self):
-            self._client.set_service_policy(ANY, ServiceSecurityPolicy())
-            self._transport.put.assert_called_once()
+            expected_service_id = 'expected-service-id'
+            self._client.set_service_policy(expected_service_id[:],
+                                            ServiceSecurityPolicy())
+            self._transport.put.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/policy',
+                self._expected_subject, service_id=expected_service_id,
+                policy={'minimum_requirements': [],
+                        'factors': [
+                            {'quickfail': False,
+                             'priority': 1,
+                             'requirement': 'forced requirement',
+                             'attributes': {'factor enabled': 0},
+                             'factor': 'device integrity'}
+                        ]}
+            )
 
         def test_set_service_policy_invalid_params(self):
             self._transport.put.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -421,8 +471,11 @@ class SharedTests(object):
                 self._client.set_service_policy(ANY, ServiceSecurityPolicy())
 
         def test_remove_service_policy_success(self):
-            self._client.remove_service_policy(ANY)
-            self._transport.delete.assert_called_once()
+            expected_service_id = 'expected-service-id'
+            self._client.remove_service_policy(expected_service_id[:])
+            self._transport.delete.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/policy',
+                self._expected_subject, service_id=expected_service_id)
 
         def test_remove_service_policy_invalid_params(self):
             self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""},

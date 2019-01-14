@@ -1,6 +1,16 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.3.0
+-----
+
+* Added tooling around code quality and ensured that CI build would fail without meeting expectations.
+* Added dynamic auth TTL and title functionality
+* Added dynamic auth push message body and title functionality
+* Added auth busy signal error handling
+* Added new auth response format
+* Added auth denial context functionality
+
 3.2.0
 -----
 
@@ -14,6 +24,7 @@ CHANGELOG for LaunchKey Python SDK
 * Added full webhook validation
 * Cleaned up error handling and raising for webhooks
 * Switch RequestsTransport to use session in order to provide connection sharing between requests
+* Added dynamic auth TTL and title functionality
 
 3.1.1
 -----

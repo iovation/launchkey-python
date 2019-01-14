@@ -1,3 +1,15 @@
+"""Exception Classes"""
+
+# pylint: disable=keyword-arg-before-vararg
+
+
+import warnings
+
+from formencode import Invalid
+
+from .validation import AuthorizationInProgressValidator
+
+
 class InsufficientRights(Exception):
     """The requesting client does not have sufficient rights for a service"""
 
@@ -12,23 +24,25 @@ class InvalidPrivateKey(Exception):
 
 class InvalidIssuer(Exception):
     """The issuer is not valid"""
-    
+
 
 class InvalidIssuerFormat(Exception):
     """The issuer format is not a valid UUID"""
-    
-    
+
+
 class InvalidIssuerVersion(Exception):
     """The issuer UUID is the wrong version type"""
-    
+
 
 class InvalidAlgorithm(Exception):
     """Input algorithm is not supported"""
 
 
 class InvalidPolicyFormat(Exception):
-    """Invalid policy format. A JSON object is expected which is in the proper format containing minimum_requirements
-    and factors."""
+    """
+    Invalid policy format. A JSON object is expected which is in the proper
+    format containing minimum_requirements and factors.
+    """
 
 
 class DuplicateGeoFenceName(Exception):
@@ -61,11 +75,14 @@ class MismatchedTimeFenceTimezones(Exception):
 
 class LaunchKeyAPIException(Exception):
     """API Error (400+) was returned"""
-    def __init__(self, message=None, status_code=None, reason=None, *args, **kwargs):
+
+    def __init__(self, message=None, status_code=None, reason=None,
+                 error_data=None, *args, **kwargs):
         super(LaunchKeyAPIException, self).__init__(message, *args, **kwargs)
         self.message = message
         self.status_code = status_code
         self.reason = reason
+        self.data = error_data if error_data else {}
 
 
 class InvalidParameters(LaunchKeyAPIException):
@@ -73,7 +90,9 @@ class InvalidParameters(LaunchKeyAPIException):
 
 
 class PolicyFailure(LaunchKeyAPIException):
-    """API Error A-AUT-P-405 - Auth creation failed due to user not passing policy"""
+    """
+    API Error A-AUT-P-405 - Auth creation failed due to user not passing policy
+    """
 
 
 class InvalidPolicyInput(LaunchKeyAPIException):
@@ -81,7 +100,9 @@ class InvalidPolicyInput(LaunchKeyAPIException):
 
 
 class Unauthorized(LaunchKeyAPIException):
-    """Generic API 401 Error - Authentication was denied. Likely an invalid key."""
+    """
+    Generic API 401 Error - Authentication was denied. Likely an invalid key.
+    """
 
 
 class Forbidden(LaunchKeyAPIException):
@@ -94,6 +115,10 @@ class EntityNotFound(LaunchKeyAPIException):
 
 class RequestTimedOut(LaunchKeyAPIException):
     """Generic API 408 Error - Request timed out"""
+
+
+class Conflict(LaunchKeyAPIException):
+    """Generic API 409 Error - Conflict"""
 
 
 class RateLimited(LaunchKeyAPIException):
@@ -137,15 +162,56 @@ class InvalidRoute(LaunchKeyAPIException):
 
 
 class ServiceNameTaken(LaunchKeyAPIException):
-    """The requested Service name is already in use. Service names are unique."""
+    """
+    The requested Service name is already in use. Service names are unique.
+    """
 
 
 class ServiceNotFound(LaunchKeyAPIException):
-    """The requested Service does not exist. Likely invalid UUID or the service has been removed."""
+    """
+    The requested Service does not exist. Likely invalid UUID or the service
+    has been removed.
+    """
+
+
+class AuthorizationInProgress(LaunchKeyAPIException):
+    """
+    An auth already exists for the given user. Another one cannot be created
+    until the current one is either responded to or expires.
+
+    Contains attributes to describe the blocking auth request:
+        :attr my_auth: Boolean stating whether the auth belongs to the
+        requesting Service or another one. This is necessary when the Service
+        may want to resume the current auth request.
+        :attr expires: datetime object stating when the auth request will
+        expire, and thus another auth can be created without user intervention.
+        :attr auth_request: Auth request ID associated with the blocking auth.
+        This ID can be used to resume polling for an auth request.
+    """
+
+    from_same_service = None
+    expires = None
+    authorization_request_id = None
+
+    def __init__(self, message=None, *args, **kwargs):
+        super(AuthorizationInProgress, self).__init__(message, *args, **kwargs)
+
+        try:
+            self.data = AuthorizationInProgressValidator().to_python(self.data)
+            self.from_same_service = self.data['from_same_service']
+            self.expires = self.data['expires']
+            self.authorization_request_id = self.data['auth_request']
+        except Invalid as exception:
+            warnings.warn("Failed to parse AuthorizationInProgress data: "
+                          "exception: {0} data: {1}".format(exception,
+                                                            self.data))
 
 
 class PublicKeyAlreadyInUse(LaunchKeyAPIException):
-    """The public key you supplied already exists for the requested entity. It cannot be added again."""
+    """
+    The public key you supplied already exists for the requested entity. It
+    cannot be added again.
+    """
 
 
 class InvalidPublicKey(LaunchKeyAPIException):
@@ -165,7 +231,10 @@ class LastRemainingSDKKey(LaunchKeyAPIException):
 
 
 class InvalidSDKKey(LaunchKeyAPIException):
-    """The Authenticator SDK Key you supplied does not belong to the referenced Directory"""
+    """
+    The Authenticator SDK Key you supplied does not belong to the referenced
+    Directory
+    """
 
 
 class DirectoryNameInUse(LaunchKeyAPIException):
@@ -181,12 +250,21 @@ class UnableToDecryptWebhookRequest(LaunchKeyAPIException):
 
 
 class UnableToDecryptAuthorizationResponse(LaunchKeyAPIException):
-    """There was an error decrypting the response package of the authorization response webhook request."""
+    """
+    There was an error decrypting the response package of the authorization
+    response webhook request.
+    """
 
 
 class UnexpectedAuthorizationResponse(LaunchKeyAPIException):
-    """There was an issue with the response package of the authorization response webhook request."""
+    """
+    There was an issue with the response package of the authorization response
+    webhook request.
+    """
 
 
 class WebhookAuthorizationError(LaunchKeyAPIException):
-    """There was an issue with validating the authorization provided by the webhook request."""
+    """
+    There was an issue with validating the authorization provided by the
+    webhook request.
+    """

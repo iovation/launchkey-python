@@ -1,5 +1,5 @@
 import unittest
-from launchkey.utils import iso_format, UUIDHelper
+from launchkey.utils.shared import iso_format, UUIDHelper
 from launchkey.entities.validation import ValidateISODate
 from ddt import ddt, data
 from formencode import Invalid
