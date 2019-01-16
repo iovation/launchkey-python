@@ -25,7 +25,7 @@ setup(name='launchkey',
       classifiers=[
           "Programming Language :: Python",
           "License :: OSI Approved :: MIT License",
-          "Operating System :: OS Independent,"
+          "Operating System :: OS Independent",
           "Topic :: System :: Systems Administration :: Authentication/Directory",
           "Programming Language :: Python :: Implementation :: CPython",
           "Programming Language :: Python :: Implementation :: PyPy",
