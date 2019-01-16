@@ -6,7 +6,7 @@ Python SDK for LaunchKey API
 
 .. _LaunchKey: https://launchkey.com
 
-.. _docs: https://docs.launchkey.com/service-sdk/python/sdk-v3/
+.. _docs: https://docs.launchkey.com
 
 .. _pyenv: https://github.com/pyenv/pyenv
 
