@@ -3,7 +3,10 @@
 # pylint: disable=too-many-public-methods,invalid-name,deprecated-method
 # pylint: disable=too-many-arguments
 
-from base64 import encodestring
+try:
+    from base64 import encodebytes as encodestring
+except ImportError:  # pragma: no cover
+    from base64 import encodestring
 from .base import ServiceManagingBaseClient, api_call
 from ..utils.shared import iso_format
 from ..entities.shared import PublicKey
