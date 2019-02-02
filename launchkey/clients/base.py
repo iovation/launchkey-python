@@ -19,7 +19,8 @@ from ..exceptions import InvalidEntityID, LaunchKeyAPIException, \
     ServiceNameTaken, ServiceNotFound, PublicKeyAlreadyInUse, \
     InvalidPublicKey, PublicKeyDoesNotExist, LastRemainingKey, \
     LastRemainingSDKKey, InvalidSDKKey, DirectoryNameInUse, \
-    AuthorizationInProgress, Conflict
+    AuthorizationInProgress, Conflict, AuthorizationResponseExists, \
+    AuthorizationRequestCanceled
 from ..transports.base import APIResponse
 
 ERROR_CODE_MAP = {
@@ -30,6 +31,8 @@ ERROR_CODE_MAP = {
     "SVC-003": PolicyFailure,
     "SVC-004": ServiceNotFound,
     "SVC-005": AuthorizationInProgress,
+    "SVC-006": AuthorizationResponseExists,
+    "SVC-007": AuthorizationRequestCanceled,
     "DIR-001": InvalidDirectoryIdentifier,
     "KEY-001": InvalidPublicKey,
     "KEY-002": PublicKeyAlreadyInUse,

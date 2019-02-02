@@ -19,7 +19,8 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     InvalidGeoFenceName, InvalidPolicyFormat, InvalidJWTResponse, \
     UnexpectedWebhookRequest, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
-    WebhookAuthorizationError
+    WebhookAuthorizationError, AuthorizationRequestCanceled, \
+    AuthorizationResponseExists
 from datetime import datetime
 from ddt import ddt, data, unpack
 
@@ -239,10 +240,54 @@ class TestServiceClient(unittest.TestCase):
         with self.assertRaises(InvalidParameters):
             self._service_client.get_authorization_response(ANY)
 
+    def test_get_authorization_response_response_exists(self):
+        self._transport.get.side_effect = LaunchKeyAPIException(
+            {"error_code": "SVC-006", "error_detail": ""}, 400)
+        with self.assertRaises(AuthorizationResponseExists):
+            self._service_client.get_authorization_response(ANY)
+
     def test_get_authorization_response_timeout(self):
         self._transport.get.side_effect = LaunchKeyAPIException({}, 408)
         with self.assertRaises(RequestTimedOut):
             self._service_client.get_authorization_response(ANY)
+
+    def test_cancel_authorization_request_success(self):
+        self._service_client.cancel_authorization_request("auth-request-id")
+        self._transport.delete.assert_called_once_with(
+            "/service/v3/auths/auth-request-id", self._issuer
+        )
+
+    def test_cancel_authorization_request_invalid_params(self):
+        self._transport.delete.side_effect = LaunchKeyAPIException(
+            {"error_code": "ARG-001", "error_detail": ""}, 400)
+        with self.assertRaises(InvalidParameters):
+            self._service_client.cancel_authorization_request(
+                "auth-request-id"
+            )
+
+    def test_cancel_authorization_request_authorization_response_exists(self):
+        self._transport.delete.side_effect = LaunchKeyAPIException(
+            {"error_code": "SVC-006", "error_detail": ""}, 400)
+        with self.assertRaises(AuthorizationResponseExists):
+            self._service_client.cancel_authorization_request(
+                "auth-request-id"
+            )
+
+    def test_cancel_authorization_request_authorization_request_canceled(self):
+        self._transport.delete.side_effect = LaunchKeyAPIException(
+            {"error_code": "SVC-007", "error_detail": ""}, 400)
+        with self.assertRaises(AuthorizationRequestCanceled):
+            self._service_client.cancel_authorization_request(
+                "auth-request-id"
+            )
+
+    def test_cancel_authorization_request_invalid_params(self):
+        self._transport.delete.side_effect = LaunchKeyAPIException(
+            {"error_code": "ARG-001", "error_detail": ""}, 400)
+        with self.assertRaises(InvalidParameters):
+            self._service_client.cancel_authorization_request(
+                "auth-request-id"
+            )
 
     def test_session_start_success(self):
         self._service_client.session_start("user-id", "auth-request-id")

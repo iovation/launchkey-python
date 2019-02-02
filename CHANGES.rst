@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.4.0
+-----
+
+* Added cancel_authorization_request method to service client
+
 3.3.0
 -----
 
