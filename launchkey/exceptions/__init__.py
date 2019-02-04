@@ -207,6 +207,19 @@ class AuthorizationInProgress(LaunchKeyAPIException):
                                                             self.data))
 
 
+class AuthorizationRequestCanceled(LaunchKeyAPIException):
+    """
+    The authorization request has been canceled.
+    """
+
+
+class AuthorizationResponseExists(LaunchKeyAPIException):
+    """
+    The authentication request has already been responded to so it cannot be
+    modified.
+    """
+
+
 class PublicKeyAlreadyInUse(LaunchKeyAPIException):
     """
     The public key you supplied already exists for the requested entity. It

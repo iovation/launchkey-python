@@ -5,6 +5,7 @@ CHANGELOG for LaunchKey Python SDK
 -----
 
 * Added ttl parameter to the DirectoryClient link_device method
+* Added cancel_authorization_request method to the ServiceClient
 
 3.3.0
 -----
