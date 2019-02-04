@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.4.0
+-----
+
+* Added ttl parameter to the DirectoryClient link_device method
+
 3.3.0
 -----
 
