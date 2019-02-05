@@ -20,6 +20,14 @@ Use to more easily interact with iovation's LaunchKey API.
 
 A more in-depth look at this SDK can be found at the official docs_.
 
+Examples
+--------
+
+CLI Example
+***********
+
+`Go to the README <examples/cli/README.md>`_
+
 Installation
 ------------
 
