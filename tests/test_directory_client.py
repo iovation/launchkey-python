@@ -46,6 +46,16 @@ class TestDirectoryClient(unittest.TestCase):
             "/directory/v3/devices", self._expected_subject,
             identifier=expected_identifier)
 
+    def test_link_device_with_ttl_includes_kwarg_to_transport(self):
+        self._response.data = {"qrcode": ANY, "code": "abcdefg"}
+        expected_identifier = "user_id"
+        expected_ttl = 123
+        self._directory_client.link_device(expected_identifier[:],
+                                           ttl=expected_ttl)
+        self._transport.post.assert_called_once_with(
+            "/directory/v3/devices", self._expected_subject,
+            identifier=expected_identifier, ttl=123)
+
     def test_link_device_unexpected_result(self):
         self._response.data = {MagicMock(), MagicMock()}
         with self.assertRaises(UnexpectedAPIResponse):

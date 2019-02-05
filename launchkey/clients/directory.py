@@ -18,7 +18,7 @@ class DirectoryClient(ServiceManagingBaseClient):
                                               "/directory/v3/services")
 
     @api_call
-    def link_device(self, user_id):
+    def link_device(self, user_id, ttl=None):
         """
         Begin the process of Linking a Subscriber Authenticator Device with an
         End User based on the Directory User ID. If no Directory User exists
@@ -28,6 +28,9 @@ class DirectoryClient(ServiceManagingBaseClient):
         User between the your application(s) and the LaunchKey API. This
         will be used for authorization requests as well as managing the End
         User's Devices.
+        :param ttl: Number of seconds the linking code returned in the response
+        should be valid. If no value is provided, the system default will be
+        used.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.InvalidDirectoryIdentifier - Input
@@ -35,9 +38,13 @@ class DirectoryClient(ServiceManagingBaseClient):
         :return: launchkey.entities.directory.DirectoryUserDeviceLinkData -
         Contains data needed to complete the linking process
         """
+        kwargs = {"identifier": user_id}
+        if ttl is not None:
+            kwargs['ttl'] = ttl
+
         response = self._transport.post("/directory/v3/devices",
                                         self._subject,
-                                        identifier=user_id)
+                                        **kwargs)
         data = self._validate_response(
             response,
             DirectoryUserDeviceLinkResponseValidator)
