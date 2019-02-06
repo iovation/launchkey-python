@@ -4,6 +4,7 @@ CHANGELOG for LaunchKey Python SDK
 3.4.0
 -----
 
+* Added example CLI to codebase
 * Added ttl parameter to the DirectoryClient link_device method
 * Added cancel_authorization_request method to the ServiceClient
 
