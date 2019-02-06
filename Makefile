@@ -30,9 +30,9 @@ test:
 		coverage run --source="launchkey" setup.py nosetests
 		coverage report --fail-under=100
 
-tests-py2: dependencies-py2 test
+tests-py2: dependencies-py2 test integration
 
-tests-py3: dependencies-py3 test
+tests-py3: dependencies-py3 test integration
 
 flake8:
 		flake8 launchkey
@@ -47,3 +47,6 @@ pylint:
 pylint-py2: dependencies-py2 pylint
 
 pylint-py3: dependencies-py3 pylint
+
+integration:
+		behave
