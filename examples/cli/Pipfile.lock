@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c97cebc86bd28a0238d806a74a18cdb1ee0c8754d4270fd6b62071d3ec077ed6"
+            "sha256": "26578e62f085c228073468ab63c726e09c4bb37320004cc8f1ec1c0c3dc99249"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,10 +16,6 @@
         ]
     },
     "default": {
-        "5448283": {
-            "editable": true,
-            "path": "./../.."
-        },
         "certifi": {
             "hashes": [
                 "sha256:47f9c83ef4c0c621eaef743f133f09fa8a74a9b75f037e8624f83bd1b6626cb7",
@@ -69,6 +65,10 @@
                 "sha256:ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"
             ],
             "version": "==2.8"
+        },
+        "launchkey": {
+            "editable": true,
+            "path": "./../.."
         },
         "pycryptodomex": {
             "hashes": [
