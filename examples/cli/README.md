@@ -10,17 +10,13 @@
 
 ## <a name="installation"></a>Installation
 
-Ensure you have pipenv installed, then install the package:
+Ensure you have pipenv installed:
 
-On Mac:
-```bash
-brew install pipenv
-pipenv install
-```
+https://pipenv.readthedocs.io/en/latest/
+ 
+Then install the requirements and set up the virtual environment:
 
-Otherwise:
 ```bash
-pip install pipenv
 pipenv install
 ```
 
@@ -279,7 +275,7 @@ Directory commands a performed utilizing credentials for the Directory.
 
         ```
 
-        Response when Directory User is successfully created:
+        Response when Device is successfully unlinked:
 
         ```
         Device unlinked
