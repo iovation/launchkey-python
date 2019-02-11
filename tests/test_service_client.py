@@ -23,6 +23,7 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     AuthorizationResponseExists
 from datetime import datetime
 from ddt import ddt, data, unpack
+from six import b, u
 
 
 @ddt
@@ -413,6 +414,11 @@ class TestHandleWebhook(unittest.TestCase):
         del self._headers['X-IOV-JWT']
         with self.assertRaises(WebhookAuthorizationError):
             self._service_client.handle_webhook(MagicMock(), self._headers)
+
+    def test_handle_webhook_session_end_with_request_as_bytes(self):
+        request = bytearray(dumps({"service_user_hash": str(uuid4()),
+                            "api_time": str(datetime.utcnow())[:19].replace(" ", "T") + "Z"}), "utf-8")
+        self.assertIsInstance(self._service_client.handle_webhook(request, self._headers), SessionEndRequest)
 
 
 @ddt
