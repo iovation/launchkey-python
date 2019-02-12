@@ -23,7 +23,6 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     AuthorizationResponseExists
 from datetime import datetime
 from ddt import ddt, data, unpack
-from six import b, u
 
 
 @ddt
