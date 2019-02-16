@@ -31,14 +31,14 @@ class OrganizationServiceManager(BaseManager):
                        callback_url=None, active=True):
         if name is None:
             name = str(uuid4())
-        self.current_service = self._organization_client.create_service(
+        service_id = self._organization_client.create_service(
             name,
             description=description,
             icon=icon,
             callback_url=callback_url,
             active=active
         )
-        return self.current_service
+        return self.retrieve_service(service_id)
 
     def retrieve_service(self, service_id):
         self.current_service = self._organization_client.get_service(

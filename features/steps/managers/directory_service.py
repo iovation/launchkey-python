@@ -7,11 +7,16 @@ class ServiceNotCreated(Exception):
     """A Service was requested but none existed"""
 
 
+class ServiceListNotQueried(Exception):
+    """Service list not queried yet"""
+
+
 class DirectoryServiceManager(BaseManager):
     def __init__(self, organization_factory):
         self.current_service = None
         self.previous_service = None
-        self._current_service_list = []
+        self.current_service_list = None
+        self.previous_service_list = None
         self._current_service_public_keys = {}
         BaseManager.__init__(self, organization_factory)
 
@@ -24,22 +29,34 @@ class DirectoryServiceManager(BaseManager):
     @current_service.setter
     def current_service(self, value):
         self.previous_service = getattr(
-            self, "_current_service", None)
+            self, "_current_service_list", None)
         self._current_service = value
+
+    @property
+    def current_service_list(self):
+        if self._current_service_list is None:
+            raise ServiceListNotQueried("Service list not queried yet")
+        return self._current_service_list
+
+    @current_service_list.setter
+    def current_service_list(self, value):
+        self.previous_service_list = getattr(
+            self, "_current_service_list", None)
+        self._current_service_list = value
 
     def create_service(self, directory_id, name=None, description=None, icon=None,
                        callback_url=None, active=True):
         if name is None:
             name = str(uuid4())
         directory_client = self._get_directory_client(directory_id)
-        self.current_service = directory_client.create_service(
+        service_id = directory_client.create_service(
             name,
             description=description,
             icon=icon,
             callback_url=callback_url,
             active=active
         )
-        return self.current_service
+        return self.retrieve_service(directory_id, service_id)
 
     def retrieve_service(self, directory_id, service_id):
         directory_client = self._get_directory_client(directory_id)

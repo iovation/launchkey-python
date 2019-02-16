@@ -30,8 +30,14 @@ class EntityManager:
     def get_current_directory_service(self):
         return self._directory_service_manager.current_service
 
+    def get_current_directory_service_list(self):
+        return self._directory_service_manager.current_service_list
+
     def get_current_directory_service_policy(self):
         return self._directory_service_policy_manager.current_service_policy
+
+    def set_current_directory_service_policy(self, policy):
+        self._directory_service_policy_manager.current_service_policy = policy
 
     def get_current_organization_service(self):
         return self._organization_service_manager.current_service
@@ -39,3 +45,7 @@ class EntityManager:
     def get_current_organization_service_policy(self):
         return self._organization_service_policy_manager.\
             current_service_policy
+
+    def set_current_organization_service_policy(self, policy):
+        self._organization_service_policy_manager.current_service_policy = \
+            policy
