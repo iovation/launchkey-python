@@ -1,5 +1,7 @@
 from .base import BaseManager
 
+from launchkey.entities.service import ServiceSecurityPolicy
+
 
 class ServicePolicyNotCreated(Exception):
     """A Service Policy was requested but none existed"""
@@ -8,7 +10,7 @@ class ServicePolicyNotCreated(Exception):
 class DirectoryServicePolicyManager(BaseManager):
     def __init__(self, organization_factory):
         self.previous_service_policy = None
-        self.current_service_policy = None
+        self.current_service_policy = ServiceSecurityPolicy()
         BaseManager.__init__(self, organization_factory)
 
     @property
@@ -32,7 +34,6 @@ class DirectoryServicePolicyManager(BaseManager):
     def remove_service_policy(self, service_id, directory_id):
         directory_client = self._get_directory_client(directory_id)
         directory_client.remove_service_policy(service_id)
-        self.current_service_policy = None
 
     def set_service_policy(self, service_id, directory_id, policy):
         directory_client = self._get_directory_client(directory_id)

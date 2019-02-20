@@ -42,10 +42,33 @@ class AuthResponseType(Enum):
 class GeoFence(object):
     """Geo-Fence entity"""
     def __init__(self, latitude, longitude, radius, name):
-        self.latitude = latitude
-        self.longitude = longitude
-        self.radius = radius
+        self.latitude = float(latitude)
+        self.longitude = float(longitude)
+        self.radius = float(radius)
         self.name = name
+
+    def __eq__(self, other):
+        if isinstance(other, GeoFence):
+            return self.name == other.name and \
+                   self.latitude == other.latitude and \
+                   self.longitude == other.longitude and \
+                   self.radius == other.radius
+        else:
+            success = False
+        return success
+
+    def __repr__(self):
+        return "GeoFence <" \
+               "name={name}, " \
+               "latitude={latitude}, " \
+               "longitude={longitude}, " \
+               "radius={radius}>". \
+            format(
+                name=self.name,
+                latitude=self.latitude,
+                longitude=self.longitude,
+                radius=self.radius
+            )
 
 
 class TimeFence(object):
@@ -86,6 +109,48 @@ class TimeFence(object):
         if self.sunday:
             self.days.append("Sunday")
         self.timezone = start_time.tzname() if start_time.tzname() else "UTC"
+
+    def __eq__(self, other):
+        if isinstance(other, TimeFence):
+            return self.name == other.name and \
+                   self.start_time == other.start_time and \
+                   self.end_time == other.end_time and \
+                   self.monday == other.monday and \
+                   self.tuesday == other.tuesday and \
+                   self.wednesday == other.wednesday and \
+                   self.thursday == other.thursday and \
+                   self.friday == other.friday and \
+                   self.saturday == other.saturday and \
+                   self.sunday == other.sunday and \
+                   self.days == other.days
+        else:
+            success = False
+        return success
+
+    def __repr__(self):
+        return "TimeFence <" \
+               "name={name}, " \
+               "start_time={start_time}, " \
+               "end_time={end_time}, " \
+               "monday={monday}, " \
+               "tuesday={tuesday}, " \
+               "wednesday={wednesday}, " \
+               "thursday={thursday}, " \
+               "friday={friday}, " \
+               "saturday={saturday}, " \
+               "sunday={sunday}>".\
+            format(
+                name=self.name,
+                start_time=self.start_time,
+                end_time=self.end_time,
+                monday=self.monday,
+                tuesday=self.tuesday,
+                wednesday=self.wednesday,
+                thursday=self.thursday,
+                friday=self.friday,
+                saturday=self.saturday,
+                sunday=self.sunday
+            )
 
 
 class DenialReason(object):
