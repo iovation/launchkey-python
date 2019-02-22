@@ -11,13 +11,18 @@ class ServiceListNotQueried(Exception):
     """Service list not queried yet"""
 
 
+class ServicePublicKeysNotQueried(Exception):
+    """Service public keys not queried yet"""
+
+
 class DirectoryServiceManager(BaseManager):
     def __init__(self, organization_factory):
         self.current_service = None
         self.previous_service = None
         self.current_service_list = None
         self.previous_service_list = None
-        self._current_service_public_keys = {}
+        self.current_service_public_keys = {}
+        self.previous_service_public_keys = None
         BaseManager.__init__(self, organization_factory)
 
     @property
@@ -43,6 +48,19 @@ class DirectoryServiceManager(BaseManager):
         self.previous_service_list = getattr(
             self, "_current_service_list", None)
         self._current_service_list = value
+
+    @property
+    def current_service_public_keys(self):
+        if self._current_service_public_keys is None:
+            raise ServicePublicKeysNotQueried("Service public keys "
+                                              "not queried yet")
+        return self._current_service_public_keys
+
+    @current_service_public_keys.setter
+    def current_service_public_keys(self, value):
+        self.previous_service_public_keys = getattr(
+            self, "_current_service_public_keys", None)
+        self._current_service_public_keys = value
 
     def create_service(self, directory_id, name=None, description=None, icon=None,
                        callback_url=None, active=True):
@@ -84,9 +102,11 @@ class DirectoryServiceManager(BaseManager):
 
     def retrieve_public_keys_list(self, directory_id, service_id):
         directory_client = self._get_directory_client(directory_id)
-        directory_client.get_service_public_keys(
-            service_id
-        )
+        self.current_service_public_keys = \
+            directory_client.get_service_public_keys(
+                service_id
+            )
+        return self.current_service_public_keys
 
     def remove_public_key(self, directory_id, key_id, service_id):
         directory_client = self._get_directory_client(directory_id)

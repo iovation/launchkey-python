@@ -49,10 +49,10 @@ class GeoFence(object):
 
     def __eq__(self, other):
         if isinstance(other, GeoFence):
-            return self.name == other.name and \
-                   self.latitude == other.latitude and \
-                   self.longitude == other.longitude and \
-                   self.radius == other.radius
+            success = self.name == other.name and \
+                      self.latitude == other.latitude and \
+                      self.longitude == other.longitude and \
+                      self.radius == other.radius
         else:
             success = False
         return success
@@ -112,17 +112,17 @@ class TimeFence(object):
 
     def __eq__(self, other):
         if isinstance(other, TimeFence):
-            return self.name == other.name and \
-                   self.start_time == other.start_time and \
-                   self.end_time == other.end_time and \
-                   self.monday == other.monday and \
-                   self.tuesday == other.tuesday and \
-                   self.wednesday == other.wednesday and \
-                   self.thursday == other.thursday and \
-                   self.friday == other.friday and \
-                   self.saturday == other.saturday and \
-                   self.sunday == other.sunday and \
-                   self.days == other.days
+            success = self.name == other.name and \
+                      self.start_time == other.start_time and \
+                      self.end_time == other.end_time and \
+                      self.monday == other.monday and \
+                      self.tuesday == other.tuesday and \
+                      self.wednesday == other.wednesday and \
+                      self.thursday == other.thursday and \
+                      self.friday == other.friday and \
+                      self.saturday == other.saturday and \
+                      self.sunday == other.sunday and \
+                      self.days == other.days
         else:
             success = False
         return success

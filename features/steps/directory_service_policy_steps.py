@@ -8,7 +8,7 @@ from launchkey.entities.service import TimeFence, GeoFence
 
 # Retrieve Directory Service Policy
 
-@when("I retrieve the Policy for the Current Directory Service")
+@step("I retrieve the Policy for the Current Directory Service")
 def retrieve_policy_for_current_directory_service(context):
     current_service = context.entity_manager.get_current_directory_service()
     current_directory = context.entity_manager.get_current_directory()
@@ -124,22 +124,25 @@ def set_current_directory_policy_require_type(context, policy_type):
     context.entity_manager.set_current_directory_service_policy(policy)
 
 
+@when("the Directory Service Policy is set to require knowledge")
 @given("the Directory Service Policy is set to require knowledge")
 def set_current_directory_policy_require_type_knowledge(context):
     set_current_directory_policy_require_type(context, "knowledge")
 
 
+@when("the Directory Service Policy is set to require inherence")
 @given("the Directory Service Policy is set to require inherence")
 def set_current_directory_policy_require_type_inherence(context):
     set_current_directory_policy_require_type(context, "inherence")
 
 
+@when("the Directory Service Policy is set to require possession")
 @given("the Directory Service Policy is set to require possession")
 def set_current_directory_policy_require_type_possession(context):
     set_current_directory_policy_require_type(context, "possession")
 
 
-@given("the Directory Service Policy is set to require jail break protection")
+@step("the Directory Service Policy is set to require jail break protection")
 def set_directory_policy_required_jailbreak_protection(context):
     policy = context.entity_manager.get_current_directory_service_policy()
     policy.require_jailbreak_protection(True)
@@ -175,9 +178,17 @@ def verify_directory_service_policy_requires_jailbreak_protection(context):
                         "it should")
 
 
+@then("the Directory Service Policy has no requirement for jail break "
+      "protection")
+def verify_directory_service_policy_does_not_require_jailbreak_protection(
+        context):
+    policy = context.entity_manager.get_current_directory_service_policy()
+    if policy.jailbreak_protection is True:
+        raise Exception("Policy ailbreak protection when it should not have")
+
+
 @given("I set the Policy for the Directory Service")
-@given("I set the Policy for the Current Directory Service")
-@when("I set the Policy for the Current Directory Service")
+@step("I set the Policy for the Current Directory Service")
 def set_directory_service_policy_require_to_current_policy(context):
     current_directory = context.entity_manager.get_current_directory()
     current_service = context.entity_manager.get_current_directory_service()
@@ -189,6 +200,7 @@ def set_directory_service_policy_require_to_current_policy(context):
     )
 
 
+@when("the Directory Service Policy is set to have the following Time Fences")
 @given("the Directory Service Policy is set to have the following Time Fences")
 def set_directory_service_policy_time_fences_from_table(context):
     policy = context.entity_manager.get_current_directory_service_policy()
@@ -226,6 +238,8 @@ def verify_directory_service_policy_time_fences_from_table(context):
                             (timefence, policy.timefences))
 
 
+@when("the Directory Service Policy is set to have the following Geofence "
+      "locations")
 @given("the Directory Service Policy is set to have the following "
        "Geofence locations")
 def set_directory_service_policy_geo_fences_from_table(context):
@@ -240,8 +254,8 @@ def set_directory_service_policy_geo_fences_from_table(context):
     context.entity_manager.set_current_directory_service_policy(policy)
 
 
-@then("the Directory Service Policy has {count:d} locations")
-def verify_directory_service_policy_has_count_locations(context, count):
+@then("the Directory Service Policy has the following Geofence locations")
+def verify_directory_service_geofence_locations_from_table(context):
     policy = context.entity_manager.get_current_directory_service_policy()
     for row in context.table:
         geofence = GeoFence(
@@ -253,6 +267,25 @@ def verify_directory_service_policy_has_count_locations(context, count):
         if geofence not in policy.geofences:
             raise Exception("%s not in policy geofences: %s" %
                             (geofence, policy.geofences))
+
+
+
+@then("the Directory Service Policy has {count:d} locations")
+def verify_directory_service_policy_has_count_locations(context, count):
+    policy = context.entity_manager.get_current_directory_service_policy()
+    found_locations = len(policy.geofences)
+    if found_locations != count:
+        raise Exception("Found %s locations when it should have been %s: %s" %
+                        (found_locations, count, policy.geofences))
+
+
+@then("the Directory Service Policy has {count:d} time fences")
+def verify_directory_service_policy_has_count_timefences(context, count):
+    policy = context.entity_manager.get_current_directory_service_policy()
+    found_locations = len(policy.timefences)
+    if found_locations != count:
+        raise Exception("Found %s timefences when it should have been %s: %s" %
+                        (found_locations, count, policy.timefences))
 
 
 @when("I attempt to set the Policy for the Directory Service with the ID "

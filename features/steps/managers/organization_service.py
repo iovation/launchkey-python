@@ -7,12 +7,22 @@ class ServiceNotCreated(Exception):
     """A Service was requested but none existed"""
 
 
+class ServiceListNotQueried(Exception):
+    """Service list not queried yet"""
+
+
+class ServicePublicKeysNotQueried(Exception):
+    """Service public keys not queried yet"""
+
+
 class OrganizationServiceManager(BaseManager):
     def __init__(self, organization_factory):
         self.current_service = None
         self.previous_service = None
-        self._current_service_list = []
-        self._current_service_public_keys = {}
+        self.current_service_list = []
+        self.previous_service_list = None
+        self.current_service_public_keys = {}
+        self.previous_service_public_keys = None
         BaseManager.__init__(self, organization_factory)
 
     @property
@@ -26,6 +36,31 @@ class OrganizationServiceManager(BaseManager):
         self.previous_service = getattr(
             self, "_current_service", None)
         self._current_service = value
+
+    @property
+    def current_service_list(self):
+        if self._current_service_list is None:
+            raise ServiceListNotQueried("Service list not queried yet")
+        return self._current_service_list
+
+    @current_service_list.setter
+    def current_service_list(self, value):
+        self.previous_service_list = getattr(
+            self, "_current_service_list", None)
+        self._current_service_list = value
+
+    @property
+    def current_service_public_keys(self):
+        if self._current_service_public_keys is None:
+            raise ServicePublicKeysNotQueried("Service public keys "
+                                              "not queried yet")
+        return self._current_service_public_keys
+
+    @current_service_public_keys.setter
+    def current_service_public_keys(self, value):
+        self.previous_service_public_keys = getattr(
+            self, "_current_service_public_keys", None)
+        self._current_service_public_keys = value
 
     def create_service(self, name=None, description=None, icon=None,
                        callback_url=None, active=True):
@@ -64,9 +99,10 @@ class OrganizationServiceManager(BaseManager):
         )
 
     def retrieve_public_keys_list(self, service_id):
-        self._organization_client.get_service_public_keys(
+        self.current_service_public_keys = self._organization_client.get_service_public_keys(
             service_id
         )
+        return self.current_service_public_keys
 
     def remove_public_key(self, key_id, service_id):
         self._organization_client.remove_service_public_key(
@@ -87,12 +123,12 @@ class OrganizationServiceManager(BaseManager):
         )
 
     def retrieve_services(self, service_ids):
-        self._current_service_list = self._organization_client.get_services(
+        self.current_service_list = self._organization_client.get_services(
             service_ids
         )
-        return self._current_service_list
+        return self.current_service_list
 
     def retrieve_all_services(self):
-        self._current_service_list = self._organization_client.\
+        self.current_service_list = self._organization_client.\
             get_all_services()
-        return self._current_service_list
+        return self.current_service_list
