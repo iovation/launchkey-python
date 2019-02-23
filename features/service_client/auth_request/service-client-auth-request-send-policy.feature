@@ -23,7 +23,7 @@ Feature: Service Client Authorization Request: Can Send Policy
     Then a EntityNotFound error occurs
 
   Scenario: Making a request with a couple geofences for an invalid User Throws EntityNotFound
-    Given the current Authorization Policy requires a geofence with a radius of 1.0, a latitude of 23.4, and a longitude of -56.7
+    Given the current Authorization Policy requires a geofence with a radius of 150.0, a latitude of 23.4, and a longitude of -56.7
     And the current Authorization Policy requires a geofence with a radius of 100.0, a latitude of -23.4, and a longitude of 56.7
     When I attempt to make an Policy based Authorization request for the User identified by "User does not matter"
     Then a EntityNotFound error occurs

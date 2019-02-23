@@ -21,6 +21,36 @@ class Directory(object):
         self.denial_context_inquiry_enabled = \
             data['denial_context_inquiry_enabled']
 
+    def __eq__(self, other):
+        if isinstance(other, Directory):
+            success = self.service_ids == other.service_ids and \
+                      self.sdk_keys == other.sdk_keys and \
+                      self.premium == other.premium and \
+                      self.name == other.name and \
+                      self.android_key == other.android_key and \
+                      self.ios_certificate_fingerprint == \
+                      other.ios_certificate_fingerprint and \
+                      self.active == other.active and \
+                      self.id == other.id and \
+                      self.denial_context_inquiry_enabled == \
+                      other.denial_context_inquiry_enabled
+        else:
+            success = False
+        return success
+
+    def __repr__(self):
+        return "Directory <id={id}, name={name}, service_ids={service_ids}, sdk_keys={sdk_keys}, premium={premium}, ios_certificate_fingerprint={ios_certificate_fingerprint}, active={active}, denial_context_inquiry_enabled={denial_context_inquiry_enabled}>". \
+            format(
+                id=self.id,
+                name=self.name,
+                service_ids=self.service_ids,
+                sdk_keys=self.sdk_keys,
+                premium=self.premium,
+                ios_certificate_fingerprint=self.ios_certificate_fingerprint,
+                active=self.active,
+                denial_context_inquiry_enabled=self.denial_context_inquiry_enabled
+            )
+
 
 class Session(object):
     """User Service Session"""

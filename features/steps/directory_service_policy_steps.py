@@ -269,7 +269,6 @@ def verify_directory_service_geofence_locations_from_table(context):
                             (geofence, policy.geofences))
 
 
-
 @then("the Directory Service Policy has {count:d} locations")
 def verify_directory_service_policy_has_count_locations(context, count):
     policy = context.entity_manager.get_current_directory_service_policy()

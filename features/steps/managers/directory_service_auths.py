@@ -1,11 +1,25 @@
 from .base import BaseManager
 
 
-# @todo This doesn't seem to actually interact with directory services
+class AuthRequestNotRetrieved(Exception):
+    """Auth request has not been retrieved yet"""
+
 
 class DirectoryServiceAuthsManager(BaseManager):
     def __init__(self, organization_factory):
         BaseManager.__init__(self, organization_factory)
+        self.current_auth_request = None
+        self.previous_auth_request = None
+
+    @property
+    def current_auth_request(self):
+        return self._current_auth_request
+
+    @current_auth_request.setter
+    def current_auth_request(self, value):
+        self.previous_auth_request = getattr(
+            self, "_current_auth_request", None)
+        self._current_auth_request = value
 
     def create_auth_request(self, service_id, user, context=None, policy=None,
                             title=None, ttl=None, push_title=None,
@@ -24,4 +38,5 @@ class DirectoryServiceAuthsManager(BaseManager):
 
     def get_auth_response(self, service_id, auth_request):
         client = self._get_service_client(service_id)
-        return client.get_authorization_response(auth_request)
+        self.current_auth_request = client.get_authorization_response(auth_request)
+        return self.current_auth_request
