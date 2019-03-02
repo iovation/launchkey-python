@@ -414,6 +414,11 @@ class TestHandleWebhook(unittest.TestCase):
         with self.assertRaises(WebhookAuthorizationError):
             self._service_client.handle_webhook(MagicMock(), self._headers)
 
+    def test_handle_webhook_session_end_with_request_as_bytes(self):
+        request = bytearray(dumps({"service_user_hash": str(uuid4()),
+                            "api_time": str(datetime.utcnow())[:19].replace(" ", "T") + "Z"}), "utf-8")
+        self.assertIsInstance(self._service_client.handle_webhook(request, self._headers), SessionEndRequest)
+
 
 @ddt
 class TestPolicyObject(unittest.TestCase):

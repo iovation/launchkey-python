@@ -3,8 +3,9 @@
 # pylint: disable=too-many-arguments
 
 import warnings
-
 from json import loads
+
+import six
 from jwkest import JWKESTException
 from launchkey.exceptions import InvalidParameters, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
@@ -294,6 +295,9 @@ class ServiceClient(BaseClient):
         :raises launchkey.exceptions.WebhookAuthorizationError: when the
         "Authorization" header in the headers.
         """
+        if not isinstance(body, six.string_types):
+            body = body.decode("utf-8")
+
         if method is None:
             warnings.warn("Not passing a valid request method string is "
                           "deprecated and will be required in the next "

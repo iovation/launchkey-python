@@ -1,12 +1,19 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
-3.4.0
+3.5.0
 -----
 
 * Added get_all_directory_sdk_keys method to Organization client
+* Added integration testing suite
+
+3.4.0
+-----
+
+* Added example CLI to codebase
 * Added ttl parameter to the DirectoryClient link_device method
 * Added cancel_authorization_request method to the ServiceClient
+* Fixed bug in ServiceClient which prevented handling of session end webhook request data when presented as a bytearray
 
 3.3.0
 -----
