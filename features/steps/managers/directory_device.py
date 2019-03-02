@@ -28,16 +28,16 @@ class DirectoryDeviceManager(BaseManager):
     def cleanup(self):
         for directory_id, user_identifier_list in \
                 self.directory_user_identifiers.items():
-            self.log_info("Cleaning up directory: %s users" % directory_id)
+            self.log_debug("Cleaning up directory: %s users" % directory_id)
 
             self._organization_client.update_directory(
                 directory_id=directory_id, active=True)
             for user_identifier in user_identifier_list:
-                self.log_info("Cleaning up user: %s devices" %
+                self.log_debug("Cleaning up user: %s devices" %
                               user_identifier)
                 for device in self.retrieve_user_devices(
                         user_identifier, directory_id=directory_id):
-                    self.log_info("Unlinking Device: %s" % device.id)
+                    self.log_debug("Unlinking Device: %s" % device.id)
                     self.unlink_device(device.id,
                                        user_identifier=user_identifier,
                                        directory_id=directory_id)

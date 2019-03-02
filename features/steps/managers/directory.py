@@ -20,8 +20,7 @@ class DirectoryManager(BaseManager):
     def __init__(self, organization_factory):
         self.current_directories = None
         self.previous_directory = None
-        # self._current_directory_entity_list = []  # Look into removing
-        self._current_sdk_keys = self.current_sdk_keys = []
+        self.current_sdk_keys = self._current_sdk_keys = []
         self.previous_sdk_keys = None
         self.current_public_keys = None
         self.current_directory = None
@@ -97,7 +96,7 @@ class DirectoryManager(BaseManager):
         sdk_key = self._organization_client.generate_and_add_directory_sdk_key(
             directory_id
         )
-        self.current_sdk_keys = self.current_sdk_keys + [sdk_key]
+        self._current_sdk_keys.append(sdk_key)
         return sdk_key
 
     def retrieve_directory(self, directory_id):

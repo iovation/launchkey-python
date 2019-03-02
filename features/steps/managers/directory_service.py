@@ -130,10 +130,10 @@ class DirectoryServiceManager(BaseManager):
 
     def retrieve_services(self, directory_id, service_ids):
         directory_client = self._get_directory_client(directory_id)
-        self._current_service_list = directory_client.get_services(service_ids)
-        return self._current_service_list
+        self.current_service_list = directory_client.get_services(service_ids)
+        return self.current_service_list
 
     def retrieve_all_services(self, directory_id):
         directory_client = self._get_directory_client(directory_id)
-        self._current_service_list = directory_client.get_all_services()
-        return self._current_service_list
+        self.current_service_list = directory_client.get_all_services()
+        return self.current_service_list

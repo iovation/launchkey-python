@@ -27,8 +27,8 @@ def linking_response_contains_valid_qr_code_url(context):
 @then("the Device linking response contains a valid Linking Code")
 def linking_response_contains_valid_linking_code(context):
     code = context.entity_manager.get_current_linking_response().code
-    if not code or not isinstance(code, str):
-        raise Exception("Linking code was not valid: %s" % code)
+    if not code:
+        raise Exception("Linking code was not valid: %s" % type(code))
 
 
 @given("I retrieve the Devices list for the current User")

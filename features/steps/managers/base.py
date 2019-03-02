@@ -1,7 +1,7 @@
 from logging import getLogger
 
 
-class Loggable:
+class Loggable(object):
 
     def __init__(self):
         self._logger = getLogger(
