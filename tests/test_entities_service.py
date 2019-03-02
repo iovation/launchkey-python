@@ -1,12 +1,13 @@
 import unittest
 
-from mock import MagicMock, ANY, patch
+from mock import MagicMock, patch
 from ddt import data, unpack, ddt
 from formencode import Invalid
+from datetime import time
 
 from launchkey.entities.service import AuthorizationResponse, \
-    AuthResponseType, AuthResponseReason
-from launchkey.exceptions import UnexpectedDeviceResponse, UnexpectedKeyID
+    AuthResponseType, AuthResponseReason, GeoFence, TimeFence
+from launchkey.exceptions import UnexpectedDeviceResponse
 from launchkey.transports.jose_auth import JOSETransport
 
 
@@ -229,3 +230,389 @@ class TestAuthorizationResponse(unittest.TestCase):
         self.transport.decrypt_rsa_response.side_effect = exc
         with self.assertRaises(UnexpectedDeviceResponse):
             AuthorizationResponse(self.data, self.transport)
+
+
+class TestGeoFence(unittest.TestCase):
+    def test_equals_same_geofence(self):
+        geo_1 = GeoFence(1, 2, 3, name='name')
+        geo_2 = GeoFence(1, 2, 3, name='name')
+        self.assertTrue(geo_1 == geo_2)
+
+    def test_different_lat(self):
+        geo_1 = GeoFence(1, 2, 3, name='name')
+        geo_2 = GeoFence(2, 2, 3, name='name')
+        self.assertFalse(geo_1 == geo_2)
+
+    def test_different_long(self):
+        geo_1 = GeoFence(1, 2, 3, name='name')
+        geo_2 = GeoFence(1, 3, 3, name='name')
+        self.assertFalse(geo_1 == geo_2)
+
+    def test_different_radius(self):
+        geo_1 = GeoFence(1, 2, 3, name='name')
+        geo_2 = GeoFence(1, 2, 4, name='name')
+        self.assertFalse(geo_1 == geo_2)
+
+    def test_different_name(self):
+        geo_1 = GeoFence(1, 2, 3, name='name')
+        geo_2 = GeoFence(1, 2, 3, name='name2')
+        self.assertFalse(geo_1 == geo_2)
+
+    def test_different_type(self):
+        geofence = GeoFence(1, 2, 3, name='name')
+        timefence = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertFalse(geofence == timefence)
+
+    def test_repr(self):
+        geo_1 = GeoFence(1, 2, 3, name='My Name')
+        self.assertEqual(
+            str(geo_1),
+            'GeoFence <name="My Name", latitude=1.0, '
+            'longitude=2.0, radius=3.0>'
+        )
+
+
+class TestTimeFence(unittest.TestCase):
+    def test_equals_same_timefence(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertTrue(fence_1 == fence_2)
+
+    def test_different_name(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name2",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_start_time(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=5),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_end_time(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=5),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_monday(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=False,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_tuesday(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=False,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_wednesday(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=False,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_thursday(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=False,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_friday(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=False,
+            saturday=True,
+            sunday=True
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_saturday(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=False,
+            sunday=True
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_sunday(self):
+        fence_1 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        fence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=False
+        )
+        self.assertFalse(fence_1 == fence_2)
+
+    def test_different_type(self):
+        timefence = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        geofence = GeoFence(1, 2, 3, "Name")
+        self.assertFalse(timefence == geofence)
+
+    def test_repr(self):
+        fence_1 = TimeFence(
+            "My Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertEqual(
+            str(fence_1),
+            'TimeFence <name="My Name", start_time="01:02:00", '
+            'end_time="03:04:00", monday=True, tuesday=True, wednesday=True, '
+            'thursday=True, friday=True, saturday=True, sunday=True>'
+        )

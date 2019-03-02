@@ -45,21 +45,21 @@ class GeoFence(object):
         self.latitude = float(latitude)
         self.longitude = float(longitude)
         self.radius = float(radius)
-        self.name = name
+        self.name = str(name) if name else None
 
     def __eq__(self, other):
         if isinstance(other, GeoFence):
-            success = self.name == other.name and \
+            eq = self.name == other.name and \
                       self.latitude == other.latitude and \
                       self.longitude == other.longitude and \
                       self.radius == other.radius
         else:
-            success = False
-        return success
+            eq = False
+        return eq
 
     def __repr__(self):
         return "GeoFence <" \
-               "name={name}, " \
+               "name=\"{name}\", " \
                "latitude={latitude}, " \
                "longitude={longitude}, " \
                "radius={radius}>". \
@@ -112,7 +112,7 @@ class TimeFence(object):
 
     def __eq__(self, other):
         if isinstance(other, TimeFence):
-            success = self.name == other.name and \
+            eq = self.name == other.name and \
                       self.start_time == other.start_time and \
                       self.end_time == other.end_time and \
                       self.monday == other.monday and \
@@ -124,14 +124,14 @@ class TimeFence(object):
                       self.sunday == other.sunday and \
                       self.days == other.days
         else:
-            success = False
-        return success
+            eq = False
+        return eq
 
     def __repr__(self):
         return "TimeFence <" \
-               "name={name}, " \
-               "start_time={start_time}, " \
-               "end_time={end_time}, " \
+               "name=\"{name}\", " \
+               "start_time=\"{start_time}\", " \
+               "end_time=\"{end_time}\", " \
                "monday={monday}, " \
                "tuesday={tuesday}, " \
                "wednesday={wednesday}, " \
@@ -223,15 +223,17 @@ class AuthPolicy(object):
         :param radius: Float. Radius of the Geo-Fence in meters
         :param name: String. Optional identifier for the Geo-Fence.
         """
-        self.geofences.append(GeoFence(latitude, longitude, radius, name))
         try:
-            location = {"radius": float(radius),
-                        "latitude": float(latitude),
-                        "longitude": float(
-                            longitude)}
-            if name is not None:
-                location['name'] = str(name)
-        except TypeError:
+            geofence = GeoFence(latitude, longitude, radius, name)
+            self.geofences.append(geofence)
+            location = {
+                "radius": geofence.radius,
+                "latitude": geofence.latitude,
+                "longitude": geofence.longitude
+            }
+            if geofence.name is not None:
+                location['name'] = geofence.name
+        except (TypeError, ValueError):
             raise InvalidParameters("Latitude, Longitude, and Radius "
                                     "must all be numbers.")
         for i, factor in enumerate(self._policy['factors']):

@@ -23,7 +23,7 @@ class Directory(object):
 
     def __eq__(self, other):
         if isinstance(other, Directory):
-            success = self.service_ids == other.service_ids and \
+            eq = self.service_ids == other.service_ids and \
                       self.sdk_keys == other.sdk_keys and \
                       self.premium == other.premium and \
                       self.name == other.name and \
@@ -35,11 +35,18 @@ class Directory(object):
                       self.denial_context_inquiry_enabled == \
                       other.denial_context_inquiry_enabled
         else:
-            success = False
-        return success
+            eq = False
+        return eq
 
     def __repr__(self):
-        return "Directory <id={id}, name={name}, service_ids={service_ids}, sdk_keys={sdk_keys}, premium={premium}, ios_certificate_fingerprint={ios_certificate_fingerprint}, active={active}, denial_context_inquiry_enabled={denial_context_inquiry_enabled}>". \
+        return "Directory <id=\"{id}\", name=\"{name}\", " \
+               "service_ids={service_ids}, sdk_keys={sdk_keys}, " \
+               "premium={premium}, " \
+               "ios_certificate_fingerprint=" \
+               "\"{ios_certificate_fingerprint}\", " \
+               "active={active}, " \
+               "denial_context_inquiry_enabled=" \
+               "{denial_context_inquiry}>". \
             format(
                 id=self.id,
                 name=self.name,
@@ -48,7 +55,7 @@ class Directory(object):
                 premium=self.premium,
                 ios_certificate_fingerprint=self.ios_certificate_fingerprint,
                 active=self.active,
-                denial_context_inquiry_enabled=self.denial_context_inquiry_enabled
+                denial_context_inquiry=self.denial_context_inquiry_enabled
             )
 
 
