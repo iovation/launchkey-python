@@ -1,6 +1,8 @@
-language: python
 dist: xenial
+
+language: python
 python:
+  - "2.7"
   - "3.4"
   - "3.5"
   - "3.5-dev"
@@ -8,9 +10,13 @@ python:
   - "3.6-dev"
   - "3.7"
   - "3.7-dev"
+  - "3.8-dev"
+  - "nightly"
   - "pypy3.5"
+
 env:
-  - MAKE_RUN=ci
+  - MAKE_RUN=test
+
 matrix:
   fast_finish: true
   allow_failures:
@@ -21,21 +27,14 @@ matrix:
   - python: nightly
 
   include:
-    - python: 2.7
+    - name: CI
+      python: "3.6"
       env:
-      - MAKE_RUN=ci-py27
-    - python: 3.8-dev
-      env:
-      - MAKE_RUN=ci-py38
-    - python: nightly
-      env:
-      - MAKE_RUN=ci-py38
+      - MAKE_RUN=ci PIPENV_IGNORE_VIRTUALENVS=1
 
 notifications:
   email:
     recipients:
       - secure: "bdFDE8d50zWO9XWc1gQ4OPDrbvjZXOum1AIchDqwYXr8C7iluJcS2q+z5mczdvHlW3XflcjALl+x81hekdBk+8L6AJuAj5MhTF+HvjFL2EkY7q0V+seLTltYhoqnnlf0BlYGwoILBbDX2p/GYHNUOqWvCtGlJGMpy0qM3R8t5Vw="
-install:
-  - pip install -U 'setuptools>=32.2.0'
-  - pip install .
+
 script: make ${MAKE_RUN}

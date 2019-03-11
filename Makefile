@@ -1,49 +1,38 @@
-ci-py27: ci-py2
+ci-py27: test
 
-ci-pypy: ci-py2
+ci-pypy: test
 
-ci-py34: ci
+ci-py34: test
 
-ci-py35: ci
+ci-py35: test
 
 ci-py36: ci
 
-ci-py37: ci
+ci-py37: test
 
-ci-py38: tests-py3
+ci-py38: test
 
-ci-pypy3: ci
+ci-pypy3: test
 
 
-
-ci: dependencies-py3 tests-py3 flake8-py3 pylint-py3
-
-ci-py2: tests-py2 flake8-py2 pylint-py2
-
-dependencies-py3:
-		pip install -r test_requirements.txt
-
-dependencies-py2:
-		pip install -r test_requirements_py2.txt
+ci: dependencies coverage flake8 pylint deps-check
 
 test:
-		coverage run --source="launchkey" setup.py nosetests
-		coverage report --fail-under=100
+		python setup.py test
 
-tests-py2: dependencies-py2 test
+dependencies:
+		pip install --upgrade pipenv
+		pipenv install --three --dev
 
-tests-py3: dependencies-py3 test
+coverage:
+		pipenv run coverage run --source="launchkey" setup.py nosetests
+		pipenv run coverage report --fail-under=100
 
 flake8:
-		flake8 launchkey
-
-flake8-py2: dependencies-py2 flake8
-
-flake8-py3: dependencies-py3 flake8
+		pipenv run flake8 launchkey
 
 pylint:
-		pylint launchkey
+		pipenv run pylint launchkey
 
-pylint-py2: dependencies-py2 pylint
-
-pylint-py3: dependencies-py3 pylint
+deps-check:
+		pipenv check
