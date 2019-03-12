@@ -518,10 +518,23 @@ class TestPolicyObject(unittest.TestCase):
         self.assertEqual(location['longitude'], float(longitude2))
         self.assertEqual(location['radius'], float(radius2))
 
-    def test_add_geofence_invalid_input(self):
+    @data('invalid', None, "")
+    def test_add_geofence_invalid_lat_input(self, value):
         policy = AuthPolicy()
         with self.assertRaises(InvalidParameters):
-            policy.add_geofence(ANY, ANY, ANY)
+            policy.add_geofence(value, 0, 0)
+
+    @data('invalid', None, "")
+    def test_add_geofence_invalid_long_input(self, value):
+        policy = AuthPolicy()
+        with self.assertRaises(InvalidParameters):
+            policy.add_geofence(0, value, 0)
+
+    @data('invalid', None, "")
+    def test_add_geofence_invalid_radius_input(self, value):
+        policy = AuthPolicy()
+        with self.assertRaises(InvalidParameters):
+            policy.add_geofence(0, 0, value)
 
     @data('myfence', 'my fence', '** fence 1234')
     def test_remove_geofence(self, name):

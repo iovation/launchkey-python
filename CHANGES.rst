@@ -4,6 +4,8 @@ CHANGELOG for LaunchKey Python SDK
 3.5.0
 -----
 
+* Added get_all_directory_sdk_keys method to Organization client
+* Added integration testing suite
 
 3.4.0
 -----
