@@ -235,13 +235,13 @@ pyenv. There are a couple ways to do that. An example of doing it globally is::
 
     pyenv global 2.7.15 3.4.9 3.5.6 3.6.6 3.7.0 3.8-dev pypy3.5-6.0.0 pypy2.7-6.0.0
 
-Install tox via PIP::
+Install dependencies via Pipenv
 
-    pip install tox
+    pipenv install --dev
 
-Run tests::
+Run validation::
 
-    tox
+    pipenv run tox
 
 Contributing
 ------------
