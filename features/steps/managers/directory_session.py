@@ -9,7 +9,8 @@ class DirectorySessionManager(BaseManager):
     def __init__(self, organization_factory):
         self.current_session_list = None
         self.previous_session_list = None
-        BaseManager.__init__(self, organization_factory)
+        super(DirectorySessionManager, self, ).__init__(
+            organization_factory)
 
     @property
     def current_session_list(self):

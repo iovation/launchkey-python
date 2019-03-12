@@ -24,8 +24,7 @@ class DirectoryManager(BaseManager):
         self.previous_sdk_keys = None
         self.current_public_keys = None
         self.current_directory = None
-
-        BaseManager.__init__(self, organization_factory)
+        super(DirectoryManager, self, ).__init__(organization_factory)
 
     @property
     def current_directory(self):

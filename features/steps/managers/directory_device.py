@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from .base import BaseManager
 
 
@@ -23,21 +25,25 @@ class DirectoryDeviceManager(BaseManager):
         self.directory_user_identifiers = dict()
         self.previous_linking_response = None
         self.current_linking_response = None
-        BaseManager.__init__(self, organization_factory)
+        self._logger = getLogger(
+            "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
+        )
+        super(DirectoryDeviceManager, self, ).__init__(organization_factory)
 
     def cleanup(self):
         for directory_id, user_identifier_list in \
                 self.directory_user_identifiers.items():
-            self.log_debug("Cleaning up directory: %s users" % directory_id)
+            self._logger.debug("Cleaning up directory: %s users" %
+                               directory_id)
 
             self._organization_client.update_directory(
                 directory_id=directory_id, active=True)
             for user_identifier in user_identifier_list:
-                self.log_debug("Cleaning up user: %s devices" %
+                self._logger.debug("Cleaning up user: %s devices" %
                               user_identifier)
                 for device in self.retrieve_user_devices(
                         user_identifier, directory_id=directory_id):
-                    self.log_debug("Unlinking Device: %s" % device.id)
+                    self._logger.debug("Unlinking Device: %s" % device.id)
                     self.unlink_device(device.id,
                                        user_identifier=user_identifier,
                                        directory_id=directory_id)
@@ -48,9 +54,6 @@ class DirectoryDeviceManager(BaseManager):
 
     @property
     def current_user_identifier(self):
-        # @todo determine whether we want to enforce a pre-existing user identifier
-        # if self._current_user_identifier is None:
-        #     raise UserNotCreated("A user has not been created yet.")
         return self._current_user_identifier
 
     @current_user_identifier.setter

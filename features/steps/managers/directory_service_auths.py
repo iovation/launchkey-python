@@ -7,9 +7,10 @@ class AuthRequestNotRetrieved(Exception):
 
 class DirectoryServiceAuthsManager(BaseManager):
     def __init__(self, organization_factory):
-        BaseManager.__init__(self, organization_factory)
         self.current_auth_request = None
         self.previous_auth_request = None
+        super(DirectoryServiceAuthsManager, self, ).__init__(
+            organization_factory)
 
     @property
     def current_auth_request(self):

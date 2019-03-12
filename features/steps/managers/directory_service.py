@@ -23,7 +23,7 @@ class DirectoryServiceManager(BaseManager):
         self.previous_service_list = None
         self.current_service_public_keys = {}
         self.previous_service_public_keys = None
-        BaseManager.__init__(self, organization_factory)
+        super(DirectoryServiceManager, self, ).__init__(organization_factory)
 
     @property
     def current_service(self):

@@ -5,7 +5,8 @@ from .base import BaseManager
 
 class DirectoryServiceSessionManager(BaseManager):
     def __init__(self, organization_factory):
-        BaseManager.__init__(self, organization_factory)
+        super(DirectoryServiceSessionManager, self, ).__init__(
+            organization_factory)
 
     def start_session(self, service_id, user_identifier, auth_request=None):
         if auth_request is None:

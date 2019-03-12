@@ -202,9 +202,9 @@ def update_directory_service_with_table_values(context):
     current_service = context.entity_manager.get_current_directory_service()
     kwargs = {}
     for row in context.table:
-        if row['value'] == "True":
+        if row['value'].lower() == "true":
             kwargs[row['key']] = True
-        elif row['value'] == "False":
+        elif row['value'].lower() == "false":
             kwargs[row['key']] = False
         else:
             kwargs[row['key']] = row['value']

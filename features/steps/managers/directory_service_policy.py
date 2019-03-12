@@ -11,7 +11,8 @@ class DirectoryServicePolicyManager(BaseManager):
     def __init__(self, organization_factory):
         self.previous_service_policy = None
         self.current_service_policy = ServiceSecurityPolicy()
-        BaseManager.__init__(self, organization_factory)
+        super(DirectoryServicePolicyManager, self, ).__init__(
+            organization_factory)
 
     @property
     def current_service_policy(self):
