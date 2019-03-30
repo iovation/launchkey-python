@@ -28,6 +28,7 @@ class AuthResponseReason(Enum):
     AUTHENTICATION = "AUTHENTICATION"
     CONFIGURATION = "CONFIGURATION"
     BUSY_LOCAL = "BUSY_LOCAL"
+    SENSOR = "SENSOR"
     OTHER = "OTHER"
 
 
@@ -416,6 +417,24 @@ class AuthorizationRequest(object):
         self.push_package = push_package
 
 
+class AuthMethod(object):
+    """
+    Auth method that describes the state of an object the policy utilized by
+    the device while processing the identified authorization request.
+    """
+
+    def __init__(self, method, set, active, allowed, supported, user_required,
+                 passed, error):
+        self.method = method
+        self.set = set
+        self.active = active
+        self.allowed = allowed
+        self.supported = supported
+        self.user_required = user_required
+        self.passed = passed
+        self.error = error
+
+
 class AuthorizationResponse(object):
     """
     Authorization Response object containing decrypted auth response and
@@ -471,6 +490,16 @@ class AuthorizationResponse(object):
             )
         self.device_id = decrypted_jwe.get("device_id")
         self.service_pins = decrypted_jwe.get("service_pins")
+        auth_methods = decrypted_jwe.get("auth_methods")
+        if auth_methods:
+            self.auth_methods = [
+                AuthMethod(method['method'], method['set'], method['active'],
+                           method['allowed'], method['supported'],
+                           method['user_required'], method['passed'],
+                           method['error'])
+                for method in auth_methods
+            ]
+        # self.auth_policy = decrypted_jwe.get("auth_policy")
 
     def _parse_device_response_from_auth_package(self, auth_package, key_id,
                                                  transport):
@@ -535,6 +564,8 @@ class AuthorizationResponse(object):
         self.reason = None
         self.denial_reason = None
         self.fraud = None
+        self.auth_policy = None
+        self.auth_methods = []
         self._parse_device_response(data, transport)
 
 

@@ -77,6 +77,18 @@ class AuthorizationResponsePackageValidator(Schema):
     allow_extra_fields = True
 
 
+class AuthMethodsValidator(Schema):
+    """Auth methods validator"""
+    method = validators.String()
+    set = validators.Bool(if_empty=None)
+    active = validators.Bool(if_empty=None)
+    allowed = validators.Bool(if_empty=None)
+    supported = validators.Bool(if_empty=None)
+    user_required = validators.Bool(if_empty=None)
+    passed = validators.Bool(if_empty=None)
+    error = validators.Bool(if_empty=None)
+
+
 class JWEAuthorizationResponsePackageValidator(Schema):
     """Authorization Response JWE payload entity validator"""
     service_pins = ForEach()
@@ -85,6 +97,8 @@ class JWEAuthorizationResponsePackageValidator(Schema):
     reason = validators.String()
     denial_reason = validators.String(if_missing=None, if_empty=None)
     device_id = validators.String()
+    # auth_policy = validators.String(if_missing=None)
+    auth_methods = ForEach(AuthMethodsValidator())
     allow_extra_fields = True
 
 
