@@ -89,6 +89,20 @@ class AuthMethodsValidator(Schema):
     error = validators.Bool(if_empty=None)
 
 
+class GeoFenceValidator(Schema):
+    name = validators.String(if_missing=None)
+    latitude = validators.Number()
+    longitude = validators.Number()
+    radius = validators.Number()
+
+
+class AuthPolicyValidator(Schema):
+    requirement = validators.String(if_missing=None, if_empty=None)
+    amount = validators.Number(if_missing=None)
+    types = ForEach(validators.String(), if_missing=None)
+    geofences = ForEach(GeoFenceValidator(), if_missing=[], if_empty=[])
+
+
 class JWEAuthorizationResponsePackageValidator(Schema):
     """Authorization Response JWE payload entity validator"""
     service_pins = ForEach()
@@ -97,7 +111,7 @@ class JWEAuthorizationResponsePackageValidator(Schema):
     reason = validators.String()
     denial_reason = validators.String(if_missing=None, if_empty=None)
     device_id = validators.String()
-    # auth_policy = validators.String(if_missing=None)
+    auth_policy = AuthPolicyValidator(if_missing=None)
     auth_methods = ForEach(AuthMethodsValidator())
     allow_extra_fields = True
 

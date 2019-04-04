@@ -171,7 +171,9 @@ def authorize(ctx, service_id, username, context, title, ttl, push_title,
                 "Device ID": auth_response.device_id,
                 "Svc User Hash": auth_response.service_user_hash,
                 "User Push ID": auth_response.user_push_id,
-                "Org User Hash": auth_response.organization_user_hash
+                "Org User Hash": auth_response.organization_user_hash,
+                "Auth Methods": auth_response.auth_methods,
+                "Auth Policy": auth_response.auth_policy
             },
             color=color
         )

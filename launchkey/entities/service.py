@@ -405,6 +405,19 @@ class AuthPolicy(object):
                     if factor['attributes']['factor enabled']:
                         self.jailbreak_protection = True
 
+    def __repr__(self):
+        return "AuthPolicy <" \
+               "minimum_requirements={minimum_requirements}, " \
+               "minimum_amount={minimum_amount}, " \
+               "jailbreak_protection={jailbreak_protection}, " \
+               "geofences={geofences}>".\
+            format(
+                minimum_requirements=self.minimum_requirements,
+                minimum_amount=self.minimum_amount,
+                jailbreak_protection=self.jailbreak_protection,
+                geofences=self.geofences
+            )
+
 
 class AuthorizationRequest(object):
     """
@@ -415,6 +428,15 @@ class AuthorizationRequest(object):
     def __init__(self, auth_request, push_package):
         self.auth_request = auth_request
         self.push_package = push_package
+
+    def __repr__(self):
+        return "AuthorizationRequest <" \
+               "auth_request=\"{auth_request}\", " \
+               "push_package=\"{push_package}\">".\
+            format(
+                auth_request=self.auth_request,
+                push_package=self.push_package
+            )
 
 
 class AuthMethod(object):
@@ -433,6 +455,27 @@ class AuthMethod(object):
         self.user_required = user_required
         self.passed = passed
         self.error = error
+
+    def __repr__(self):
+        return "AuthMethod <" \
+               "method=\"{method}\", " \
+               "set={set}, " \
+               "active={active}, " \
+               "allowed={allowed}, " \
+               "supported={supported}, " \
+               "user_required={user_required}, " \
+               "passed={passed}, " \
+               "error={error}>".\
+            format(
+                method=self.method,
+                set=self.set,
+                active=self.active,
+                allowed=self.allowed,
+                supported=self.supported,
+                user_required=self.user_required,
+                passed=self.passed,
+                error=self.error
+            )
 
 
 class AuthorizationResponse(object):
@@ -490,6 +533,7 @@ class AuthorizationResponse(object):
             )
         self.device_id = decrypted_jwe.get("device_id")
         self.service_pins = decrypted_jwe.get("service_pins")
+
         auth_methods = decrypted_jwe.get("auth_methods")
         if auth_methods:
             self.auth_methods = [
@@ -499,7 +543,23 @@ class AuthorizationResponse(object):
                            method['error'])
                 for method in auth_methods
             ]
-        # self.auth_policy = decrypted_jwe.get("auth_policy")
+
+        auth_policy = decrypted_jwe.get("auth_policy")
+        if auth_policy:
+            kwargs = {}
+            if auth_policy['requirement'] == "amount":
+                kwargs['any'] = auth_policy['amount']
+            elif auth_policy['requirement'] == "types":
+                for item in auth_policy['types']:
+                    kwargs[item.lower()] = True
+            self.auth_policy = AuthPolicy(**kwargs)
+            for fence in auth_policy['geofences']:
+                self.auth_policy.add_geofence(
+                    fence['latitude'],
+                    fence['longitude'],
+                    fence['radius'],
+                    name=fence['name']
+                )
 
     def _parse_device_response_from_auth_package(self, auth_package, key_id,
                                                  transport):
