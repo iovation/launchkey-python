@@ -90,6 +90,7 @@ class AuthMethodsValidator(Schema):
 
 
 class GeoFenceValidator(Schema):
+    """GeoFence validator"""
     name = validators.String(if_missing=None)
     latitude = validators.Number()
     longitude = validators.Number()
@@ -97,6 +98,7 @@ class GeoFenceValidator(Schema):
 
 
 class AuthPolicyValidator(Schema):
+    """Auth policy validate for auth method insights"""
     requirement = validators.String(if_missing=None, if_empty=None)
     amount = validators.Number(if_missing=None)
     types = ForEach(validators.String(), if_missing=None)

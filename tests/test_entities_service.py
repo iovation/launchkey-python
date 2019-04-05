@@ -6,7 +6,8 @@ from formencode import Invalid
 from datetime import time
 
 from launchkey.entities.service import AuthorizationResponse, \
-    AuthResponseType, AuthResponseReason, GeoFence, TimeFence, PolicyMethod
+    AuthResponseType, AuthResponseReason, GeoFence, TimeFence, PolicyMethod, \
+    AuthPolicy, AuthorizationRequest, AuthMethod
 from launchkey.exceptions import UnexpectedDeviceResponse
 from launchkey.transports.jose_auth import JOSETransport
 
@@ -337,6 +338,43 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
         self.assertEqual(
             response.auth_policy.minimum_requirements,
             []
+        )
+
+    def test_auth_policy_repr_default(self):
+        auth_policy = AuthPolicy()
+        self.assertEqual(
+            str(auth_policy),
+            "AuthPolicy <minimum_requirements=[], minimum_amount=0, "
+            "geofences=[]>"
+        )
+
+    def test_auth_policy_min_amount_repr(self):
+        auth_policy = AuthPolicy(any=3)
+        self.assertEqual(
+            str(auth_policy),
+            "AuthPolicy <minimum_requirements=[], "
+            "minimum_amount=3, geofences=[]>"
+        )
+
+    def test_auth_policy_min_requirements_repr(self):
+        auth_policy = AuthPolicy(knowledge=True, inherence=True, possession=True)
+        self.assertEqual(
+            str(auth_policy),
+            "AuthPolicy <minimum_requirements="
+            "['knowledge', 'inherence', 'possession'], "
+            "minimum_amount=0, geofences=[]>"
+        )
+
+    def test_auth_policy_repr_geofences(self):
+        auth_policy = AuthPolicy()
+        auth_policy.add_geofence(1, 2, 3)
+        auth_policy.add_geofence(4.1, 5.2, 6.3, name='test')
+        self.assertEqual(
+            str(auth_policy),
+            'AuthPolicy <minimum_requirements=[], minimum_amount=0, '
+            'geofences=[GeoFence <name="None", latitude=1.0, longitude=2.0, '
+            'radius=3.0>, GeoFence <name="test", latitude=4.1, longitude=5.2, '
+            'radius=6.3>]>'
         )
 
 
@@ -1129,4 +1167,34 @@ class TestTimeFence(unittest.TestCase):
             'TimeFence <name="My Name", start_time="01:02:00", '
             'end_time="03:04:00", monday=True, tuesday=True, wednesday=True, '
             'thursday=True, friday=True, saturday=True, sunday=True>'
+        )
+
+
+class TestAuthorizationRequest(unittest.TestCase):
+    def test_repr(self):
+        auth_request = AuthorizationRequest('auth', 'package')
+        self.assertEqual(
+            str(auth_request),
+            'AuthorizationRequest <auth_request="auth", '
+            'push_package="package">'
+        )
+
+
+class TestAuthMethod(unittest.TestCase):
+    def test_repr(self):
+        auth_method = AuthMethod(
+            PolicyMethod.FINGERPRINT,
+            True,
+            True,
+            False,
+            False,
+            True,
+            True,
+            False
+        )
+        self.assertEqual(
+            str(auth_method),
+            'AuthMethod <method=FINGERPRINT, set=True, active=True, '
+            'allowed=False, supported=False, user_required=True, passed=True, '
+            'error=False>'
         )
