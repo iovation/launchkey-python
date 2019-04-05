@@ -6,7 +6,7 @@ from formencode import Invalid
 from datetime import time
 
 from launchkey.entities.service import AuthorizationResponse, \
-    AuthResponseType, AuthResponseReason, GeoFence, TimeFence
+    AuthResponseType, AuthResponseReason, GeoFence, TimeFence, PolicyMethod
 from launchkey.exceptions import UnexpectedDeviceResponse
 from launchkey.transports.jose_auth import JOSETransport
 
@@ -233,6 +233,114 @@ class TestAuthorizationResponse(unittest.TestCase):
 
 
 @ddt
+class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
+
+    def setUp(self):
+        self.data = {
+            "auth": "auth data",
+            "auth_jwe": "auth jwe data",
+            "service_user_hash": "vf8fg663aauTkVUFCiR0Er6kctIN9d6958hkzznVHF9",
+            "user_push_id": "399e1d6c-f651-5b82-9dff-d5d63f16c849",
+            "org_user_hash": "SlwSGZz0M9kPtZUL6mzAGjdYcmdUS1jHccRKOJ9rTMO",
+            "public_key_id": "56:66:9d:72:f8:c3:e0:0b:3d:52:f4:81:36:f1:cc:74"
+        }
+        self.transport = MagicMock(spec=JOSETransport)
+        self.transport.decrypt_response.return_value = "{}"
+
+    def test_missing_auth_policy(self):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "circle_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertIsNone(response.auth_policy)
+
+    def test_geofence_auth_policy(self):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [{"latitude": 36.083548, "longitude": -115.157517, "radius": 150, "name": "work"}, {"latitude": 40.55, "longitude": -90.12, "radius": 100, "name": "home"}] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            [
+                GeoFence(latitude=36.083548, longitude=-115.157517,
+                         radius=150.0, name="work"),
+                GeoFence(latitude=40.55, longitude=-90.12, radius=100.0,
+                         name="home")
+            ]
+        )
+
+    def test_empty_geofence_auth_policy(self):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
+
+    def test_missing_geofence_auth_policy(self):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
+
+    def test_types_requirement(self):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["knowledge", "inherence"] }}'
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(
+            response.auth_policy.minimum_requirements,
+            ['knowledge', 'inherence']
+        )
+        self.assertEqual(
+            response.auth_policy.minimum_amount,
+            0
+        )
+
+    def test_types_requirement_with_amount_included(self):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["knowledge", "inherence"], "amount": 3 }}'
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(
+            response.auth_policy.minimum_requirements,
+            ['knowledge', 'inherence']
+        )
+        self.assertEqual(
+            response.auth_policy.minimum_amount,
+            0
+        )
+
+    @patch('launchkey.entities.service.warnings')
+    def test_types_requirement_invalid_type(self, warnings_patch):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["knowledge", "invalid"] }}'
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(
+            response.auth_policy.minimum_requirements,
+            ['knowledge']
+        )
+        warnings_patch.warn.assert_called_once()
+
+    def test_amount_requirement(self):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 3 }}'
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(
+            response.auth_policy.minimum_amount,
+            3
+        )
+        self.assertEqual(
+            response.auth_policy.minimum_requirements,
+            []
+        )
+
+    def test_amount_requirement_with_types_included(self):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 3, "types": ["knowledge", "inherence"] }}'
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(
+            response.auth_policy.minimum_amount,
+            3
+        )
+        self.assertEqual(
+            response.auth_policy.minimum_requirements,
+            []
+        )
+
+
+@ddt
 class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
 
     def setUp(self):
@@ -247,27 +355,31 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.transport = MagicMock(spec=JOSETransport)
         self.transport.decrypt_response.return_value = "{}"
 
-        self.addCleanup(patch.stopall)
-
-    def test_missing_auth_policy(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_methods": [{"method": "wearable", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "circle_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
-        response = AuthorizationResponse(self.data, self.transport)
-        self.assertEqual(response.type, AuthResponseType.AUTHORIZED)
-        self.assertEqual(response.reason, AuthResponseReason.APPROVED)
-
     def test_missing_auth_methods(self):
         self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["possession"], "geofences": [] } }'
         response = AuthorizationResponse(self.data, self.transport)
-        self.assertEqual(response.type, AuthResponseType.AUTHORIZED)
-        self.assertEqual(response.reason, AuthResponseReason.APPROVED)
+        self.assertIsNone(response.auth_methods)
+
+    def test_unknown_auth_method(self):
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "something_new", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        response = AuthorizationResponse(self.data, self.transport)
+        unknown = response.auth_methods[7]
+        self.assertEqual(unknown.method, PolicyMethod.OTHER)
+        self.assertFalse(unknown.set)
+        self.assertFalse(unknown.active)
+        self.assertTrue(unknown.allowed)
+        self.assertTrue(unknown.supported)
+        self.assertIsNone(unknown.user_required)
+        self.assertIsNone(unknown.passed)
+        self.assertIsNone(unknown.error)
 
     def test_1_pin_code_and_locations_success(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [ ] }, "auth_methods": [{"method": "wearable", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.AUTHORIZED)
         self.assertEqual(response.reason, AuthResponseReason.APPROVED)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, 'locations')
+        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -276,7 +388,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(locations.passed)
         self.assertFalse(locations.error)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, 'pin_code')
+        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -284,14 +396,18 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(pin_code.user_required)
         self.assertTrue(pin_code.passed)
         self.assertFalse(pin_code.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
 
     def test_2_location_failure_unchecked_pincode(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "AUTHENTICATION", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [ ] }, "auth_methods": [{"method": "wearable", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": false, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "AUTHENTICATION", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": false, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.AUTHENTICATION)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, 'locations')
+        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -300,7 +416,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(locations.passed)
         self.assertFalse(locations.error)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, 'pin_code')
+        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -308,14 +424,18 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(pin_code.user_required)
         self.assertIsNone(pin_code.passed)
         self.assertIsNone(pin_code.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
 
     def test_3_possession_failure_unchecked_circle_code(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "POLICY", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["possession"], "geofences": [ ] }, "auth_methods": [{"method": "wearable", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "POLICY", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["possession"], "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.POLICY)
         circle_code = response.auth_methods[4]
-        self.assertEqual(circle_code.method, 'circle_code')
+        self.assertEqual(circle_code.method, PolicyMethod.CIRCLE_CODE)
         self.assertTrue(circle_code.set)
         self.assertTrue(circle_code.active)
         self.assertTrue(circle_code.allowed)
@@ -323,14 +443,18 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(circle_code.user_required)
         self.assertIsNone(circle_code.passed)
         self.assertIsNone(circle_code.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
 
     def test_4_amount_failure_unchecked_fingerprint(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "POLICY", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [ ] }, "auth_methods": [{"method": "wearable", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "POLICY", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.POLICY)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, 'fingerprint')
+        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -338,14 +462,18 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(fingerprint.user_required)
         self.assertIsNone(fingerprint.passed)
         self.assertIsNone(fingerprint.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
 
     def test_5_amount_success_failed_wearable_sensor_unchecked_fingerprint(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "SENSOR", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [ ] }, "auth_methods": [{"method": "wearable", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": true }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "SENSOR", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": true }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.SENSOR)
         wearable = response.auth_methods[0]
-        self.assertEqual(wearable.method, 'wearable')
+        self.assertEqual(wearable.method, PolicyMethod.WEARABLES)
         self.assertTrue(wearable.set)
         self.assertTrue(wearable.active)
         self.assertTrue(wearable.allowed)
@@ -354,7 +482,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(wearable.passed)
         self.assertTrue(wearable.error)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, 'fingerprint')
+        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -362,14 +490,18 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(fingerprint.user_required)
         self.assertIsNone(fingerprint.passed)
         self.assertIsNone(fingerprint.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
 
     def test_6_required_amount_2_failed_wearable_unchecked_location_unchecked_fingerprint(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "AUTHENTICATION", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [ ] }, "auth_methods": [{"method": "wearable", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": false, "error": false }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "AUTHENTICATION", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": false, "error": false }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.AUTHENTICATION)
         wearable = response.auth_methods[0]
-        self.assertEqual(wearable.method, 'wearable')
+        self.assertEqual(wearable.method, PolicyMethod.WEARABLES)
         self.assertTrue(wearable.set)
         self.assertTrue(wearable.active)
         self.assertTrue(wearable.allowed)
@@ -378,7 +510,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(wearable.passed)
         self.assertFalse(wearable.error)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, 'locations')
+        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -387,7 +519,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(locations.passed)
         self.assertIsNone(locations.error)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, 'fingerprint')
+        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -395,14 +527,18 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(fingerprint.user_required)
         self.assertIsNone(fingerprint.passed)
         self.assertIsNone(fingerprint.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
 
     def test_7_required_amount_2_successful_fingerprint_successful_locations_unchecked_wearable(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [ ] }, "auth_methods": [{"method": "wearable", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.AUTHORIZED)
         self.assertEqual(response.reason, AuthResponseReason.APPROVED)
         wearable = response.auth_methods[0]
-        self.assertEqual(wearable.method, 'wearable')
+        self.assertEqual(wearable.method, PolicyMethod.WEARABLES)
         self.assertTrue(wearable.set)
         self.assertTrue(wearable.active)
         self.assertTrue(wearable.allowed)
@@ -411,7 +547,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(wearable.passed)
         self.assertIsNone(wearable.error)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, 'locations')
+        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -420,7 +556,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(locations.passed)
         self.assertFalse(locations.error)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, 'fingerprint')
+        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -428,14 +564,18 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(fingerprint.user_required)
         self.assertTrue(fingerprint.passed)
         self.assertFalse(fingerprint.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
 
     def test_8_required_amount_3_passed_geofence_failed_amount_skipped_face_skipped_pin(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "POLICY", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 3, "geofences": [{"latitude": 36.083548, "longitude": -115.157517, "radius": 150, "name": "work"} ] }, "auth_methods": [{"method": "wearable", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "POLICY", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 3, "geofences": [{"latitude": 36.083548, "longitude": -115.157517, "radius": 150, "name": "work"} ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.POLICY)
         geofencing = response.auth_methods[1]
-        self.assertEqual(geofencing.method, 'geofencing')
+        self.assertEqual(geofencing.method, PolicyMethod.GEOFENCING)
         self.assertIsNone(geofencing.set)
         self.assertTrue(geofencing.active)
         self.assertTrue(geofencing.allowed)
@@ -444,7 +584,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(geofencing.passed)
         self.assertIsNone(geofencing.error)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, 'pin_code')
+        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -453,7 +593,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(pin_code.passed)
         self.assertIsNone(pin_code.error)
         face = response.auth_methods[5]
-        self.assertEqual(face.method, 'face')
+        self.assertEqual(face.method, PolicyMethod.FACE)
         self.assertTrue(face.set)
         self.assertTrue(face.active)
         self.assertTrue(face.allowed)
@@ -461,14 +601,21 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(face.user_required)
         self.assertIsNone(face.passed)
         self.assertIsNone(face.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            [
+                GeoFence(latitude=36.083548, longitude=-115.157517,
+                         radius=150.0, name="work")
+            ]
+        )
 
     def test_9_required_amount_2_failed_geofence_unchecked_face_unchecked_pin(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "AUTHENTICATION", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [{"latitude": 36.083548, "longitude": -115.157517, "radius": 150, "name": "work"} ] }, "auth_methods": [{"method": "wearable", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": false, "error": false }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "AUTHENTICATION", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 2, "geofences": [{"latitude": 36.083548, "longitude": -115.157517, "radius": 150, "name": "work"} ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": false, "error": false }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.AUTHENTICATION)
         geofencing = response.auth_methods[1]
-        self.assertEqual(geofencing.method, 'geofencing')
+        self.assertEqual(geofencing.method, PolicyMethod.GEOFENCING)
         self.assertIsNone(geofencing.set)
         self.assertTrue(geofencing.active)
         self.assertTrue(geofencing.allowed)
@@ -477,7 +624,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(geofencing.passed)
         self.assertFalse(geofencing.error)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, 'pin_code')
+        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -486,7 +633,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(pin_code.passed)
         self.assertIsNone(pin_code.error)
         face = response.auth_methods[5]
-        self.assertEqual(face.method, 'face')
+        self.assertEqual(face.method, PolicyMethod.FACE)
         self.assertTrue(face.set)
         self.assertTrue(face.active)
         self.assertTrue(face.allowed)
@@ -494,14 +641,21 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(face.user_required)
         self.assertIsNone(face.passed)
         self.assertIsNone(face.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            [
+                GeoFence(latitude=36.083548, longitude=-115.157517,
+                         radius=150.0, name="work")
+            ]
+        )
 
     def test_10_location_failure_unchecked_fingerprint_passed_geofence(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "AUTHENTICATION", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [{"latitude": 36.083548, "longitude": -115.157517, "radius": 150, "name": "work"} ] }, "auth_methods": [{"method": "wearable", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": true, "error": false }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": false, "error": false }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "AUTHENTICATION", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [{"latitude": 36.083548, "longitude": -115.157517, "radius": 150, "name": "work"} ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": true, "error": false }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": false, "error": false }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.AUTHENTICATION)
         geofencing = response.auth_methods[1]
-        self.assertEqual(geofencing.method, 'geofencing')
+        self.assertEqual(geofencing.method, PolicyMethod.GEOFENCING)
         self.assertIsNone(geofencing.set)
         self.assertTrue(geofencing.active)
         self.assertTrue(geofencing.allowed)
@@ -510,7 +664,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(geofencing.passed)
         self.assertFalse(geofencing.error)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, 'locations')
+        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -519,7 +673,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(locations.passed)
         self.assertFalse(locations.error)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, 'fingerprint')
+        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -527,14 +681,21 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(fingerprint.user_required)
         self.assertIsNone(fingerprint.passed)
         self.assertIsNone(fingerprint.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            [
+                GeoFence(latitude=36.083548, longitude=-115.157517,
+                         radius=150.0, name="work")
+            ]
+        )
 
     def test_11_required_possession_failure_unchecked_pin_unchecked_circle_code(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "POLICY", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["possession"], "geofences": [] }, "auth_methods": [{"method": "wearable", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "circle_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "POLICY", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["possession"], "geofences": [] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "circle_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.POLICY)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, 'pin_code')
+        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -543,7 +704,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(pin_code.passed)
         self.assertIsNone(pin_code.error)
         circle_code = response.auth_methods[4]
-        self.assertEqual(circle_code.method, 'circle_code')
+        self.assertEqual(circle_code.method, PolicyMethod.CIRCLE_CODE)
         self.assertTrue(circle_code.set)
         self.assertTrue(circle_code.active)
         self.assertTrue(circle_code.allowed)
@@ -551,14 +712,18 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(circle_code.user_required)
         self.assertIsNone(circle_code.passed)
         self.assertIsNone(circle_code.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
 
     def test_12_required_amount_1_failed_wearable_sensor_unchecked_locations(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "SENSOR", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 1, "geofences": [] }, "auth_methods": [{"method": "wearable", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": true }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "FAILED", "reason": "SENSOR", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 1, "geofences": [] }, "auth_methods": [{"method": "wearables", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": true }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "pin_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.SENSOR)
         wearable = response.auth_methods[0]
-        self.assertEqual(wearable.method, 'wearable')
+        self.assertEqual(wearable.method, PolicyMethod.WEARABLES)
         self.assertTrue(wearable.set)
         self.assertTrue(wearable.active)
         self.assertTrue(wearable.allowed)
@@ -567,7 +732,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(wearable.passed)
         self.assertTrue(wearable.error)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, 'locations')
+        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -575,6 +740,10 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(locations.user_required)
         self.assertIsNone(locations.passed)
         self.assertIsNone(locations.error)
+        self.assertEqual(
+            response.auth_policy.geofences,
+            []
+        )
 
 
 class TestGeoFence(unittest.TestCase):

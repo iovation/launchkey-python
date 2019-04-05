@@ -5,6 +5,7 @@
 # pylint: disable=too-many-locals
 
 import datetime
+import warnings
 from json import loads, dumps
 from enum import Enum
 from formencode import Invalid
@@ -37,6 +38,18 @@ class AuthResponseType(Enum):
     AUTHORIZED = "AUTHORIZED"
     DENIED = "DENIED"
     FAILED = "FAILED"
+    OTHER = "OTHER"
+
+
+class PolicyMethod(Enum):
+    """Authentication Request Policy Method Enum"""
+    PIN_CODE = "PIN_CODE"
+    CIRCLE_CODE = "CIRCLE_CODE"
+    GEOFENCING = "GEOFENCING"
+    LOCATIONS = "LOCATIONS"
+    WEARABLES = "WEARABLES"
+    FINGERPRINT = "FINGERPRINT"
+    FACE = "FACE"
     OTHER = "OTHER"
 
 
@@ -409,12 +422,10 @@ class AuthPolicy(object):
         return "AuthPolicy <" \
                "minimum_requirements={minimum_requirements}, " \
                "minimum_amount={minimum_amount}, " \
-               "jailbreak_protection={jailbreak_protection}, " \
                "geofences={geofences}>".\
             format(
                 minimum_requirements=self.minimum_requirements,
                 minimum_amount=self.minimum_amount,
-                jailbreak_protection=self.jailbreak_protection,
                 geofences=self.geofences
             )
 
@@ -458,7 +469,7 @@ class AuthMethod(object):
 
     def __repr__(self):
         return "AuthMethod <" \
-               "method=\"{method}\", " \
+               "method={method}, " \
                "set={set}, " \
                "active={active}, " \
                "allowed={allowed}, " \
@@ -467,7 +478,7 @@ class AuthMethod(object):
                "passed={passed}, " \
                "error={error}>".\
             format(
-                method=self.method,
+                method=self.method.value if self.method else None,
                 set=self.set,
                 active=self.active,
                 allowed=self.allowed,
@@ -537,10 +548,17 @@ class AuthorizationResponse(object):
         auth_methods = decrypted_jwe.get("auth_methods")
         if auth_methods:
             self.auth_methods = [
-                AuthMethod(method['method'], method['set'], method['active'],
-                           method['allowed'], method['supported'],
-                           method['user_required'], method['passed'],
-                           method['error'])
+                AuthMethod(
+                    self._retrieve_enum_from_value(
+                        PolicyMethod, method['method'].upper()),
+                    method['set'],
+                    method['active'],
+                    method['allowed'],
+                    method['supported'],
+                    method['user_required'],
+                    method['passed'],
+                    method['error']
+                )
                 for method in auth_methods
             ]
 
@@ -551,7 +569,15 @@ class AuthorizationResponse(object):
                 kwargs['any'] = auth_policy['amount']
             elif auth_policy['requirement'] == "types":
                 for item in auth_policy['types']:
-                    kwargs[item.lower()] = True
+                    type = item.lower()
+                    if type in ['knowledge', 'inherence', 'possession']:
+                        kwargs[type] = True
+                    else:
+                        warnings.warn(
+                            "Invalid policy type given: %s. "
+                            "It will be ignored, but this could "
+                            "signify the need for an update." % type)
+
             self.auth_policy = AuthPolicy(**kwargs)
             for fence in auth_policy['geofences']:
                 self.auth_policy.add_geofence(
@@ -625,7 +651,7 @@ class AuthorizationResponse(object):
         self.denial_reason = None
         self.fraud = None
         self.auth_policy = None
-        self.auth_methods = []
+        self.auth_methods = None
         self._parse_device_response(data, transport)
 
 
