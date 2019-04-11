@@ -248,13 +248,45 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
         self.transport = MagicMock(spec=JOSETransport)
         self.transport.decrypt_response.return_value = "{}"
 
+        self.json_loads_patch = patch(
+            "launchkey.entities.service.loads").start()
+        self.addCleanup(patch.stopall)
+        self.json_loads_patch.return_value = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": None,
+                "geofences": [
+                    {"latitude": 36.083548, "longitude": -115.157517, "radius": 150, "name": "work"}
+                ]
+            },
+            "auth_methods": [
+                {"method": "wearables", "set": False, "active": False, "allowed": True, "supported": True, "user_required": None, "passed": None, "error": None },
+                {"method": "geofencing", "set": None, "active": True, "allowed": True, "supported": True, "user_required": None, "passed": None, "error": None },
+                {"method": "locations", "set": False, "active": False, "allowed": True, "supported": True, "user_required": None, "passed": None, "error": None },
+                {"method": "pin_code", "set": True, "active": True, "allowed": True, "supported": True, "user_required": False, "passed": None, "error": None },
+                {"method": "circle_code", "set": True, "active": True, "allowed": True, "supported": True, "user_required": False, "passed": None, "error": None },
+                {"method": "face", "set": False, "active": False, "allowed": True, "supported": True, "user_required": None, "passed": None, "error": None },
+                {"method": "fingerprint", "set": False, "active": False, "allowed": True, "supported": True, "user_required": None, "passed": None, "error": None }
+            ]
+        }
+
     def test_missing_auth_policy(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "circle_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": false, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        del self.json_loads_patch.return_value['auth_policy']
         response = AuthorizationResponse(self.data, self.transport)
         self.assertIsNone(response.auth_policy)
 
     def test_geofence_auth_policy(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [{"latitude": 36.083548, "longitude": -115.157517, "radius": 150, "name": "work"}, {"latitude": 40.55, "longitude": -90.12, "radius": 100, "name": "home"}] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        self.json_loads_patch.return_value['auth_policy']['geofences'] = [
+            {"latitude": 36.083548, "longitude": -115.157517, "radius": 150,
+             "name": "work"},
+            {"latitude": 40.55, "longitude": -90.12, "radius": 100,
+             "name": "home"}
+        ]
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(
             response.auth_policy.geofences,
@@ -267,7 +299,7 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
         )
 
     def test_empty_geofence_auth_policy(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        self.json_loads_patch.return_value['auth_policy']['geofences'] = []
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(
             response.auth_policy.geofences,
@@ -275,15 +307,30 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
         )
 
     def test_missing_geofence_auth_policy(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
+        del self.json_loads_patch.return_value['auth_policy']['geofences']
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(
             response.auth_policy.geofences,
             []
         )
 
+    def test_invalid_requirement(self):
+        self.json_loads_patch.return_value['auth_policy']['requirement'] = 'invalid'
+        self.json_loads_patch.return_value['auth_policy']['types'] = ['knowledge', 'inherence']
+        self.json_loads_patch.return_value['auth_policy']['amount'] = 2
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(
+            response.auth_policy.minimum_requirements,
+            []
+        )
+        self.assertEqual(
+            response.auth_policy.minimum_amount,
+            0
+        )
+
     def test_types_requirement(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["knowledge", "inherence"] }}'
+        self.json_loads_patch.return_value['auth_policy']['requirement'] = 'types'
+        self.json_loads_patch.return_value['auth_policy']['types'] = ['knowledge', 'inherence']
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(
             response.auth_policy.minimum_requirements,
@@ -295,11 +342,13 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
         )
 
     def test_types_requirement_with_amount_included(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["knowledge", "inherence"], "amount": 3 }}'
+        self.json_loads_patch.return_value['auth_policy']['requirement'] = 'types'
+        self.json_loads_patch.return_value['auth_policy']['types'] = ['inherence']
+        self.json_loads_patch.return_value['auth_policy']['amount'] = 3
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(
             response.auth_policy.minimum_requirements,
-            ['knowledge', 'inherence']
+            ['inherence']
         )
         self.assertEqual(
             response.auth_policy.minimum_amount,
@@ -308,7 +357,8 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
 
     @patch('launchkey.entities.service.warnings')
     def test_types_requirement_invalid_type(self, warnings_patch):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "types", "types": ["knowledge", "invalid"] }}'
+        self.json_loads_patch.return_value['auth_policy']['requirement'] = 'types'
+        self.json_loads_patch.return_value['auth_policy']['types'] = ['knowledge', 'invalid']
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(
             response.auth_policy.minimum_requirements,
@@ -317,7 +367,8 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
         warnings_patch.warn.assert_called_once()
 
     def test_amount_requirement(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 3 }}'
+        self.json_loads_patch.return_value['auth_policy']['requirement'] = 'amount'
+        self.json_loads_patch.return_value['auth_policy']['amount'] = 3
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(
             response.auth_policy.minimum_amount,
@@ -329,7 +380,9 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
         )
 
     def test_amount_requirement_with_types_included(self):
-        self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": "amount", "amount": 3, "types": ["knowledge", "inherence"] }}'
+        self.json_loads_patch.return_value['auth_policy']['requirement'] = 'amount'
+        self.json_loads_patch.return_value['auth_policy']['amount'] = 3
+        self.json_loads_patch.return_value['auth_policy']['types'] = ['knowledge', 'invalid']
         response = AuthorizationResponse(self.data, self.transport)
         self.assertEqual(
             response.auth_policy.minimum_amount,
