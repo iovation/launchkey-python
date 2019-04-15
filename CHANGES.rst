@@ -6,6 +6,8 @@ CHANGELOG for LaunchKey Python SDK
 
 * Added get_all_directory_sdk_keys method to Organization client
 * Added integration testing suite
+* Added device failure sensor type
+* Added auth_methods and auth_policy attributes to the AuthorizationResponse object
 
 3.4.0
 -----
