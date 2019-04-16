@@ -6,8 +6,8 @@ from formencode import Invalid
 from datetime import time
 
 from launchkey.entities.service import AuthorizationResponse, \
-    AuthResponseType, AuthResponseReason, GeoFence, TimeFence, PolicyMethod, \
-    AuthPolicy, AuthorizationRequest, AuthMethod
+    AuthResponseType, AuthResponseReason, GeoFence, TimeFence, \
+    AuthMethodType, AuthPolicy, AuthorizationRequest, AuthMethod
 from launchkey.exceptions import UnexpectedDeviceResponse
 from launchkey.transports.jose_auth import JOSETransport
 
@@ -455,7 +455,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.transport.decrypt_response.return_value = '{"auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008", "type": "AUTHORIZED", "reason": "APPROVED", "denial_reason": "32", "service_pins": ["1", "2", "3"], "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008", "auth_policy": {"requirement": null, "geofences": [ ] }, "auth_methods": [{"method": "wearables", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "geofencing", "set": null, "active": true, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "locations", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "pin_code", "set": true, "active": true, "allowed": true, "supported": true, "user_required": true, "passed": true, "error": false }, {"method": "circle_code", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "face", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "fingerprint", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null }, {"method": "something_new", "set": false, "active": false, "allowed": true, "supported": true, "user_required": null, "passed": null, "error": null } ] }'
         response = AuthorizationResponse(self.data, self.transport)
         unknown = response.auth_methods[7]
-        self.assertEqual(unknown.method, PolicyMethod.OTHER)
+        self.assertEqual(unknown.method, AuthMethodType.OTHER)
         self.assertFalse(unknown.set)
         self.assertFalse(unknown.active)
         self.assertTrue(unknown.allowed)
@@ -470,7 +470,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.AUTHORIZED)
         self.assertEqual(response.reason, AuthResponseReason.APPROVED)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
+        self.assertEqual(locations.method, AuthMethodType.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -479,7 +479,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(locations.passed)
         self.assertFalse(locations.error)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
+        self.assertEqual(pin_code.method, AuthMethodType.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -498,7 +498,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.AUTHENTICATION)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
+        self.assertEqual(locations.method, AuthMethodType.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -507,7 +507,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(locations.passed)
         self.assertFalse(locations.error)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
+        self.assertEqual(pin_code.method, AuthMethodType.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -526,7 +526,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.POLICY)
         circle_code = response.auth_methods[4]
-        self.assertEqual(circle_code.method, PolicyMethod.CIRCLE_CODE)
+        self.assertEqual(circle_code.method, AuthMethodType.CIRCLE_CODE)
         self.assertTrue(circle_code.set)
         self.assertTrue(circle_code.active)
         self.assertTrue(circle_code.allowed)
@@ -545,7 +545,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.POLICY)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
+        self.assertEqual(fingerprint.method, AuthMethodType.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -564,7 +564,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.SENSOR)
         wearable = response.auth_methods[0]
-        self.assertEqual(wearable.method, PolicyMethod.WEARABLES)
+        self.assertEqual(wearable.method, AuthMethodType.WEARABLES)
         self.assertTrue(wearable.set)
         self.assertTrue(wearable.active)
         self.assertTrue(wearable.allowed)
@@ -573,7 +573,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(wearable.passed)
         self.assertTrue(wearable.error)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
+        self.assertEqual(fingerprint.method, AuthMethodType.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -592,7 +592,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.AUTHENTICATION)
         wearable = response.auth_methods[0]
-        self.assertEqual(wearable.method, PolicyMethod.WEARABLES)
+        self.assertEqual(wearable.method, AuthMethodType.WEARABLES)
         self.assertTrue(wearable.set)
         self.assertTrue(wearable.active)
         self.assertTrue(wearable.allowed)
@@ -601,7 +601,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(wearable.passed)
         self.assertFalse(wearable.error)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
+        self.assertEqual(locations.method, AuthMethodType.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -610,7 +610,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(locations.passed)
         self.assertIsNone(locations.error)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
+        self.assertEqual(fingerprint.method, AuthMethodType.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -629,7 +629,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.AUTHORIZED)
         self.assertEqual(response.reason, AuthResponseReason.APPROVED)
         wearable = response.auth_methods[0]
-        self.assertEqual(wearable.method, PolicyMethod.WEARABLES)
+        self.assertEqual(wearable.method, AuthMethodType.WEARABLES)
         self.assertTrue(wearable.set)
         self.assertTrue(wearable.active)
         self.assertTrue(wearable.allowed)
@@ -638,7 +638,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(wearable.passed)
         self.assertIsNone(wearable.error)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
+        self.assertEqual(locations.method, AuthMethodType.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -647,7 +647,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(locations.passed)
         self.assertFalse(locations.error)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
+        self.assertEqual(fingerprint.method, AuthMethodType.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -666,7 +666,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.POLICY)
         geofencing = response.auth_methods[1]
-        self.assertEqual(geofencing.method, PolicyMethod.GEOFENCING)
+        self.assertEqual(geofencing.method, AuthMethodType.GEOFENCING)
         self.assertIsNone(geofencing.set)
         self.assertTrue(geofencing.active)
         self.assertTrue(geofencing.allowed)
@@ -675,7 +675,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(geofencing.passed)
         self.assertIsNone(geofencing.error)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
+        self.assertEqual(pin_code.method, AuthMethodType.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -684,7 +684,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(pin_code.passed)
         self.assertIsNone(pin_code.error)
         face = response.auth_methods[5]
-        self.assertEqual(face.method, PolicyMethod.FACE)
+        self.assertEqual(face.method, AuthMethodType.FACE)
         self.assertTrue(face.set)
         self.assertTrue(face.active)
         self.assertTrue(face.allowed)
@@ -706,7 +706,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.AUTHENTICATION)
         geofencing = response.auth_methods[1]
-        self.assertEqual(geofencing.method, PolicyMethod.GEOFENCING)
+        self.assertEqual(geofencing.method, AuthMethodType.GEOFENCING)
         self.assertIsNone(geofencing.set)
         self.assertTrue(geofencing.active)
         self.assertTrue(geofencing.allowed)
@@ -715,7 +715,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(geofencing.passed)
         self.assertFalse(geofencing.error)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
+        self.assertEqual(pin_code.method, AuthMethodType.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -724,7 +724,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(pin_code.passed)
         self.assertIsNone(pin_code.error)
         face = response.auth_methods[5]
-        self.assertEqual(face.method, PolicyMethod.FACE)
+        self.assertEqual(face.method, AuthMethodType.FACE)
         self.assertTrue(face.set)
         self.assertTrue(face.active)
         self.assertTrue(face.allowed)
@@ -746,7 +746,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.AUTHENTICATION)
         geofencing = response.auth_methods[1]
-        self.assertEqual(geofencing.method, PolicyMethod.GEOFENCING)
+        self.assertEqual(geofencing.method, AuthMethodType.GEOFENCING)
         self.assertIsNone(geofencing.set)
         self.assertTrue(geofencing.active)
         self.assertTrue(geofencing.allowed)
@@ -755,7 +755,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(geofencing.passed)
         self.assertFalse(geofencing.error)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
+        self.assertEqual(locations.method, AuthMethodType.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -764,7 +764,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(locations.passed)
         self.assertFalse(locations.error)
         fingerprint = response.auth_methods[6]
-        self.assertEqual(fingerprint.method, PolicyMethod.FINGERPRINT)
+        self.assertEqual(fingerprint.method, AuthMethodType.FINGERPRINT)
         self.assertTrue(fingerprint.set)
         self.assertTrue(fingerprint.active)
         self.assertTrue(fingerprint.allowed)
@@ -786,7 +786,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.POLICY)
         pin_code = response.auth_methods[3]
-        self.assertEqual(pin_code.method, PolicyMethod.PIN_CODE)
+        self.assertEqual(pin_code.method, AuthMethodType.PIN_CODE)
         self.assertTrue(pin_code.set)
         self.assertTrue(pin_code.active)
         self.assertTrue(pin_code.allowed)
@@ -795,7 +795,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(pin_code.passed)
         self.assertIsNone(pin_code.error)
         circle_code = response.auth_methods[4]
-        self.assertEqual(circle_code.method, PolicyMethod.CIRCLE_CODE)
+        self.assertEqual(circle_code.method, AuthMethodType.CIRCLE_CODE)
         self.assertTrue(circle_code.set)
         self.assertTrue(circle_code.active)
         self.assertTrue(circle_code.allowed)
@@ -814,7 +814,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertEqual(response.type, AuthResponseType.FAILED)
         self.assertEqual(response.reason, AuthResponseReason.SENSOR)
         wearable = response.auth_methods[0]
-        self.assertEqual(wearable.method, PolicyMethod.WEARABLES)
+        self.assertEqual(wearable.method, AuthMethodType.WEARABLES)
         self.assertTrue(wearable.set)
         self.assertTrue(wearable.active)
         self.assertTrue(wearable.allowed)
@@ -823,7 +823,7 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertIsNone(wearable.passed)
         self.assertTrue(wearable.error)
         locations = response.auth_methods[2]
-        self.assertEqual(locations.method, PolicyMethod.LOCATIONS)
+        self.assertEqual(locations.method, AuthMethodType.LOCATIONS)
         self.assertTrue(locations.set)
         self.assertTrue(locations.active)
         self.assertTrue(locations.allowed)
@@ -1236,7 +1236,7 @@ class TestAuthorizationRequest(unittest.TestCase):
 class TestAuthMethod(unittest.TestCase):
     def test_repr(self):
         auth_method = AuthMethod(
-            PolicyMethod.FINGERPRINT,
+            AuthMethodType.FINGERPRINT,
             True,
             True,
             False,
