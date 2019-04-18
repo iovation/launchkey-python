@@ -59,7 +59,7 @@ class TestRequestsHTTPTransportParseResponse(unittest.TestCase):
 class TestRequestsHTTPTransport(unittest.TestCase):
 
     def setUp(self):
-        patcher = patch('requests.session')
+        patcher = patch('launchkey.transports.http.requests')
         self._session_patch = patcher.start()
         self.addCleanup(patcher.stop)
         self._transport = RequestsTransport()
@@ -80,20 +80,20 @@ class TestRequestsHTTPTransport(unittest.TestCase):
 
     def test_get(self):
         self._transport.get(MagicMock())
-        self._session_patch.return_value.get.assert_called_once()
+        self._session_patch.get.assert_called_once()
 
     def test_post(self):
         self._transport.post(MagicMock())
-        self._session_patch.return_value.post.assert_called_once()
+        self._session_patch.post.assert_called_once()
 
     def test_put(self):
         self._transport.put(MagicMock())
-        self._session_patch.return_value.put.assert_called_once()
+        self._session_patch.put.assert_called_once()
 
     def test_delete(self):
         self._transport.delete(MagicMock())
-        self._session_patch.return_value.delete.assert_called_once()
+        self._session_patch.delete.assert_called_once()
         
     def test_patch(self):
         self._transport.patch(MagicMock())
-        self._session_patch.return_value.patch.assert_called_once()
+        self._session_patch.patch.assert_called_once()
