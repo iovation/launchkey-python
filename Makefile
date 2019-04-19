@@ -2,8 +2,6 @@ ci-py27: test
 
 ci-pypy: test
 
-ci-py34: test
-
 ci-py35: test
 
 ci-py36: ci
