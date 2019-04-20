@@ -276,6 +276,7 @@ def verify_denial_context_inquiry_is_disabled(context):
                         "shouldn't have been ")
 
 
+@given("I have added an SDK Key to the Directory")
 @when("I generate and add an SDK Key to the Directory")
 def generate_and_add_sdk_key_to_directory(context):
     current_directory = context.entity_manager.get_current_directory()

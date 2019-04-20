@@ -10,3 +10,4 @@ build
 .eggs
 .coverage
 \.tox/*
+*.apk

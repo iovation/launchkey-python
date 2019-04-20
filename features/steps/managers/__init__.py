@@ -10,3 +10,6 @@ from .organization_service import OrganizationServiceManager
 from .organization_service_policy import OrganizationServicePolicyManager
 from .entity_manager import EntityManager
 from .auth_policy import AuthPolicyManager
+from .sample_app_device_manager import SampleAppDeviceManager
+from .kobiton_manager import KobitonManager
+from .appium_device_manager import AppiumDeviceManager

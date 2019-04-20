@@ -18,7 +18,10 @@ class EntityManager:
         self._auth_policy_manager = auth_policy_manager
 
     def get_current_auth_response(self):
-        return self._directory_service_auths_manager.current_auth_request
+        return self._directory_service_auths_manager.current_auth_response
+
+    def get_current_auth_request_id(self):
+        return self._directory_service_auths_manager.current_auth_request_id
 
     def get_current_directory(self):
         return self._directory_manager.current_directory

@@ -5,6 +5,7 @@ verify_ssl = true
 
 [packages]
 launchkey = {path = ".", editable = true}
+appium-python-client = "*"
 
 [dev-packages]
 # From setup.py tests_require to lock testing requirements

@@ -35,6 +35,22 @@ uShJAoGAXMnqK51x0FRPuG23lbYzBSYZstLfY+wzzpmPQANkfzQCeJVzpbExrahx
 R0vEOCX0M9qMvW6zlIa+TnPi04iCo9NPcysgubFUufNTBz89v+Xfl9kXqHeJMT4j
 Ztj8w6eKRmeLlLdGuRpFBQ6CcYGY9a5fJ9MmHGMvoQ+A3MuEM6U=
 -----END RSA PRIVATE KEY-----"""
+
+    # Note that that the only app currently supported is the Android
+    # Authenticator SDK demo app
+    # https://github.com/iovation/launchkey-android-authenticator-sdk/tree/master/demo-app
+    context.sample_app_apk_path = '/path/to/sample-app.apk'
+
+    # You can use Kobiton Testing
+    context.kobiton_username = "username"
+    context.kobiton_sdk_key = "83aab95e-c577-410d-a7db-c7a83bd2433a"
+
+    # Or Local Testing
+    context.appium_url = 'http://localhost:4723/wd/hub'
+    context.platform_name = 'Android'
+    context.platform_version = '8.0.0'
+    context.device_name = 'Pixel'
+
     base_before_all(context)
 
 
