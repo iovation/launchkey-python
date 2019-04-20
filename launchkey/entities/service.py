@@ -41,8 +41,8 @@ class AuthResponseType(Enum):
     OTHER = "OTHER"
 
 
-class PolicyMethod(Enum):
-    """Authentication Request Policy Method Enum"""
+class AuthMethodType(Enum):
+    """Authentication Request Method Type Enum"""
     PIN_CODE = "PIN_CODE"
     CIRCLE_CODE = "CIRCLE_CODE"
     GEOFENCING = "GEOFENCING"
@@ -550,7 +550,7 @@ class AuthorizationResponse(object):
             self.auth_methods = [
                 AuthMethod(
                     self._retrieve_enum_from_value(
-                        PolicyMethod, method['method'].upper()),
+                        AuthMethodType, method['method'].upper()),
                     method['set'],
                     method['active'],
                     method['allowed'],
