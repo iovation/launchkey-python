@@ -16,9 +16,6 @@ class RequestsTransport(object):
     testing = False
     verify_ssl = True
 
-    def __init__(self):
-        self._session = requests.session()
-
     def set_url(self, url, testing):
         """
         :param url: Base url for the querying LaunchKey API
@@ -61,8 +58,8 @@ class RequestsTransport(object):
         the request.
         :return:
         """
-        response = self._session.get(self.url + path, params=data,
-                                     headers=headers, verify=self.verify_ssl)
+        response = requests.get(self.url + path, params=data,
+                                headers=headers, verify=self.verify_ssl)
         return self._parse_response(response)
 
     def post(self, path, headers=None, data=None):
@@ -74,8 +71,8 @@ class RequestsTransport(object):
         body of the request.
         :return:
         """
-        response = self._session.post(self.url + path, data=data,
-                                      headers=headers, verify=self.verify_ssl)
+        response = requests.post(self.url + path, data=data,
+                                 headers=headers, verify=self.verify_ssl)
         return self._parse_response(response)
 
     def put(self, path, headers=None, data=None):
@@ -87,8 +84,8 @@ class RequestsTransport(object):
         body of the request.
         :return:
         """
-        response = self._session.put(self.url + path, data=data,
-                                     headers=headers, verify=self.verify_ssl)
+        response = requests.put(self.url + path, data=data,
+                                headers=headers, verify=self.verify_ssl)
         return self._parse_response(response)
 
     def delete(self, path, headers=None, data=None):
@@ -100,9 +97,9 @@ class RequestsTransport(object):
         body of the request.
         :return:
         """
-        response = self._session.delete(self.url + path, data=data,
-                                        headers=headers,
-                                        verify=self.verify_ssl)
+        response = requests.delete(self.url + path, data=data,
+                                   headers=headers,
+                                   verify=self.verify_ssl)
         return self._parse_response(response)
 
     def patch(self, path, headers=None, data=None):
@@ -114,6 +111,6 @@ class RequestsTransport(object):
         body of the request.
         :return:
         """
-        response = self._session.patch(self.url + path, data=data,
-                                       headers=headers, verify=self.verify_ssl)
+        response = requests.patch(self.url + path, data=data,
+                                  headers=headers, verify=self.verify_ssl)
         return self._parse_response(response)
