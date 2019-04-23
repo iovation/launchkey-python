@@ -1,3 +1,5 @@
+import logging
+
 from launchkey.factories import OrganizationFactory
 from launchkey import LAUNCHKEY_PRODUCTION
 
@@ -47,6 +49,10 @@ def before_all(context):
 
         devices = context.kobiton_manager.get_devices()
         for device in devices:
+            # Look for a device that is not currently booked (check out by
+            # another user), is online and ready to use, is Android (currently
+            # the only supported device type), and a platform that is greater
+            # than 5.0
             if not device.is_booked and device.is_online and device.platform_name == "Android" and \
                     int(device.platform_version[0]) > 5:
                 desired_caps['platformName'] = device.platform_name
@@ -55,7 +61,6 @@ def before_all(context):
                 desired_caps['deviceName'] = device.device_name
                 desired_caps['app'] = "kobiton-store:v%s" % \
                                       context.uploaded_app.versions[0].id
-                logging.info("Using desired caps: %s" % desired_caps)
 
                 context.appium_device_manager = AppiumDeviceManager(
                     'https://%s:%s@api.kobiton.com/wd/hub' % (
@@ -65,8 +70,15 @@ def before_all(context):
                     timeout_period=10
                 )
                 break
+            if 'deviceName' not in desired_caps:
+                raise Exception(
+                    "No viable device found in Kobiton. Note that you need "
+                    "an available Android device with an OS > v5.0.0")
     else:
-        context.appium_device_manager = None
+        raise Exception(
+            "Missing device configurations. Please include configurations for "
+            "either Appium or Kobiton."
+        )
 
     context.sample_app_device_manager = SampleAppDeviceManager(
         context.appium_device_manager
@@ -74,7 +86,8 @@ def before_all(context):
 
 
 def after_all(context):
-    context.appium_device_manager.quit()
+    if hasattr(context, 'appium_device_manager'):
+        context.appium_device_manager.quit()
     if hasattr(context, 'uploaded_app'):
         context.kobiton_manager.delete_app(context.uploaded_app.id)
 

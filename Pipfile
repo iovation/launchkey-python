@@ -5,7 +5,6 @@ verify_ssl = true
 
 [packages]
 launchkey = {path = ".", editable = true}
-appium-python-client = "*"
 
 [dev-packages]
 # From setup.py tests_require to lock testing requirements
@@ -21,6 +20,7 @@ astroid = "~=2.1.0"  # Remove after pylint is updated to 2.3.0+
 # Tools for multi-environment testing before sending to CI
 tox = "~=3.7.0"
 behave = "~=1.2.6"
+appium-python-client = "*"
 
 [requires]
 python = "~=3.4"

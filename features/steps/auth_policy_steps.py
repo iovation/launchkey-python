@@ -72,3 +72,13 @@ def update_current_auth_policy_to_require_given_geofence(context, radius,
                                                          latitude, longitude):
     current_auth = context.entity_manager.get_current_auth_policy()
     current_auth.add_geofence(latitude, longitude, radius)
+
+
+@given("the current Authorization Policy requires a geofence with a radius "
+       "of {radius:f}, a latitude of {latitude:f}, a longitude of "
+       "{longitude:f}, and named \"{name}\"")
+def update_current_auth_policy_to_require_given_geofence(context, radius,
+                                                         latitude, longitude,
+                                                         name):
+    current_auth = context.entity_manager.get_current_auth_policy()
+    current_auth.add_geofence(latitude, longitude, radius, name=name)

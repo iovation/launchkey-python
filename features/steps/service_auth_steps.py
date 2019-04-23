@@ -130,6 +130,25 @@ def verify_current_auth_response_requires_geofence(context, radius,
                         (geofence, current_auth.auth_policy.geofences))
 
 
+@then("the Authorization response should contain a geofence with a radius of "
+      "{radius:f}, a latitude of {latitude:f}, a longitude of {longitude:f}, "
+      "and a name of \"{name}\"")
+def verify_current_auth_response_requires_geofence(context, radius,
+                                                   latitude, longitude, name):
+    current_auth = context.entity_manager.get_current_auth_response()
+
+    geofence = GeoFence(
+        latitude,
+        longitude,
+        radius,
+        name
+    )
+
+    if geofence not in current_auth.auth_policy.geofences:
+        raise Exception("%s not in policy geofences: %s" %
+                        (geofence, current_auth.auth_policy.geofences))
+
+
 def verify_auth_response_policy_requires_type(context, policy_type):
     policy = context.entity_manager.get_current_auth_response().auth_policy
     if policy_type.lower() not in policy.minimum_requirements:

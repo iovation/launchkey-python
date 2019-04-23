@@ -45,7 +45,9 @@ Ztj8w6eKRmeLlLdGuRpFBQ6CcYGY9a5fJ9MmHGMvoQ+A3MuEM6U=
     context.kobiton_username = "username"
     context.kobiton_sdk_key = "83aab95e-c577-410d-a7db-c7a83bd2433a"
 
-    # Or Local Testing
+    # Or Local Testing.
+    # Note that if these values are included, Kobiton configurations will
+    # be ignored.
     context.appium_url = 'http://localhost:4723/wd/hub'
     context.platform_name = 'Android'
     context.platform_version = '8.0.0'
