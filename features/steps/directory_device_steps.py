@@ -61,6 +61,22 @@ def verify_device_list_count(context, count):
             count, current_device_list))
 
 
+@then("all of the devices should be inactive")
+def verify_device_list_count(context):
+    current_device_list = context.entity_manager.get_current_device_list()
+    for device in current_device_list:
+        if device.status.is_active:
+            raise Exception("Device was active: %s" % device)
+
+
+@then("all of the devices should be active")
+def verify_device_list_count(context):
+    current_device_list = context.entity_manager.get_current_device_list()
+    for device in current_device_list:
+        if not device.status.is_active:
+            raise Exception("Device was not active: %s" % device)
+
+
 @when("I unlink the Device with the ID \"{device_id}\"")
 def unlink_device_with_id(context, device_id):
     current_directory = context.entity_manager.get_current_directory()
@@ -113,3 +129,43 @@ def attempt_to_unlink_user_identifier_device(context, user_identifier):
         )
     except Exception as e:
         context.current_exception = e
+
+# Device manager steps
+
+
+@given("I have a linked device")
+def link_device(context):
+    context.execute_steps('''
+    Given I made a Device linking request
+    When I link my device
+    ''')
+
+
+@when("I link my device")
+def link_physical_device(context):
+    sdk_key = context.entity_manager.get_current_directory_sdk_keys()[0]
+    linking_code = context.entity_manager.get_current_linking_response().code
+    context.sample_app_device_manager.link_device(sdk_key, linking_code)
+
+
+@when("I link my physical device with the name \"{device_name}\"")
+def link_device_with_name(context, device_name):
+    sdk_key = context.entity_manager.get_current_directory_sdk_keys()[0]
+    linking_code = context.entity_manager.get_current_linking_response().code
+    context.sample_app_device_manager.link_device(sdk_key, linking_code,
+                                                  device_name=device_name)
+
+
+@when("I approve the auth request")
+def approve_auth_request(context):
+    context.sample_app_device_manager.approve_request()
+
+
+@when("I deny the auth request")
+def deny_auth_request(context):
+    context.sample_app_device_manager.deny_request()
+
+
+@when("I receive the auth request and acknowledge the failure message")
+def deny_auth_request(context):
+    context.sample_app_device_manager.receive_and_acknowledge_auth_failure()

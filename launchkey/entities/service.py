@@ -488,6 +488,20 @@ class AuthMethod(object):
                 error=self.error
             )
 
+    def __eq__(self, other):
+        if isinstance(other, AuthMethod):
+            eq = self.method == other.method and \
+                 self.set == other.set and \
+                 self.active == other.active and \
+                 self.allowed == other.allowed and \
+                 self.supported == other.supported and \
+                 self.user_required == other.user_required and \
+                 self.passed == other.passed and \
+                 self.error == other.error
+        else:
+            eq = False
+        return eq
+
 
 class AuthorizationResponse(object):
     """

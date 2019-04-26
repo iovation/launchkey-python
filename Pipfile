@@ -20,6 +20,7 @@ astroid = "~=2.1.0"  # Remove after pylint is updated to 2.3.0+
 # Tools for multi-environment testing before sending to CI
 tox = "~=3.7.0"
 behave = "~=1.2.6"
+appium-python-client = "*"
 
 [requires]
 python = "~=3.4"

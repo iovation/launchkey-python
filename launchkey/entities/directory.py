@@ -109,6 +109,14 @@ class DeviceStatus(object):
         """
         return self._status_map[self._status_code][0]
 
+    def __repr__(self):
+        return \
+            "DeviceStatus <status_code=\"{status_code}\", " \
+            "is_active={is_active}>".format(
+                status_code=self.status_code,
+                is_active=self.is_active
+            )
+
 
 class Device(object):
     """Device object belonging to a directory user"""
@@ -118,3 +126,13 @@ class Device(object):
         self.name = data['name']
         self.status = DeviceStatus(data['status'])
         self.type = data['type']
+
+    def __repr__(self):
+        return "Device <id=\"{id}\", name=\"{name}\", " \
+               "status={status}, type=\"{type}\">". \
+            format(
+                id=self.id,
+                name=self.name,
+                status=self.status,
+                type=self.type
+            )

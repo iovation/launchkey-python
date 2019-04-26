@@ -1251,3 +1251,234 @@ class TestAuthMethod(unittest.TestCase):
             'allowed=False, supported=False, user_required=True, passed=True, '
             'error=False>'
         )
+
+    def test_eq_match(self):
+        self.assertEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            )
+        )
+
+    def test_eq_different_method(self):
+        self.assertNotEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            AuthMethod(
+                AuthMethodType.FACE,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            )
+        )
+
+    def test_eq_different_set(self):
+        self.assertNotEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                False,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            )
+        )
+
+    def test_eq_different_active(self):
+        self.assertNotEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                False,
+                True,
+                True,
+                True,
+                True,
+                True
+            )
+        )
+
+    def test_eq_different_allowed(self):
+        self.assertNotEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                False,
+                True,
+                True,
+                True,
+                True
+            )
+        )
+
+    def test_eq_different_supported(self):
+        self.assertNotEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                False,
+                True,
+                True,
+                True
+            )
+        )
+
+    def test_eq_different_user_required(self):
+        self.assertNotEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                False,
+                True,
+                True
+            )
+        )
+
+    def test_eq_different_user_passed(self):
+        self.assertNotEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                False,
+                True
+            )
+        )
+
+    def test_eq_different_user_error(self):
+        self.assertNotEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                False
+            )
+        )
+
+    def test_eq_different_object(self):
+        self.assertNotEqual(
+            AuthMethod(
+                AuthMethodType.FINGERPRINT,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True,
+                True
+            ),
+            True
+        )

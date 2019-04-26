@@ -1,6 +1,6 @@
 import unittest
 
-from launchkey.entities.directory import Directory
+from launchkey.entities.directory import Directory, DeviceStatus, Device
 
 
 class TestDirectoryEntity(unittest.TestCase):
@@ -393,4 +393,60 @@ class TestDirectoryEntity(unittest.TestCase):
             'sdk_keys=[\'7acf6dc0-8db8-40e4-8045-2a73471adc58\'], '
             'premium=True, ios_certificate_fingerprint="A Fingerprint", '
             'active=True, denial_context_inquiry_enabled=True>'
+        )
+
+
+class TestDeviceEntity(unittest.TestCase):
+    def test_device_repr(self):
+        device = Device(
+            {
+                "id": '740c36bd-43cb-4238-8f4b-a75307c5ef62',
+                "name": "A Device",
+                "status": 1,
+                "type": "Android"
+            }
+        )
+        self.assertEqual(
+            str(device),
+            'Device <id="740c36bd-43cb-4238-8f4b-a75307c5ef62", '
+            'name="A Device", status=DeviceStatus <status_code="LINKED", '
+            'is_active=True>, type="Android">'
+        )
+
+
+class TestDeviceStatusEntity(unittest.TestCase):
+    def test_0(self):
+        status = DeviceStatus(0)
+        self.assertEqual(status.status_code, "LINK_PENDING")
+        self.assertFalse(status.is_active)
+
+    def test_device_repr_0(self):
+        device = DeviceStatus(0)
+        self.assertEqual(
+            str(device),
+            'DeviceStatus <status_code="LINK_PENDING", is_active=False>'
+        )
+
+    def test_1(self):
+        status = DeviceStatus(1)
+        self.assertEqual(status.status_code, "LINKED")
+        self.assertTrue(status.is_active)
+
+    def test_device_repr_1(self):
+        device = DeviceStatus(1)
+        self.assertEqual(
+            str(device),
+            'DeviceStatus <status_code="LINKED", is_active=True>'
+        )
+
+    def test_2(self):
+        status = DeviceStatus(2)
+        self.assertEqual(status.status_code, "UNLINK_PENDING")
+        self.assertTrue(status.is_active)
+
+    def test_device_repr_2(self):
+        device = DeviceStatus(2)
+        self.assertEqual(
+            str(device),
+            'DeviceStatus <status_code="UNLINK_PENDING", is_active=True>'
         )
