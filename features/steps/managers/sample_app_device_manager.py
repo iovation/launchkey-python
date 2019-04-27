@@ -44,9 +44,9 @@ class SampleAppDeviceManager:
         self.appium_device_manager.long_press(id="auth_info_action_positive")
 
     def _deny_auth(self):
-        self.appium_device_manager.click(id="auth_info_action_negative")
+        self.appium_device_manager.long_press(id="auth_info_action_negative")
         self.appium_device_manager.click(text="I don't approve")
-        self.appium_device_manager.click(id="auth_do_action_negative")
+        self.appium_device_manager.long_press(id="auth_do_action_negative")
 
     def approve_request(self):
         self._open_auth_menu()
