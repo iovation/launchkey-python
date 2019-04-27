@@ -72,10 +72,10 @@ def before_all(context):
                     timeout_period=10
                 )
                 break
-            if 'deviceName' not in desired_caps:
-                raise Exception(
-                    "No viable device found in Kobiton. Note that you need "
-                    "an available Android device with an OS > v5.0.0")
+        if 'deviceName' not in desired_caps:
+            raise Exception(
+                "No viable device found in Kobiton. Note that you need "
+                "an available Android device with an OS > v5.0.0")
 
     if hasattr(context, 'appium_device_manager'):
         context.sample_app_device_manager = SampleAppDeviceManager(
