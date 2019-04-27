@@ -1,3 +1,4 @@
+@device_testing
 Feature: Service Client Authorization Request: Get Device Response
   In order to complete an authorization request
   As a Directory Service

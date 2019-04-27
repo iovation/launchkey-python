@@ -1,3 +1,4 @@
+@device_testing
 Feature: Service Client Authorization Request: Get Device Response Policy
   In order to understand an auth response
   As a Directory Service

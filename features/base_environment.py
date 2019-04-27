@@ -1,5 +1,3 @@
-import logging
-
 from launchkey.factories import OrganizationFactory
 from launchkey import LAUNCHKEY_PRODUCTION
 
@@ -20,6 +18,9 @@ def before_all(context):
     sample_app_package = 'com.launchkey.android.authenticator.demo'
 
     desired_caps = dict()
+    # Increase the default idle time in order to prevent the session from
+    # closing while non device tests are being ran.
+    desired_caps['newCommandTimeout'] = 300
     desired_caps['appPackage'] = sample_app_package
     desired_caps[
         'appWaitActivity'] = 'com.launchkey.android.authenticator.demo.' \
@@ -27,6 +28,7 @@ def before_all(context):
     desired_caps['fullReset'] = True
     desired_caps['noReset'] = False
     desired_caps['captureScreenshots'] = True
+    desired_caps['disableWindowAnimation'] = True
 
     if hasattr(context, 'appium_url'):
         desired_caps['platformName'] = context.platform_name
@@ -74,15 +76,11 @@ def before_all(context):
                 raise Exception(
                     "No viable device found in Kobiton. Note that you need "
                     "an available Android device with an OS > v5.0.0")
-    else:
-        raise Exception(
-            "Missing device configurations. Please include configurations for "
-            "either Appium or Kobiton."
-        )
 
-    context.sample_app_device_manager = SampleAppDeviceManager(
-        context.appium_device_manager
-    )
+    if hasattr(context, 'appium_device_manager'):
+        context.sample_app_device_manager = SampleAppDeviceManager(
+            context.appium_device_manager
+        )
 
 
 def after_all(context):
@@ -101,6 +99,16 @@ def after_feature(context, feature):
 
 
 def before_scenario(context, scenario):
+
+    if 'device_testing' in scenario.effective_tags:
+        if hasattr(context, 'appium_device_manager'):
+            # Reset the app each time a new device scenario begins
+            context.appium_device_manager.reset()
+        else:
+            # Skip device scenarios when the tester has not added
+            # configurations for them
+            scenario.skip("Missing Appium configurations")
+
     context.directory_manager = DirectoryManager(context.organization_factory)
     context.directory_device_manager = DirectoryDeviceManager(
         context.organization_factory)
@@ -132,7 +140,6 @@ def before_scenario(context, scenario):
         context.auth_policy_manager
     )
     context.current_exception = None
-    context.appium_device_manager.reset()
 
 
 def after_scenario(context, scenario):
