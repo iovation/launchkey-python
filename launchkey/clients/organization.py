@@ -248,3 +248,19 @@ class OrganizationClient(ServiceManagingBaseClient):
         self._transport.delete("/organization/v3/directory/sdk-keys",
                                self._subject, directory_id=str(directory_id),
                                sdk_key=sdk_key)
+
+    @api_call
+    def get_all_directory_sdk_keys(self, directory_id):
+        """
+        Retrieves a list of Authenticator SDK keys from a Directory
+        :param directory_id: Unique Directory ID
+        :raise: launchkey.exceptions.InvalidParameters - Input parameters
+        were not correct
+        :raise: launchkey.exceptions.EntityNotFound - Input Directory ID does
+        not exist
+        :return:
+        """
+        return self._transport.post(
+            "/organization/v3/directory/sdk-keys/list",
+            self._subject, directory_id=str(directory_id)
+        ).data

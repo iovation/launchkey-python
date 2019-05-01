@@ -5,7 +5,7 @@ from launchkey.clients import OrganizationClient
 from launchkey.clients.organization import Directory
 from launchkey.transports.base import APIResponse
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, LastRemainingKey, PublicKeyDoesNotExist, \
-    InvalidPublicKey, PublicKeyAlreadyInUse, LastRemainingSDKKey, InvalidSDKKey, Forbidden
+    InvalidPublicKey, PublicKeyAlreadyInUse, LastRemainingSDKKey, InvalidSDKKey, Forbidden, EntityNotFound
 from datetime import datetime
 import pytz
 from .shared import SharedTests
@@ -438,3 +438,33 @@ class TestOrganizationClientDirectories(unittest.TestCase):
         self._transport.delete.side_effect = LaunchKeyAPIException({"error_code": "ORG-006", "error_detail": ""}, 400)
         with self.assertRaises(InvalidSDKKey):
             self._organization_client.remove_directory_sdk_key(ANY, ANY)
+
+    def test_get_all_directory_sdk_keys_transport_params(self):
+        self._organization_client.get_all_directory_sdk_keys(
+            "1fa129ee-bb63-4705-a8cb-1c5be8000a0e")
+        self._transport.post.assert_called_once_with(
+            "/organization/v3/directory/sdk-keys/list", self._expected_subject,
+            directory_id="1fa129ee-bb63-4705-a8cb-1c5be8000a0e"
+        )
+
+    def test_get_all_directory_sdk_keys_return_value(self):
+        result = self._organization_client.get_all_directory_sdk_keys(
+            "1fa129ee-bb63-4705-a8cb-1c5be8000a0e")
+        self.assertEqual(
+            result,
+            self._transport.post.return_value.data
+        )
+
+    def test_get_all_directory_sdk_keys_invalid_params(self):
+        self._transport.post.side_effect = LaunchKeyAPIException(
+            {"error_code": "ARG-001", "error_detail": ""}, 400)
+        with self.assertRaises(InvalidParameters):
+            self._organization_client.get_all_directory_sdk_keys(
+                "1fa129ee-bb63-4705-a8cb-1c5be8000a0e")
+
+    def test_get_all_directory_sdk_keys_entity_not_found(self):
+        self._transport.post.side_effect = LaunchKeyAPIException(
+            {}, 404)
+        with self.assertRaises(EntityNotFound):
+            self._organization_client.get_all_directory_sdk_keys(
+                "1fa129ee-bb63-4705-a8cb-1c5be8000a0e")
