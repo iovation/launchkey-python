@@ -205,8 +205,8 @@ def set_directory_service_policy_time_fences_from_table(context):
         return value
 
     methods = context.entity_manager.get_current_auth_response().auth_methods
-    expected_methods = [
-        AuthMethod(
+    for i, method in enumerate(context.table):
+        expected_method = AuthMethod(
             AuthMethodType(method['Method'].upper()),
             parse_input(method['Set']),
             parse_input(method['Active']),
@@ -215,7 +215,14 @@ def set_directory_service_policy_time_fences_from_table(context):
             parse_input(method['User Required']),
             parse_input(method['Passed']),
             parse_input(method['Error'])
-        ) for method in context.table
-    ]
-    if methods != expected_methods:
-        raise Exception("Expected %s but got %s" % (expected_methods, methods))
+        )
+        if methods[i] != expected_method:
+            if expected_method.method in \
+                    [AuthMethodType.FINGERPRINT, AuthMethodType.FACE] and \
+                    expected_method.supported != methods[i].supported:
+                raise Exception(
+                    "Expected %s but got %s. Be aware that %s "
+                    "is not supported on all devices, so this may fail." %
+                    (expected_method, methods[i], expected_method.method))
+            else:
+                raise Exception("Expected %s but got %s" % (expected_method, methods[i]))

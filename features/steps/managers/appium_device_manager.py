@@ -1,8 +1,10 @@
 from appium import webdriver
+from appium.webdriver.common.touch_action import TouchAction
+from appium.webdriver.webdriver import MobileBy
+
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.wait import TimeoutException
-from appium.webdriver.webdriver import MobileBy
 
 
 class AppiumDeviceManager:
@@ -88,6 +90,27 @@ class AppiumDeviceManager:
             raise TimeoutException(
                 u'Couldn\'t find the id "%s" before the '
                 u'timeout of %s seconds' % (resource_id, self.timeout_period))
+
+    def get_element(self, id=None, text=None):
+        if id:
+            e = self.get_element_by_id(id)
+        elif text:
+            e = self.get_scrollable_element_by_text(text)
+        else:
+            raise Exception("id or text required")
+        return e
+
+    def click(self, id=None, text=None):
+        self.get_element(id=id, text=text).click()
+
+    def long_press(self, id=None, text=None, duration=1000):
+        actions = TouchAction(self.driver)
+        e = self.get_element(id=id, text=text)
+        actions.long_press(e, duration=duration)
+        actions.perform()
+
+    def send_keys(self, keys, id=None, text=None):
+        self.get_element(id=id, text=text).send_keys(keys)
 
     def quit(self):
         """
