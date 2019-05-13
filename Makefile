@@ -12,7 +12,6 @@ ci-py38: test
 
 ci-pypy3: test
 
-
 ci: dependencies coverage flake8 pylint deps-check
 
 test:

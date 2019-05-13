@@ -17,6 +17,11 @@ CHANGELOG for LaunchKey Python SDK
 * Added cancel_authorization_request method to the ServiceClient
 * Fixed bug in ServiceClient which prevented handling of session end webhook request data when presented as a bytearray
 
+3.3.1
+-----
+
+* Updated HTTP transport to no longer use sessions due to a bug that was causing BadStatusLine exceptions on long lived connections.
+
 3.3.0
 -----
 
@@ -40,7 +45,6 @@ CHANGELOG for LaunchKey Python SDK
 * Added full webhook validation
 * Cleaned up error handling and raising for webhooks
 * Switch RequestsTransport to use session in order to provide connection sharing between requests
-* Added dynamic auth TTL and title functionality
 
 3.1.1
 -----
