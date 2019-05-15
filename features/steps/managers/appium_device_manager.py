@@ -10,7 +10,9 @@ from selenium.webdriver.support.wait import TimeoutException
 class AppiumDeviceManager:
 
     def __init__(self, appium_url, device_capabilities, app_package,
-                 timeout_period=10):
+                 timeout_period=10, ignore_unimportant_views=True,
+                 wait_for_idle_timeout=1000, wait_for_selector_timeout=1000,
+                 action_acknowledgement_timeout=1000):
         """
         Manager for interacting with mobile devices via Appium. Note that
         currently only Android devices are supported.
@@ -22,6 +24,12 @@ class AppiumDeviceManager:
         out
         """
         self.driver = webdriver.Remote(appium_url, device_capabilities)
+        self.driver.update_settings({
+            "ignoreUnimportantViews": ignore_unimportant_views,
+            "waitForIdleTimeout": wait_for_idle_timeout,
+            "waitForSelectorTimeout": wait_for_selector_timeout,
+            "actionAcknowledgmentTimeout": action_acknowledgement_timeout
+        })
         self.app_package = app_package
         self.timeout_period = timeout_period
 
