@@ -70,4 +70,8 @@ class DirectoryServiceAuthsManager(BaseManager):
         client = self._get_service_client(service_id)
         self.current_auth_response = client.get_authorization_response(
             auth_request)
+        if not self.current_auth_response:
+            sleep(2)
+            self.current_auth_response = client.get_authorization_response(
+                auth_request)
         return self.current_auth_response

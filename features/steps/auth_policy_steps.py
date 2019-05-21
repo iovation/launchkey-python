@@ -76,7 +76,7 @@ def update_current_auth_policy_to_require_given_geofence(context, radius,
 
 @given("the current Authorization Policy requires a geofence with a radius "
        "of {radius:f}, a latitude of {latitude:f}, a longitude of "
-       "{longitude:f}, and named \"{name}\"")
+       "{longitude:f}, and a name of \"{name}\"")
 def update_current_auth_policy_to_require_given_geofence(context, radius,
                                                          latitude, longitude,
                                                          name):

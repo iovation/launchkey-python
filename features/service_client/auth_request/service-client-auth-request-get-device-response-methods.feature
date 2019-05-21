@@ -1,9 +1,9 @@
 @device_testing
-Feature: Service Client Authorization Request: Get Device Response Policy
+Feature: Service Client Authorization Request: Get Device Response Methods
   In order to understand an auth response
   As a Directory Service
   I can retrieve an Authorization Requests that been responded to and determine
-  the policy that was used
+  the methods that were used
 
   Background:
     Given I created a Directory
