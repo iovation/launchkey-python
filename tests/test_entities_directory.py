@@ -16,7 +16,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
         self.assertEqual(directory.service_ids,
@@ -43,7 +44,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -57,7 +59,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -74,7 +77,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -88,7 +92,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -105,7 +110,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -119,7 +125,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -136,7 +143,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -150,7 +158,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -167,7 +176,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -181,7 +191,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -198,7 +209,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -212,7 +224,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -229,7 +242,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -243,7 +257,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "Another Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -260,7 +275,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -274,7 +290,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": False,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -291,7 +308,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -305,7 +323,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c4",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -322,7 +341,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -336,7 +356,41 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": False
+                "denial_context_inquiry_enabled": False,
+                "webhook_url": "https://my.webhook.url/path"
+            }
+        )
+
+        self.assertFalse(directory_1 == directory_2)
+
+    def test_different_webhook_url(self):
+        directory_1 = Directory(
+            {
+                "service_ids": ['740c36bd-43cb-4238-8f4b-a75307c5ef62'],
+                "sdk_keys": ["7acf6dc0-8db8-40e4-8045-2a73471adc58"],
+                "premium": True,
+                "name": "Directory Name",
+                "android_key": "A Key",
+                "ios_certificate_fingerprint": "A Fingerprint",
+                "active": True,
+                "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
+            }
+        )
+
+        directory_2 = Directory(
+            {
+                "service_ids": ['740c36bd-43cb-4238-8f4b-a75307c5ef62'],
+                "sdk_keys": ["7acf6dc0-8db8-40e4-8045-2a73471adc58"],
+                "premium": True,
+                "name": "Directory Name",
+                "android_key": "A Key",
+                "ios_certificate_fingerprint": "A Fingerprint",
+                "active": True,
+                "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
+                "denial_context_inquiry_enabled": False,
+                "webhook_url": "https://my.webhook.url/otherpath"
             }
         )
 
@@ -353,7 +407,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
 
@@ -366,7 +421,8 @@ class TestDirectoryEntity(unittest.TestCase):
             "ios_certificate_fingerprint": "A Fingerprint",
             "active": True,
             "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-            "denial_context_inquiry_enabled": False
+            "denial_context_inquiry_enabled": False,
+            "webhook_url": "https://my.webhook.url/path"
         }
 
         self.assertFalse(directory == not_directory)
@@ -382,7 +438,8 @@ class TestDirectoryEntity(unittest.TestCase):
                 "ios_certificate_fingerprint": "A Fingerprint",
                 "active": True,
                 "id": "d36f81de-7683-48aa-b3cb-d4c6bffef3c5",
-                "denial_context_inquiry_enabled": True
+                "denial_context_inquiry_enabled": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         )
         self.assertEqual(
@@ -392,7 +449,8 @@ class TestDirectoryEntity(unittest.TestCase):
             'service_ids=[\'740c36bd-43cb-4238-8f4b-a75307c5ef62\'], '
             'sdk_keys=[\'7acf6dc0-8db8-40e4-8045-2a73471adc58\'], '
             'premium=True, ios_certificate_fingerprint="A Fingerprint", '
-            'active=True, denial_context_inquiry_enabled=True>'
+            'active=True, denial_context_inquiry_enabled=True, '
+            'webhook_url="https://my.webhook.url/path">'
         )
 
 

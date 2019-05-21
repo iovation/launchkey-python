@@ -36,6 +36,17 @@ Feature: Organization clients can update Directories
     And I retrieve the updated Directory
     Then the Directory has no IOS Certificate Fingerprint
 
+  Scenario: I can set the webhook url
+    When I update the Directory webhook url to "https://a.webhook.url/path"
+    And I retrieve the updated Directory
+    Then the Directory webhook url is "https://a.webhook.url/path"
+
+  Scenario: I can unset the webhook url
+    When I update the Directory webhook url to "https://a.webhook.url/path"
+    And I update the Directory webhook url to null
+    And I retrieve the updated Directory
+    Then the Directory webhook url is empty
+
   Scenario: Attempting to update an invalid Directory throws a Forbidden exception
     When I attempt to update the active status of the Directory with the ID "eba60cb8-c649-11e7-abc4-cec278b6b50a"
     Then a Forbidden error occurs

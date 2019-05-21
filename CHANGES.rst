@@ -8,6 +8,8 @@ CHANGELOG for LaunchKey Python SDK
 * Added integration testing suite
 * Added device failure sensor type
 * Added auth_methods and auth_policy attributes to the AuthorizationResponse object
+* Added handle_webhook as well as DirectoryUserDeviceLinkCompletionWebhookPackage into the DirectoryClient
+* Updated the OrganizationClient update_directory() method and Directory object to include a webhook_url kwarg / attribute
 
 3.4.0
 -----

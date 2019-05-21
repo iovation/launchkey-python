@@ -259,7 +259,8 @@ def device_link(ctx, directory_id, user_identifier, ttl):
         "Device link request successful",
         {
             "QR Code URL": link_response.qrcode,
-            "Manual verification code": link_response.code
+            "Linking code": link_response.code,
+            "Device ID": link_response.device_id
         },
         color=SUCCESS_COLOR
     )

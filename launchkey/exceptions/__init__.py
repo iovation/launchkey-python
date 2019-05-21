@@ -281,3 +281,11 @@ class WebhookAuthorizationError(LaunchKeyAPIException):
     There was an issue with validating the authorization provided by the
     webhook request.
     """
+
+
+class XiovJWTValidationFailure(LaunchKeyAPIException):
+    """x-iov-jwt validation failure"""
+
+
+class XiovJWTDecryptionFailure(LaunchKeyAPIException):
+    """x-iov-jwt decryption failure"""

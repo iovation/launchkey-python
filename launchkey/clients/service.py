@@ -5,12 +5,11 @@
 import warnings
 from json import loads
 
-import six
-from jwkest import JWKESTException
 from launchkey.exceptions import InvalidParameters, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
-    UnexpectedAPIResponse, UnexpectedWebhookRequest, JWTValidationFailure, \
-    InvalidJWTResponse, WebhookAuthorizationError
+    UnexpectedAPIResponse, UnexpectedWebhookRequest, XiovJWTValidationFailure,\
+    XiovJWTDecryptionFailure
+from launchkey.utils.shared import XiovJWTService
 from launchkey.entities.validation import AuthorizationResponseValidator, \
     AuthorizeSSEValidator, AuthorizeValidator
 from launchkey.entities.service import AuthPolicy, AuthorizationResponse, \
@@ -23,6 +22,7 @@ class ServiceClient(BaseClient):
 
     def __init__(self, subject_id, transport):
         super(ServiceClient, self).__init__('svc', subject_id, transport)
+        self.x_iov_jwt_service = XiovJWTService(self._transport, self._subject)
 
     @api_call
     def authorize(self, user, context=None, policy=None, title=None, ttl=None,
@@ -295,9 +295,6 @@ class ServiceClient(BaseClient):
         :raises launchkey.exceptions.WebhookAuthorizationError: when the
         "Authorization" header in the headers.
         """
-        if not isinstance(body, six.string_types):
-            body = body.decode("utf-8")
-
         if method is None:
             warnings.warn("Not passing a valid request method string is "
                           "deprecated and will be required in the next "
@@ -307,47 +304,34 @@ class ServiceClient(BaseClient):
             warnings.warn("Not passing a valid request path string is "
                           "deprecated and will be required in the next "
                           "major version", PendingDeprecationWarning)
-
-        compact_jwt = None
-        for header_key, header_value in headers.items():
-            if header_key.lower() == 'x-iov-jwt':
-                compact_jwt = header_value
-
-        if compact_jwt is None:
-            raise WebhookAuthorizationError(
-                "The X-IOV-JWT header was not found in the supplied headers "
-                "from the request!")
-
         try:
-            self._transport.verify_jwt_request(
-                compact_jwt,
-                self._subject,
-                method,
-                path,
-                body)
-        except (JWTValidationFailure, InvalidJWTResponse) as reason:
-            raise UnexpectedWebhookRequest(reason=reason)
-        if "service_user_hash" in body:
-            try:
-                body = self._validate_response(
-                    loads(body),
-                    AuthorizeSSEValidator)
-            except UnexpectedAPIResponse as reason:
-                raise UnexpectedWebhookRequest(reason=reason)
-            result = SessionEndRequest(
-                body['service_user_hash'],
-                self._transport.parse_api_time(body['api_time']))
-        else:
-            try:
-                decrypted_body = self._transport.decrypt_response(body)
-                auth_response = loads(decrypted_body)
-                result = AuthorizationResponse(
-                    auth_response,
-                    self._transport
-                )
-            except JWKESTException as reason:
-                raise UnableToDecryptWebhookRequest(reason=reason)
-            except KeyError as reason:
-                raise UnexpectedAuthorizationResponse(reason=reason)
+            if "service_user_hash" in "%s" % body:
+                body = self.x_iov_jwt_service.verify_jwt_request(body, headers,
+                                                                 method, path)
+                try:
+                    body = self._validate_response(
+                        loads(body),
+                        AuthorizeSSEValidator)
+                except UnexpectedAPIResponse as reason:
+                    raise UnexpectedWebhookRequest(reason=reason)
+                result = SessionEndRequest(
+                    body['service_user_hash'],
+                    self._transport.parse_api_time(body['api_time']))
+            else:
+                try:
+                    decrypted_body = self.x_iov_jwt_service.decrypt_jwe(
+                        body, headers, method, path
+                    )
+                    auth_response = loads(decrypted_body)
+                    result = AuthorizationResponse(
+                        auth_response,
+                        self._transport
+                    )
+                except XiovJWTDecryptionFailure as reason:
+                    raise UnableToDecryptWebhookRequest(reason=reason)
+                except KeyError as reason:
+                    raise UnexpectedAuthorizationResponse(reason=reason)
+        except XiovJWTValidationFailure as reason:
+            raise UnexpectedWebhookRequest(reason)
 
         return result

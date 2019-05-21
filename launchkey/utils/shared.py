@@ -1,7 +1,83 @@
 """ Shared Utilities """
 
 from uuid import UUID
-from ..exceptions import InvalidIssuerFormat, InvalidIssuerVersion
+
+import six
+from jwkest import JWKESTException
+
+from ..exceptions import InvalidIssuerFormat, InvalidIssuerVersion, \
+    JWTValidationFailure, InvalidJWTResponse, WebhookAuthorizationError, \
+    XiovJWTValidationFailure, XiovJWTDecryptionFailure
+
+
+class XiovJWTService(object):
+    """
+    Handles the x-iov-jwt request spec validation and decryption
+    """
+
+    def __init__(self, transport, subject):
+        self._transport = transport
+        self._subject = subject
+
+    def verify_jwt_request(self, body, headers, method, path):
+        """
+        Retrieves and validates an x-iov-jwt payload
+        :param body: The raw body that was send in the POST content
+        :param headers: A generic map of response headers. These will be used
+        to access and validate authorization
+        :param method: The HTTP method of the request
+        :param path:  The path of the request
+        :return: utf-8 encoded string of the body
+        :raises launchkey.exceptions.XiovJWTValidationFailure: when the
+        request or its cannot be parsed or fails
+        validation.
+        :raises launchkey.exceptions.WebhookAuthorizationError: when the
+        "Authorization" header in the headers.
+        """
+        if not isinstance(body, six.string_types):
+            body = body.decode("utf-8")
+
+        compact_jwt = None
+        for header_key, header_value in headers.items():
+            if header_key.lower() == 'x-iov-jwt':
+                compact_jwt = header_value
+
+        if compact_jwt is None:
+            raise WebhookAuthorizationError(
+                "The X-IOV-JWT header was not found in the supplied headers "
+                "from the request!")
+
+        try:
+            self._transport.verify_jwt_request(
+                compact_jwt,
+                self._subject,
+                method,
+                path,
+                body)
+        except (JWTValidationFailure, InvalidJWTResponse) as reason:
+            raise XiovJWTValidationFailure(reason=reason)
+        return body
+
+    def decrypt_jwe(self, body, headers, method, path):
+        """
+        Verifies and decrypts a jwt request
+        :param body: The raw body that was send in the POST content
+        :param headers: A generic map of response headers. These will be used
+        to access and validate authorization
+        :param method: The HTTP method of the request
+        :param path:  The path of the request
+        :raises launchkey.exceptions.UnexpectedKeyID: when the request body is
+        decrypted using a public key whose private key is not known by the
+        client. This can be a configuration issue.
+        :raises launchkey.exceptions.XiovJWTDecryptionFailure: when the request
+        body cannot be decrypted.
+        :return: Decrypted string
+        """
+        body = self.verify_jwt_request(body, headers, method, path)
+        try:
+            return self._transport.decrypt_response(body)
+        except JWKESTException as reason:
+            raise XiovJWTDecryptionFailure(reason)
 
 
 class UUIDHelper(object):

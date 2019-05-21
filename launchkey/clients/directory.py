@@ -2,10 +2,19 @@
 
 # pylint: disable=too-many-arguments
 
+import warnings
+from json import loads
+from formencode import Invalid
 from ..entities.validation import DirectoryGetDeviceResponseValidator, \
-    DirectoryGetSessionsValidator, DirectoryUserDeviceLinkResponseValidator
-from ..entities.directory import Session, DirectoryUserDeviceLinkData, Device
+    DirectoryGetSessionsValidator, DirectoryUserDeviceLinkResponseValidator, \
+    DirectoryDeviceLinkCompletionValidator
+from ..entities.directory import Session, DirectoryUserDeviceLinkData, Device,\
+    DirectoryUserDeviceLinkCompletionWebhookPackage
 from .base import ServiceManagingBaseClient, api_call
+from ..exceptions import UnableToDecryptWebhookRequest, \
+    UnexpectedWebhookRequest, XiovJWTValidationFailure, \
+    XiovJWTDecryptionFailure
+from ..utils.shared import XiovJWTService
 
 
 class DirectoryClient(ServiceManagingBaseClient):
@@ -16,6 +25,7 @@ class DirectoryClient(ServiceManagingBaseClient):
     def __init__(self, subject_id, transport):
         super(DirectoryClient, self).__init__('dir', subject_id, transport,
                                               "/directory/v3/services")
+        self.x_iov_jwt_service = XiovJWTService(self._transport, self._subject)
 
     @api_call
     def link_device(self, user_id, ttl=None):
@@ -128,3 +138,46 @@ class DirectoryClient(ServiceManagingBaseClient):
             sessions.append(session)
 
         return sessions
+
+    def handle_webhook(self, body, headers, method, path):
+        """
+        Handle a webhook callback
+        :param body: The raw body that was send in the POST content
+        :param headers: A generic map of response headers. These will be used
+        to access and validate authorization
+        :param path:  The path of the request
+        :param method: The HTTP method of the request
+        :return: launchkey.entities.directory.
+        DirectoryUserDeviceLinkCompletionWebhookPackage
+        :raises launchkey.exceptions.UnexpectedWebhookRequest: when the
+        request or its cannot be parsed or fails
+        validation.
+        :raises launchkey.exceptions.UnableToDecryptWebhookRequest: when the
+        request is an authorization response webhook and the request body
+        cannot be decrypted
+        :raises launchkey.exceptions.UnexpectedKeyID: when the auth package in
+        an authorization response webhook request body is decrypted using a
+        public key whose private key is not known by the client. This can be
+        a configuration issue.
+        :raises launchkey.exceptions.WebhookAuthorizationError: when the
+        "Authorization" header in the headers.
+        """
+        result = None
+        try:
+            decrypted_body = self.x_iov_jwt_service.decrypt_jwe(body, headers,
+                                                                method, path)
+            payload = loads(decrypted_body)
+            device_link_data = DirectoryDeviceLinkCompletionValidator(
+            ).to_python(payload)
+            result = DirectoryUserDeviceLinkCompletionWebhookPackage(
+                device_link_data
+            )
+        except Invalid:
+            warnings.warn("Invalid Directory Webhook received. There may be"
+                          " an update available to add support.")
+        except XiovJWTDecryptionFailure as reason:
+            raise UnableToDecryptWebhookRequest(reason=reason)
+        except XiovJWTValidationFailure as reason:
+            raise UnexpectedWebhookRequest(reason)
+
+        return result
