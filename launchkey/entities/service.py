@@ -592,14 +592,15 @@ class AuthorizationResponse(object):
                             "It will be ignored, but this could "
                             "signify the need for an update." % type)
 
-            self.auth_policy = AuthPolicy(**kwargs)
-            for fence in auth_policy['geofences']:
-                self.auth_policy.add_geofence(
-                    fence['latitude'],
-                    fence['longitude'],
-                    fence['radius'],
-                    name=fence['name']
-                )
+            if auth_policy.get('geofences') or kwargs:
+                self.auth_policy = AuthPolicy(**kwargs)
+                for fence in auth_policy.get('geofences', []):
+                    self.auth_policy.add_geofence(
+                        fence['latitude'],
+                        fence['longitude'],
+                        fence['radius'],
+                        name=fence['name']
+                    )
 
     def _parse_device_response_from_auth_package(self, auth_package, key_id,
                                                  transport):
