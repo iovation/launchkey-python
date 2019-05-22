@@ -10,7 +10,13 @@ FAILURE_COLOR = "red"
 
 def print_result(message, data={}, color=None):
     for item in data.items():
-        message += "\n\t%s:\t%s" % item
+        if isinstance(item[1], (list, tuple, set)):
+            message += "\n\t%s:\t[" % item[0]
+            for list_item in item[1]:
+                message += "\n\t\t%s" % list_item
+            message += "\n\t]"
+        else:
+            message += "\n\t%s:\t%s" % item
     click.secho(message, fg=color)
 
 
