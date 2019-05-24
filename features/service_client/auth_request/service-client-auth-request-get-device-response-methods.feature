@@ -17,7 +17,7 @@ Feature: Service Client Authorization Request: Get Device Response Methods
     And I get the response for the Authorization request
     Then the Authorization response should contain the following methods:
       | Method      | Set   | Active | Allowed | Supported  | User Required | Passed | Error |
-      | wearables   | False | False  | True    | True       | Null          | Null   | Null  |
+      | wearables   | False | False  | True    | False      | Null          | Null   | Null  |
       | geofencing  | Null  | True   | True    | True       | Null          | Null   | Null  |
       | locations   | False | False  | True    | True       | Null          | Null   | Null  |
       | pin_code    | False | False  | True    | True       | Null          | Null   | Null  |
