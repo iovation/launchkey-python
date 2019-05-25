@@ -12,7 +12,7 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     UnableToDecryptWebhookRequest
 from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse
-from launchkey.entities.directory import DirectoryUserDeviceLinkCompletionWebhookPackage
+from launchkey.entities.directory import DeviceLinkCompletionResponse
 from .shared import SharedTests
 import six
 from datetime import datetime
@@ -252,7 +252,7 @@ class TestHandleWebhook(unittest.TestCase):
 
     def test_returns_directory_user_device_link_completion_webhook_package(self):
         returned = self.client.handle_webhook("body", self._headers, "method", "path")
-        self.assertIsInstance(returned, DirectoryUserDeviceLinkCompletionWebhookPackage)
+        self.assertIsInstance(returned, DeviceLinkCompletionResponse)
         self.assertEqual(returned.device_id, 'device id')
         self.assertEqual(returned.device_public_key, 'public key')
         self.assertEqual(returned.device_public_key_id, 'public key id')

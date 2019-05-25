@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<form id="login-form" action="/login" method="post">
+    <input type="text" name="username" placeholder="Username" /><input value="Login" type="submit" />
+</form>
+<br />
+<br />
+<a href="/link">Link Device</a>
+{% endblock %}

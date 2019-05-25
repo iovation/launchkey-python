@@ -6,10 +6,11 @@ Feature: Directory Client can link Devices
   Background:
     Given I created a Directory
 
-  Scenario: Linking Devices returns QR Code URL and linking code
+  Scenario: Linking Devices returns QR Code URL, linking code, and Device ID
     When I make a Device linking request
     Then the Device linking response contains a valid QR Code URL
     And the Device linking response contains a valid Linking Code
+    And the Device linking response contains a valid Device ID
 
   Scenario: Linking Devices adds the device to the User's Device list
     When I make a Device linking request

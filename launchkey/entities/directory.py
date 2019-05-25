@@ -82,8 +82,8 @@ class DirectoryUserDeviceLinkData(object):
         self.device_id = data['device_id']
 
 
-class DirectoryUserDeviceLinkCompletionWebhookPackage(object):
-    """Webhook package returned on the event that a device finishes linking"""
+class DeviceLinkCompletionResponse(object):
+    """Package returned on the event that a device finishes linking"""
 
     def __init__(self, data):
         self.device_id = data['device_id']

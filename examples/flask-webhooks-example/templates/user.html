@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+Hello, {{username}}
+
+{% if devices %}
+<table>
+    <thead>
+        <th width="300px">Device ID</th><th>Device Public Key ID</th><th>Device Public Key</th>
+    </thead>
+    {% for device in devices -%}
+    <tr>
+        <td>{{device.id}}</td><td>{{device.public_key_id}}</td><td>{{device.public_key}}</td>
+    </tr>
+    {%- endfor %}
+</table>
+{% endif %}
+
+<script>
+    function getLinkStatus() {
+        $.get( "/login-status", function( data ) {
+        }).done(function() {
+            setTimeout(getLinkStatus, 1000);
+        })
+        .fail(function(e) {
+            window.location.replace("/login");
+        });
+    }
+    getLinkStatus()
+</script>
+
+<a href="/logout">Logout</a>
+{{code}}
+{% endblock %}

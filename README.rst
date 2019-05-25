@@ -28,6 +28,11 @@ CLI Example
 
 `Go to the README <examples/cli/README.md>`_
 
+Flask Webhooks Example
+**********************
+
+`Go to the README <examples/flask-webhooks-example/README.md>`_
+
 Installation
 ------------
 

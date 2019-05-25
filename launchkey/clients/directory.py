@@ -9,7 +9,7 @@ from ..entities.validation import DirectoryGetDeviceResponseValidator, \
     DirectoryGetSessionsValidator, DirectoryUserDeviceLinkResponseValidator, \
     DirectoryDeviceLinkCompletionValidator
 from ..entities.directory import Session, DirectoryUserDeviceLinkData, Device,\
-    DirectoryUserDeviceLinkCompletionWebhookPackage
+    DeviceLinkCompletionResponse
 from .base import ServiceManagingBaseClient, api_call
 from ..exceptions import UnableToDecryptWebhookRequest, \
     UnexpectedWebhookRequest, XiovJWTValidationFailure, \
@@ -169,7 +169,7 @@ class DirectoryClient(ServiceManagingBaseClient):
             payload = loads(decrypted_body)
             device_link_data = DirectoryDeviceLinkCompletionValidator(
             ).to_python(payload)
-            result = DirectoryUserDeviceLinkCompletionWebhookPackage(
+            result = DeviceLinkCompletionResponse(
                 device_link_data
             )
         except Invalid:
