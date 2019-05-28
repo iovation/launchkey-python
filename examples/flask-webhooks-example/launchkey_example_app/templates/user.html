@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% block content %}
+{% block header %}
 Hello, {{username}}
-
+{% endblock %}
+{% block content %}
 {% if devices %}
 <table>
     <thead>

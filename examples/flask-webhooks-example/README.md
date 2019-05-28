@@ -1,17 +1,13 @@
-Python SDK for LaunchKey API
-============================
+LaunchKey Webhooks Example App
+==============================
 
-.. _LaunchKey: https://launchkey.com
+Example webapp to demonstrate LaunchKey webhooks using 
+the Python Service SDK and Flask.
 
-Example webapp to demonstrate LaunchKey_ using the Python Service SDK.
+For more information on LaunchKey webhooks see:
 
-Examples
---------
+https://docs.launchkey.com/api/webhooks/index.html
 
-CLI Example
-***********
-
-`Go to the README <examples/cli/README.md>`_
 
 Installation
 ------------
@@ -27,6 +23,7 @@ Usage
 .. code-block:: bash
     
     $ ngrok http 5000
-    $ cp example_config.py config.py
-    $ # Update config.py to include your cred and the ngrok url confirmed
-    $ FLASK_APP=app.py flask run
+    $ cp instance/example_config.py instance/config.py
+    $ # Update config.py to include the returned ngrok url and your LaunchKey credentials
+    $ pipenv shell
+    $ FLASK_APP=launchkey_example_app flask run
