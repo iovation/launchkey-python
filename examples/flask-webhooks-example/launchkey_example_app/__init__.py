@@ -20,10 +20,10 @@ launchkey_service = LaunchKeyService(
     app.config.get('LAUNCHKEY_API', LAUNCHKEY_PRODUCTION)
 )
 
-launchkey_service.set_directory_webhook_url(
+launchkey_service.update_directory_webhook_url(
     app.config['NGROK_BASE_URL'] + "/webhooks/directory"
 )
-launchkey_service.set_service_webhook_url(
+launchkey_service.update_service_webhook_url(
     app.config['NGROK_BASE_URL'] + "/webhooks/service"
 )
 

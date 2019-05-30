@@ -22,13 +22,13 @@ class LaunchKeyService:
             service_id
         )
 
-    def set_directory_webhook_url(self, webhook_url):
+    def update_directory_webhook_url(self, webhook_url):
         self.organization_client.update_directory(
             self.directory_id,
             webhook_url=webhook_url
         )
 
-    def set_service_webhook_url(self, webhook_url):
+    def update_service_webhook_url(self, webhook_url):
         self.directory_client.update_service(
             self.service_id,
             callback_url=webhook_url
