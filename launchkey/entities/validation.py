@@ -20,6 +20,7 @@ class DirectoryUserDeviceLinkResponseValidator(Schema):
     """Directory User Device link response validator"""
     qrcode = validators.String()  # URL
     code = validators.String(min=7)
+    device_id = validators.String()
     allow_extra_fields = True
 
 
@@ -54,6 +55,16 @@ class DirectoryValidator(Schema):
     active = validators.Bool()
     denial_context_inquiry_enabled = validators.Bool(if_empty=False,
                                                      if_missing=False)
+    webhook_url = validators.String()
+    allow_extra_fields = True
+
+
+class DirectoryDeviceLinkCompletionValidator(Schema):
+    """Directory User Device link completion validator"""
+    type = validators.OneOf(['DEVICE_LINK_COMPLETION'])
+    device_id = validators.String()
+    device_public_key = validators.String()
+    device_public_key_id = validators.String()
     allow_extra_fields = True
 
 

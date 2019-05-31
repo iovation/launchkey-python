@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from behave import given, when, then
+from hamcrest import assert_that, equal_to, empty
 
 
 # Create Directory
@@ -366,3 +367,36 @@ def attempt_to_remove_last_generated_sdk_key_from_directory(context, sdk_key):
         )
     except Exception as e:
         context.current_exception = e
+
+
+@given("I updated the Directory webhook url to \"{webhook_url}\"")
+@when("I update the Directory webhook url to \"{webhook_url}\"")
+def update_directory_webhook_url_to_value(context, webhook_url):
+    current_directory = context.entity_manager.get_current_directory()
+    context.directory_manager.update_directory(
+        current_directory.id,
+        webhook_url=webhook_url
+    )
+
+
+@when("I update the Directory webhook url to null")
+def update_directory_webhook_url_to_value(context):
+    current_directory = context.entity_manager.get_current_directory()
+    context.directory_manager.update_directory(
+        current_directory.id,
+        webhook_url=None
+    )
+
+
+@then("the Directory webhook url is \"{webhook_url}\"")
+def verify_directory_webhook_url_is_value(context, webhook_url):
+    current_directory = context.entity_manager.get_current_directory()
+    assert_that(current_directory.webhook_url, equal_to(webhook_url),
+                "Directory webhook url is incorrect")
+
+
+@then("the Directory webhook url is empty")
+def verify_directory_webhook_url_is_null(context):
+    current_directory = context.entity_manager.get_current_directory()
+    assert_that(current_directory.webhook_url, empty(),
+                "Directory webhook url is set when it shouldn't be")

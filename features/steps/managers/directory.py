@@ -82,13 +82,15 @@ class DirectoryManager(BaseManager):
 
     def update_directory(self, directory_id, ios_p12=False,
                          android_key=False, active=None,
-                         denial_context_inquiry_enabled=None):
+                         denial_context_inquiry_enabled=None,
+                         webhook_url=False):
         self._organization_client.update_directory(
             directory_id,
             ios_p12=ios_p12,
             android_key=android_key,
             active=active,
-            denial_context_inquiry_enabled=denial_context_inquiry_enabled
+            denial_context_inquiry_enabled=denial_context_inquiry_enabled,
+            webhook_url=webhook_url
         )
 
     def generate_and_add_directory_sdk_key_to_directory(self, directory_id):

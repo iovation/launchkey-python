@@ -1,4 +1,4 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from behave import given, when, then
 from formencode import Invalid, validators
@@ -28,7 +28,18 @@ def linking_response_contains_valid_qr_code_url(context):
 def linking_response_contains_valid_linking_code(context):
     code = context.entity_manager.get_current_linking_response().code
     if not code:
-        raise Exception("Linking code was not valid: %s" % type(code))
+        raise Exception("Linking code was not valid: %s" % code)
+
+
+@then("the Device linking response contains a valid Device ID")
+def linking_response_contains_valid_linking_code(context):
+    device_id = context.entity_manager.get_current_linking_response().device_id
+    try:
+        if not device_id:
+            raise ValueError
+        UUID(device_id)
+    except ValueError:
+        raise Exception("Device ID was not valid: %s" % device_id)
 
 
 @given("I retrieve the Devices list for the current User")

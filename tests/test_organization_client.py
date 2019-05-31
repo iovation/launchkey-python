@@ -61,7 +61,8 @@ class TestOrganizationClientDirectories(unittest.TestCase):
                 "name": "A Test Directory",
                 "android_key": "afb1ad83-09d5-427a-b097-e8aa982c4d6c",
                 "ios_certificate_fingerprint": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
-                "active": True
+                "active": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         ]
         response = self._organization_client.get_all_directories()
@@ -82,6 +83,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
         self.assertEqual(directory.android_key, "afb1ad83-09d5-427a-b097-e8aa982c4d6c")
         self.assertEqual(directory.ios_certificate_fingerprint, "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz")
         self.assertEqual(directory.active, True)
+        self.assertEqual(directory.webhook_url, "https://my.webhook.url/path")
 
     def test_get_directories(self):
         self._response.data = [
@@ -93,7 +95,8 @@ class TestOrganizationClientDirectories(unittest.TestCase):
                 "name": "A Test Directory",
                 "android_key": "afb1ad83-09d5-427a-b097-e8aa982c4d6c",
                 "ios_certificate_fingerprint": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
-                "active": True
+                "active": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         ]
         response = self._organization_client.get_directories(["760b2ae5-b44b-49ac-a83c-d3421b30936f"])
@@ -115,6 +118,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
         self.assertEqual(directory.android_key, "afb1ad83-09d5-427a-b097-e8aa982c4d6c")
         self.assertEqual(directory.ios_certificate_fingerprint, "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz")
         self.assertEqual(directory.active, True)
+        self.assertEqual(directory.webhook_url, "https://my.webhook.url/path")
 
     def test_get_directories_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -131,7 +135,8 @@ class TestOrganizationClientDirectories(unittest.TestCase):
                 "name": "A Test Directory",
                 "android_key": "afb1ad83-09d5-427a-b097-e8aa982c4d6c",
                 "ios_certificate_fingerprint": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
-                "active": True
+                "active": True,
+                "webhook_url": "https://my.webhook.url/path"
             }
         ]
         directory = self._organization_client.get_directory("directory_id")
@@ -151,6 +156,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
         self.assertEqual(directory.android_key, "afb1ad83-09d5-427a-b097-e8aa982c4d6c")
         self.assertEqual(directory.ios_certificate_fingerprint, "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz")
         self.assertEqual(directory.active, True)
+        self.assertEqual(directory.webhook_url, "https://my.webhook.url/path")
 
     def test_get_directory_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -194,17 +200,28 @@ class TestOrganizationClientDirectories(unittest.TestCase):
             directory_id="683e9dea-5128-471e-8264-6f8f6ba522ab",
             denial_context_inquiry_enabled=True)
 
+    def test_update_directory_webhook_url(self):
+        self._organization_client.update_directory(
+            "683e9dea-5128-471e-8264-6f8f6ba522ab",
+            webhook_url="https://my.webhook.url/path")
+        self._transport.patch.assert_called_once_with(
+            "/organization/v3/directories", self._expected_subject,
+            directory_id="683e9dea-5128-471e-8264-6f8f6ba522ab",
+            webhook_url="https://my.webhook.url/path")
+
     def test_update_directory_all(self):
         self._organization_client.update_directory(
             "683e9dea-5128-471e-8264-6f8f6ba522ab", ios_p12=b'An iOS P12',
             android_key="465e74df-13a0-4049-8f31-a9715cb8c12b", active=True,
-            denial_context_inquiry_enabled=False)
+            denial_context_inquiry_enabled=False,
+            webhook_url="https://my.webhook.url/path")
         self._transport.patch.assert_called_once_with(
             "/organization/v3/directories", self._expected_subject,
             directory_id="683e9dea-5128-471e-8264-6f8f6ba522ab",
             ios_p12=encodestring(b'An iOS P12').decode('utf-8'),
             android_key="465e74df-13a0-4049-8f31-a9715cb8c12b",
-            active=True, denial_context_inquiry_enabled=False)
+            active=True, denial_context_inquiry_enabled=False,
+            webhook_url="https://my.webhook.url/path")
 
     def test_update_directory_invalid_params(self):
         self._transport.patch.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)

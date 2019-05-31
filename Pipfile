@@ -4,7 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [packages]
-launchkey = {path = ".", editable = true}
+launchkey = {path = ".",editable = true}
 
 [dev-packages]
 # From setup.py tests_require to lock testing requirements
@@ -21,6 +21,7 @@ astroid = "~=2.1.0"  # Remove after pylint is updated to 2.3.0+
 tox = "~=3.7.0"
 behave = "~=1.2.6"
 appium-python-client = "*"
+pyhamcrest = "*"
 
 [requires]
 python = "~=3.4"

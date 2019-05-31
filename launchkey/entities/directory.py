@@ -20,6 +20,7 @@ class Directory(object):
         self.id = data['id']
         self.denial_context_inquiry_enabled = \
             data['denial_context_inquiry_enabled']
+        self.webhook_url = data['webhook_url']
 
     def __eq__(self, other):
         if isinstance(other, Directory):
@@ -33,7 +34,8 @@ class Directory(object):
                       self.active == other.active and \
                       self.id == other.id and \
                       self.denial_context_inquiry_enabled == \
-                      other.denial_context_inquiry_enabled
+                      other.denial_context_inquiry_enabled and \
+                      self.webhook_url == other.webhook_url
         else:
             eq = False
         return eq
@@ -46,7 +48,7 @@ class Directory(object):
                "\"{ios_certificate_fingerprint}\", " \
                "active={active}, " \
                "denial_context_inquiry_enabled=" \
-               "{denial_context_inquiry}>". \
+               "{denial_context_inquiry}, webhook_url=\"{webhook_url}\">". \
             format(
                 id=self.id,
                 name=self.name,
@@ -55,7 +57,8 @@ class Directory(object):
                 premium=self.premium,
                 ios_certificate_fingerprint=self.ios_certificate_fingerprint,
                 active=self.active,
-                denial_context_inquiry=self.denial_context_inquiry_enabled
+                denial_context_inquiry=self.denial_context_inquiry_enabled,
+                webhook_url=self.webhook_url
             )
 
 
@@ -76,6 +79,16 @@ class DirectoryUserDeviceLinkData(object):
     def __init__(self, data):
         self.qrcode = data['qrcode']
         self.code = data['code']
+        self.device_id = data['device_id']
+
+
+class DeviceLinkCompletionResponse(object):
+    """Package returned on the event that a device finishes linking"""
+
+    def __init__(self, data):
+        self.device_id = data['device_id']
+        self.device_public_key = data['device_public_key']
+        self.device_public_key_id = data['device_public_key_id']
 
 
 class DeviceStatus(object):
