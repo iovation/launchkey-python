@@ -927,6 +927,11 @@ class TestGeoFence(unittest.TestCase):
         geo_2 = GeoFence(1, 2, 3, name='name2')
         self.assertFalse(geo_1 == geo_2)
 
+    def test_not_equal(self):
+        geofence = GeoFence(1, 2, 3, name='name')
+        geofence_2 = GeoFence(2, 2, 3, name='name')
+        self.assertTrue(geofence != geofence_2)
+
     def test_different_type(self):
         geofence = GeoFence(1, 2, 3, name='name')
         timefence = TimeFence(
@@ -1250,6 +1255,33 @@ class TestTimeFence(unittest.TestCase):
         )
         self.assertFalse(fence_1 == fence_2)
 
+    def test_not_equal(self):
+        timefence = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        timefence_2 = TimeFence(
+            "Name",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=False,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        self.assertTrue(timefence != timefence_2)
+
     def test_different_type(self):
         timefence = TimeFence(
             "Name",
@@ -1265,6 +1297,7 @@ class TestTimeFence(unittest.TestCase):
         )
         geofence = GeoFence(1, 2, 3, "Name")
         self.assertFalse(timefence == geofence)
+
 
     def test_repr(self):
         fence_1 = TimeFence(
@@ -1545,4 +1578,29 @@ class TestAuthMethod(unittest.TestCase):
                 True
             ),
             True
+        )
+
+    def test_not_equal(self):
+        method_1 = AuthMethod(
+            AuthMethodType.FINGERPRINT,
+            True,
+            True,
+            True,
+            True,
+            True,
+            True,
+            True
+        )
+        method_2 = AuthMethod(
+            AuthMethodType.FINGERPRINT,
+            False,
+            True,
+            True,
+            True,
+            True,
+            True,
+            True
+        )
+        self.assertTrue(
+             method_1 != method_2
         )

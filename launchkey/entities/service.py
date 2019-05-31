@@ -61,6 +61,9 @@ class GeoFence(object):
         self.radius = float(radius)
         self.name = str(name) if name else None
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __eq__(self, other):
         if isinstance(other, GeoFence):
             eq = self.name == other.name and \
@@ -123,6 +126,9 @@ class TimeFence(object):
         if self.sunday:
             self.days.append("Sunday")
         self.timezone = start_time.tzname() if start_time.tzname() else "UTC"
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __eq__(self, other):
         if isinstance(other, TimeFence):
@@ -221,6 +227,9 @@ class AuthPolicy(object):
         self.set_minimum_requirements(knowledge, inherence, possession, any)
         self.jailbreak_protection = jailbreak_protection
         self.require_jailbreak_protection(jailbreak_protection)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __eq__(self, other):
         if isinstance(other, AuthPolicy):
@@ -487,6 +496,9 @@ class AuthMethod(object):
                 passed=self.passed,
                 error=self.error
             )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __eq__(self, other):
         if isinstance(other, AuthMethod):

@@ -146,7 +146,7 @@ def attempt_to_unlink_user_identifier_device(context, user_identifier):
 
 @given("I have a linked device")
 def link_device(context):
-    context.execute_steps('''
+    context.execute_steps(u'''
     Given I made a Device linking request
     When I link my device
     ''')

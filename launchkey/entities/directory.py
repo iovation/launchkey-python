@@ -22,6 +22,9 @@ class Directory(object):
             data['denial_context_inquiry_enabled']
         self.webhook_url = data['webhook_url']
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __eq__(self, other):
         if isinstance(other, Directory):
             eq = self.service_ids == other.service_ids and \

@@ -687,7 +687,7 @@ class TestPolicyObject(unittest.TestCase):
         policy2 = AuthPolicy()
         self.assertNotEqual(policy, policy2)
         policy2.add_geofence(1, 2, 2, '122')
-        self.assertFalse(policy == policy2)
+        self.assertTrue(policy != policy2)
 
     @data("test", {}, True, False, None)
     def test_eq_mismatch_non_object(self, value):
