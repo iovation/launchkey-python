@@ -4,6 +4,7 @@ from launchkey.entities.service import GeoFence, AuthMethod, AuthMethodType
 
 # Auth Creation
 
+
 @given("I made an Authorization request")
 @when("I make an Authorization request")
 def make_auth_for_current_user_identifier(context):
