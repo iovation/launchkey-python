@@ -21,7 +21,8 @@ def verify_current_organization_service_policy_has_no_inherence_requirement(
         context):
     current_policy = context.entity_manager.\
         get_current_organization_service_policy()
-    if "inherence" in current_policy.minimum_requirements:
+    if current_policy.minimum_requirements and \
+            "inherence" in current_policy.minimum_requirements:
         raise Exception(
             "Found inherence in current policy requirements when it "
             "should not have been: %s" % current_policy.minimum_requirements
@@ -33,7 +34,8 @@ def verify_current_organization_service_policy_has_no_knowledge_requirement(
         context):
     current_policy = context.entity_manager.\
         get_current_organization_service_policy()
-    if "knowledge" in current_policy.minimum_requirements:
+    if current_policy.minimum_requirements and \
+            "knowledge" in current_policy.minimum_requirements:
         raise Exception(
             "Found knowledge in current policy requirements when it "
             "should not have been: %s" % current_policy.minimum_requirements
@@ -45,7 +47,8 @@ def verify_current_organization_service_policy_has_no_possession_requirement(
         context):
     current_policy = context.entity_manager.\
         get_current_organization_service_policy()
-    if "possession" in current_policy.minimum_requirements:
+    if current_policy.minimum_requirements and \
+            "possession" in current_policy.minimum_requirements:
         raise Exception(
             "Found possession in current policy requirements when it "
             "should not have been: %s" % current_policy.minimum_requirements
@@ -58,9 +61,9 @@ def verify_current_organization_service_policy_has_factor_count_requirement(
         context):
     current_policy = context.entity_manager.\
         get_current_organization_service_policy()
-    if current_policy.minimum_amount is not 0:
+    if current_policy.minimum_amount is not None:
         raise Exception(
-            "Expected minimum requirement amount to be 0 but it was %s" %
+            "Expected minimum requirement amount to be None but it was %s" %
             current_policy.minimum_amount
         )
 
@@ -106,9 +109,10 @@ def set_current_organization_policy_require_type(context, policy_type):
     policy = context.entity_manager.get_current_organization_service_policy()
     kwargs = {}
 
-    # Make sure the previously set requirements remain
-    for additional_policy_type in policy.minimum_requirements:
-        kwargs[additional_policy_type] = True
+    if policy.minimum_requirements:
+        # Make sure the previously set requirements remain
+        for additional_policy_type in policy.minimum_requirements:
+            kwargs[additional_policy_type] = True
 
     kwargs[policy_type] = True
 
@@ -179,8 +183,8 @@ def verify_organization_service_policy_requires_jailbreak_protection(context):
 def verify_organization_service_policy_does_not_require_jailbreak_protection(
         context):
     policy = context.entity_manager.get_current_organization_service_policy()
-    if policy.jailbreak_protection is True:
-        raise Exception("Policy ailbreak protection when it should not have")
+    if policy.jailbreak_protection is not None:
+        raise Exception("Policy jailbreak protection was set to %s when it should have been None" % policy.jailbreak_protection)
 
 
 @given("I set the Policy for the Organization Service")
@@ -268,7 +272,7 @@ def verify_organization_service_geofence_locations_from_table(context):
 @then("the Organization Service Policy has {count:d} locations")
 def verify_organization_service_policy_has_count_locations(context, count):
     policy = context.entity_manager.get_current_organization_service_policy()
-    found_locations = len(policy.geofences)
+    found_locations = len(policy.geofences) if policy.geofences else 0
     if found_locations != count:
         raise Exception("Found %s locations when it should have been %s: %s" %
                         (found_locations, count, policy.geofences))
@@ -277,7 +281,7 @@ def verify_organization_service_policy_has_count_locations(context, count):
 @then("the Organization Service Policy has {count:d} time fences")
 def verify_organization_service_policy_has_count_timefences(context, count):
     policy = context.entity_manager.get_current_organization_service_policy()
-    found_locations = len(policy.timefences)
+    found_locations = len(policy.timefences) if policy.timefences else 0
     if found_locations != count:
         raise Exception("Found %s timefences when it should have been %s: %s" %
                         (found_locations, count, policy.timefences))

@@ -451,13 +451,7 @@ class SharedTests(object):
                 self._expected_base_endpoint[0:-1] + '/policy',
                 self._expected_subject, service_id=expected_service_id,
                 policy={'minimum_requirements': [],
-                        'factors': [
-                            {'quickfail': False,
-                             'priority': 1,
-                             'requirement': 'forced requirement',
-                             'attributes': {'factor enabled': 0},
-                             'factor': 'device integrity'}
-                        ]}
+                        'factors': []}
             )
 
         def test_set_service_policy_invalid_params(self):

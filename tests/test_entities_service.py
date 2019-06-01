@@ -313,13 +313,11 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
         self.json_loads_patch.return_value['auth_policy']['types'] = ['knowledge', 'inherence']
         self.json_loads_patch.return_value['auth_policy']['amount'] = 2
         response = AuthorizationResponse(self.data, self.transport)
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
-        self.assertEqual(
-            response.auth_policy.minimum_amount,
-            0
+        self.assertIsNone(
+            response.auth_policy.minimum_amount
         )
 
     def test_types_requirement(self):
@@ -330,9 +328,8 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
             response.auth_policy.minimum_requirements,
             ['knowledge', 'inherence']
         )
-        self.assertEqual(
-            response.auth_policy.minimum_amount,
-            0
+        self.assertIsNone(
+            response.auth_policy.minimum_amount
         )
 
     def test_types_requirement_with_amount_included(self):
@@ -344,9 +341,8 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
             response.auth_policy.minimum_requirements,
             ['inherence']
         )
-        self.assertEqual(
-            response.auth_policy.minimum_amount,
-            0
+        self.assertIsNone(
+            response.auth_policy.minimum_amount
         )
 
     @patch('launchkey.entities.service.warnings')
@@ -368,9 +364,8 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
             response.auth_policy.minimum_amount,
             3
         )
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
 
     def test_amount_requirement_with_types_included(self):
@@ -382,25 +377,24 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
             response.auth_policy.minimum_amount,
             3
         )
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
 
     def test_auth_policy_repr_default(self):
         auth_policy = AuthPolicy()
         self.assertEqual(
             str(auth_policy),
-            "AuthPolicy <minimum_requirements=[], minimum_amount=0, "
-            "geofences=[]>"
+            "AuthPolicy <minimum_requirements=None, minimum_amount=None, "
+            "geofences=None>"
         )
 
     def test_auth_policy_min_amount_repr(self):
         auth_policy = AuthPolicy(any=3)
         self.assertEqual(
             str(auth_policy),
-            "AuthPolicy <minimum_requirements=[], "
-            "minimum_amount=3, geofences=[]>"
+            "AuthPolicy <minimum_requirements=None, "
+            "minimum_amount=3, geofences=None>"
         )
 
     def test_auth_policy_min_requirements_repr(self):
@@ -409,7 +403,7 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
             str(auth_policy),
             "AuthPolicy <minimum_requirements="
             "['knowledge', 'inherence', 'possession'], "
-            "minimum_amount=0, geofences=[]>"
+            "minimum_amount=None, geofences=None>"
         )
 
     def test_auth_policy_repr_geofences(self):
@@ -418,7 +412,7 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
         auth_policy.add_geofence(4.1, 5.2, 6.3, name='test')
         self.assertEqual(
             str(auth_policy),
-            'AuthPolicy <minimum_requirements=[], minimum_amount=0, '
+            'AuthPolicy <minimum_requirements=None, minimum_amount=None, '
             'geofences=[GeoFence <name="None", latitude=1.0, longitude=2.0, '
             'radius=3.0>, GeoFence <name="test", latitude=4.1, longitude=5.2, '
             'radius=6.3>]>'
@@ -522,13 +516,11 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(circle_code.user_required)
         self.assertIsNone(circle_code.passed)
         self.assertIsNone(circle_code.error)
-        self.assertEqual(
-            response.auth_policy.geofences,
-            []
+        self.assertIsNone(
+            response.auth_policy.geofences
         )
-        self.assertEqual(
-            response.auth_policy.minimum_amount,
-            0
+        self.assertIsNone(
+            response.auth_policy.minimum_amount
         )
         self.assertEqual(
             response.auth_policy.minimum_requirements,
@@ -549,17 +541,15 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(fingerprint.user_required)
         self.assertIsNone(fingerprint.passed)
         self.assertIsNone(fingerprint.error)
-        self.assertEqual(
-            response.auth_policy.geofences,
-            []
+        self.assertIsNone(
+            response.auth_policy.geofences
         )
         self.assertEqual(
             response.auth_policy.minimum_amount,
             2
         )
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
 
     def test_5_amount_success_failed_wearable_sensor_unchecked_fingerprint(self):
@@ -585,17 +575,15 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(fingerprint.user_required)
         self.assertIsNone(fingerprint.passed)
         self.assertIsNone(fingerprint.error)
-        self.assertEqual(
-            response.auth_policy.geofences,
-            []
+        self.assertIsNone(
+            response.auth_policy.geofences
         )
         self.assertEqual(
             response.auth_policy.minimum_amount,
             2
         )
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
 
     def test_6_required_amount_2_failed_wearable_unchecked_location_unchecked_fingerprint(self):
@@ -630,17 +618,15 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(fingerprint.user_required)
         self.assertIsNone(fingerprint.passed)
         self.assertIsNone(fingerprint.error)
-        self.assertEqual(
-            response.auth_policy.geofences,
-            []
+        self.assertIsNone(
+            response.auth_policy.geofences
         )
         self.assertEqual(
             response.auth_policy.minimum_amount,
             2
         )
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
 
     def test_7_required_amount_2_successful_fingerprint_successful_locations_unchecked_wearable(self):
@@ -675,9 +661,8 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertTrue(fingerprint.user_required)
         self.assertTrue(fingerprint.passed)
         self.assertFalse(fingerprint.error)
-        self.assertEqual(
-            response.auth_policy.geofences,
-            []
+        self.assertIsNone(
+            response.auth_policy.geofences
         )
         self.assertEqual(
             response.auth_policy.minimum_amount,
@@ -727,9 +712,8 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
             response.auth_policy.minimum_amount,
             3
         )
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
 
     def test_9_required_amount_2_failed_geofence_unchecked_face_unchecked_pin(self):
@@ -775,9 +759,8 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
             response.auth_policy.minimum_amount,
             2
         )
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
 
     def test_10_location_failure_unchecked_fingerprint_passed_geofence(self):
@@ -819,13 +802,11 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
                          radius=150.0, name="work")
             ]
         )
-        self.assertEqual(
-            response.auth_policy.minimum_amount,
-            0
+        self.assertIsNone(
+            response.auth_policy.minimum_amount
         )
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
 
     def test_11_required_possession_failure_unchecked_pin_unchecked_circle_code(self):
@@ -851,13 +832,11 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(circle_code.user_required)
         self.assertIsNone(circle_code.passed)
         self.assertIsNone(circle_code.error)
-        self.assertEqual(
-            response.auth_policy.geofences,
-            []
+        self.assertIsNone(
+            response.auth_policy.geofences
         )
-        self.assertEqual(
-            response.auth_policy.minimum_amount,
-            0
+        self.assertIsNone(
+            response.auth_policy.minimum_amount
         )
         self.assertEqual(
             response.auth_policy.minimum_requirements,
@@ -887,17 +866,15 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
         self.assertFalse(locations.user_required)
         self.assertIsNone(locations.passed)
         self.assertIsNone(locations.error)
-        self.assertEqual(
-            response.auth_policy.geofences,
-            []
+        self.assertIsNone(
+            response.auth_policy.geofences
         )
         self.assertEqual(
             response.auth_policy.minimum_amount,
             1
         )
-        self.assertEqual(
-            response.auth_policy.minimum_requirements,
-            []
+        self.assertIsNone(
+            response.auth_policy.minimum_requirements
         )
 
 

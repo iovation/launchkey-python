@@ -14,11 +14,11 @@ class TestServiceSecurityPolicy(unittest.TestCase):
 
     def test_defaults(self):
         policy = ServiceSecurityPolicy()
-        self.assertEqual(policy.timefences, [])
-        self.assertEqual(policy.geofences, [])
-        self.assertEqual(policy.minimum_amount, 0)
-        self.assertEqual(policy.minimum_requirements, [])
-        self.assertEqual(policy.jailbreak_protection, False)
+        self.assertIsNone(policy.timefences)
+        self.assertIsNone(policy.geofences)
+        self.assertIsNone(policy.minimum_amount)
+        self.assertIsNone(policy.minimum_requirements)
+        self.assertIsNone(policy.jailbreak_protection)
 
     def test_add_geofence(self):
         policy = ServiceSecurityPolicy()
@@ -27,8 +27,8 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         radius = MagicMock(spec=int)
         policy.add_geofence(latitude, longitude, radius, 'a fence')
         retrieved = policy.get_policy()
-        self.assertEqual(len(retrieved['factors']), 2)
-        factor = retrieved['factors'][1] if retrieved['factors'][1]['factor'] == 'geofence' else retrieved['factors'][0]
+        self.assertEqual(len(retrieved['factors']), 1)
+        factor = retrieved['factors'][0]
         self.assertEqual(factor['factor'], 'geofence')
         self.assertEqual(len(factor['attributes']['locations']), 1)
         location = factor['attributes']['locations'][0]
@@ -41,8 +41,8 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         radius2 = MagicMock(spec=int)
         policy.add_geofence(latitude2, longitude2, radius2, 'another fence')
         retrieved = policy.get_policy()
-        self.assertEqual(len(retrieved['factors']), 2)
-        factor = retrieved['factors'][1] if retrieved['factors'][1]['factor'] == 'geofence' else retrieved['factors'][0]
+        self.assertEqual(len(retrieved['factors']), 1)
+        factor = retrieved['factors'][0]
         self.assertEqual(factor['factor'], 'geofence')
         self.assertEqual(len(factor['attributes']['locations']), 2)
         location = factor['attributes']['locations'][1]
@@ -95,15 +95,15 @@ class TestServiceSecurityPolicy(unittest.TestCase):
 
     def test_add_multiple_timefences(self):
         policy = ServiceSecurityPolicy()
-        self.assertEqual(len(policy.timefences), 0)
+        self.assertIsNone(policy.timefences)
         start_time = time(hour=12, minute=30, second=30)
         end_time = time(hour=23, minute=45, second=45)
-        policy.add_timefence("Fence 1", start_time, end_time, monday=True, wednesday=True, sunday=True)
+        policy.add_timefence("Fence 1", start_time, end_time, monday=True, wednesday=True,
+                             sunday=True)
         self.assertEqual(len(policy.timefences), 1)
         retrieved = policy.get_policy()
-        self.assertEqual(len(retrieved['factors']), 2)
-        factor = retrieved['factors'][1] \
-            if retrieved['factors'][1]['factor'] == 'timefence' else retrieved['factors'][0]
+        self.assertEqual(len(retrieved['factors']), 1)
+        factor = retrieved['factors'][0]
         self.assertEqual(factor['factor'], 'timefence')
         self.assertEqual(len(factor['attributes']['time fences']), 1)
         fence = factor['attributes']['time fences'][0]
@@ -119,13 +119,13 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         # Add a second timefence
         start_time_2 = time(hour=20, minute=10, second=10)
         end_time_2 = time(hour=22, minute=50, second=20)
-        policy.add_timefence("Fence 2", start_time_2, end_time_2, tuesday=True, thursday=True, friday=True,
+        policy.add_timefence("Fence 2", start_time_2, end_time_2, tuesday=True, thursday=True,
+                             friday=True,
                              saturday=True)
         self.assertEqual(len(policy.timefences), 2)
         retrieved = policy.get_policy()
-        self.assertEqual(len(retrieved['factors']), 2)
-        factor = retrieved['factors'][1] \
-            if retrieved['factors'][1]['factor'] == 'timefence' else retrieved['factors'][0]
+        self.assertEqual(len(retrieved['factors']), 1)
+        factor = retrieved['factors'][0]
         self.assertEqual(factor['factor'], 'timefence')
         self.assertEqual(len(factor['attributes']['time fences']), 2)
         fence = factor['attributes']['time fences'][1]
@@ -167,8 +167,7 @@ class TestServiceSecurityPolicy(unittest.TestCase):
                              time(tzinfo=pytz.timezone("US/Pacific")))
         self.assertEqual(policy.timefences[0].timezone, "US/Pacific")
         retrieved = policy.get_policy()
-        factor = retrieved['factors'][1] if \
-            retrieved['factors'][1]['factor'] == 'timefence' else retrieved['factors'][0]
+        factor = retrieved['factors'][0]
         self.assertEqual(factor['attributes']['time fences'][0]['timezone'], "US/Pacific")
 
     def test_remove_timefence(self):
@@ -178,16 +177,14 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         policy.add_timefence("my timefence 2", time(hour=12), time(hour=13))
         self.assertEqual(len(policy.timefences), 2)
         retrieved = policy.get_policy()
-        factor = retrieved['factors'][1] if \
-            retrieved['factors'][1]['factor'] == 'timefence' else retrieved['factors'][0]
+        factor = retrieved['factors'][0]
         self.assertEqual(len(factor['attributes']['time fences']), 2)
 
         # Remove the first time fence
         policy.remove_timefence('my timefence')
         self.assertEqual(len(policy.timefences), 1)
         retrieved = policy.get_policy()
-        factor = retrieved['factors'][1] if \
-            retrieved['factors'][1]['factor'] == 'timefence' else retrieved['factors'][0]
+        factor = retrieved['factors'][0]
 
         # Verify the correct time fence was removed
         self.assertEqual(len(factor['attributes']['time fences']), 1)
@@ -197,6 +194,16 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         self.assertEqual(policy.timefences[0].name, "my timefence 2")
         self.assertEqual(policy.timefences[0].start_time.hour, 12)
         self.assertEqual(policy.timefences[0].end_time.hour, 13)
+
+    def test_remove_last_timefence(self):
+        # Create a policy and add two time fences
+        policy = ServiceSecurityPolicy()
+        policy.add_timefence("my timefence", time(hour=10), time(hour=11))
+        # Remove the first time fence
+        policy.remove_timefence('my timefence')
+        self.assertIsNone(policy.timefences)
+        retrieved = policy.get_policy()
+        self.assertEqual(len(retrieved['factors']), 0)
 
     def test_remove_invalid_timefence_no_timefences(self):
         policy = ServiceSecurityPolicy()
@@ -216,10 +223,9 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         with self.assertRaises(InvalidTimeFenceName):
             policy.remove_timefence("name")
 
-
     def test_import_timefence_from_policy(self):
         policy = ServiceSecurityPolicy()
-        self.assertEqual(len(policy.timefences), 0)
+        self.assertIsNone(policy.timefences)
         policy.set_policy(
             {
                 'minimum_requirements': [],
@@ -246,7 +252,7 @@ class TestServiceSecurityPolicy(unittest.TestCase):
                 ]
             }
         )
-        self.assertEqual(len(policy.timefences), 1)
+        self.assertIsNotNone(policy.timefences)
         timefence = policy.timefences[0]
         self.assertTrue(timefence.monday)
         self.assertFalse(timefence.tuesday)
@@ -262,7 +268,7 @@ class TestServiceSecurityPolicy(unittest.TestCase):
 
     def test_import_geofence_from_policy_does_not_require_name(self):
         policy = ServiceSecurityPolicy()
-        self.assertEqual(len(policy.timefences), 0)
+        self.assertIsNone(policy.timefences)
         policy.set_policy(
             {
                 'minimum_requirements': [],

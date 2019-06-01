@@ -11,8 +11,9 @@ def update_current_auth_policy_to_require_count_factors(context, count):
 def update_current_auth_policy_to_require_inherence(context):
     current_auth = context.entity_manager.get_current_auth_policy()
     kwargs = {}
-    for k in current_auth.minimum_requirements:
-        kwargs[k] = True
+    if current_auth.minimum_requirements:
+        for k in current_auth.minimum_requirements:
+            kwargs[k] = True
     kwargs['inherence'] = True
     current_auth.set_minimum_requirements(**kwargs)
 
@@ -21,8 +22,9 @@ def update_current_auth_policy_to_require_inherence(context):
 def update_current_auth_policy_to_require_possession(context):
     current_auth = context.entity_manager.get_current_auth_policy()
     kwargs = {}
-    for k in current_auth.minimum_requirements:
-        kwargs[k] = True
+    if current_auth.minimum_requirements:
+        for k in current_auth.minimum_requirements:
+            kwargs[k] = True
     kwargs['possession'] = True
     current_auth.set_minimum_requirements(**kwargs)
 
@@ -31,8 +33,9 @@ def update_current_auth_policy_to_require_possession(context):
 def update_current_auth_policy_to_require_knowledge(context):
     current_auth = context.entity_manager.get_current_auth_policy()
     kwargs = {}
-    for k in current_auth.minimum_requirements:
-        kwargs[k] = True
+    if current_auth.minimum_requirements:
+        for k in current_auth.minimum_requirements:
+            kwargs[k] = True
     kwargs['knowledge'] = True
     current_auth.set_minimum_requirements(**kwargs)
 
