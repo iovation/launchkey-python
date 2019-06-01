@@ -188,8 +188,8 @@ class DenialReason(object):
 class AuthPolicy(object):
     """AuthPolicy object for performing dynamic authorizations"""
 
-    def __init__(self, any=0, knowledge=False, inherence=False,
-                 possession=False, jailbreak_protection=False):
+    def __init__(self, any=None, knowledge=None, inherence=None,
+                 possession=None, jailbreak_protection=None):
         """
         Note that if any is used neither knowledge, inherence, nor possession
         can be used alongside it.
@@ -204,18 +204,18 @@ class AuthPolicy(object):
                rooted devices to authenticate
         """
 
-        if knowledge not in (True, False, 0, 1) \
-                or inherence not in (True, False, 0, 1) \
-                or possession not in (True, False, 0, 1):
+        if knowledge not in (None, True, False, 0, 1) \
+                or inherence not in (None, True, False, 0, 1) \
+                or possession not in (None, True, False, 0, 1):
             raise InvalidParameters("Inherence, knowledge, or possesion "
-                                    "]input must be a boolean.")
-        if any != 0 and (knowledge or inherence or possession):
+                                    "input must be a boolean.")
+        if any not in (0, None) and (knowledge or inherence or possession):
             raise InvalidParameters("Cannot use \"any\" with other specific "
-                                    "]factor requirements")
+                                    "factor requirements")
 
-        self.geofences = []
-        self.minimum_requirements = []
-        self.minimum_amount = 0
+        self.geofences = None
+        self.minimum_requirements = None
+        self.minimum_amount = None
 
         self._policy = {"factors": []}
         self.set_minimum_requirements(knowledge, inherence, possession, any)
@@ -237,6 +237,8 @@ class AuthPolicy(object):
         :param radius: Float. Radius of the Geo-Fence in meters
         :param name: String. Optional identifier for the Geo-Fence.
         """
+        if self.geofences is None:
+            self.geofences = []
         try:
             geofence = GeoFence(latitude, longitude, radius, name)
             self.geofences.append(geofence)
@@ -280,6 +282,9 @@ class AuthPolicy(object):
                                 and location['name'].lower() == name_.lower():
                             del self._policy['factors'][key]['attributes'][
                                 'locations'][loc_key]
+                            if not self._policy['factors'][key][
+                                    'attributes']['locations']:
+                                del self._policy['factors'][key]
                             return True
             return False
 
@@ -287,6 +292,8 @@ class AuthPolicy(object):
             for geo_key, geo in enumerate(self.geofences):
                 if geo.name.lower() == name.lower():
                     del self.geofences[geo_key]
+                    if not self.geofences:
+                        self.geofences = None
                     return True
             return False
 
@@ -302,25 +309,26 @@ class AuthPolicy(object):
         :param status: Bool as to whether device integrity should be required
         :return:
         """
-        enabled = 1 if status else 0
-        self.jailbreak_protection = enabled == 1
-
         for key, factor in enumerate(self._policy['factors']):
             if 'factor' in factor and factor['factor'] == 'device integrity':
-                self._policy['factors'][key]['attributes'] = \
-                    {"factor enabled": 1 if status else 0}
-                return
+                del self._policy['factors'][key]
 
-        self._policy['factors'].append({
-            "factor": "device integrity",
-            "requirement": "forced requirement",
-            "quickfail": False,
-            "priority": 1,
-            "attributes": {"factor enabled": enabled}
-        })
+        if status is not None:
+            enabled = 1 if status else 0
+            self.jailbreak_protection = enabled == 1
 
-    def set_minimum_requirements(self, knowledge=False, inherence=False,
-                                 possession=False, minimum_amount=0):
+            self._policy['factors'].append({
+                "factor": "device integrity",
+                "requirement": "forced requirement",
+                "quickfail": False,
+                "priority": 1,
+                "attributes": {"factor enabled": enabled}
+            })
+        else:
+            self.jailbreak_protection = None
+
+    def set_minimum_requirements(self, knowledge=None, inherence=None,
+                                 possession=None, minimum_amount=None):
         """
         Sets minimum requirements that must be used for each Auth Request
         :param knowledge: Bool. Whether a Knowledge factor should be required.
@@ -332,26 +340,37 @@ class AuthPolicy(object):
         :return:
         """
 
-        minimum_requirements = []
-        if knowledge:
-            minimum_requirements.append("knowledge")
-        if inherence:
-            minimum_requirements.append("inherence")
-        if possession:
-            minimum_requirements.append("possession")
-
+        if knowledge is not None or inherence is not None or \
+                possession is not None:
+            minimum_requirements = []
+            if knowledge:
+                minimum_requirements.append("knowledge")
+            if inherence:
+                minimum_requirements.append("inherence")
+            if possession:
+                minimum_requirements.append("possession")
+        else:
+            minimum_requirements = None
         self.minimum_requirements = minimum_requirements
+
         self.minimum_amount = minimum_amount
+
         if not minimum_requirements and not minimum_amount:
             self._policy['minimum_requirements'] = []
         else:
-            self._policy['minimum_requirements'] = [{
-                "requirement": "authenticated",
-                "any": self.minimum_amount,
-                "knowledge": 1 if 'knowledge' in minimum_requirements else 0,
-                "inherence": 1 if 'inherence' in minimum_requirements else 0,
-                "possession": 1 if 'possession' in minimum_requirements else 0,
-            }]
+            minimum_requirements_dict = {
+                "requirement": "authenticated"
+            }
+            if self.minimum_amount is not None:
+                minimum_requirements_dict['any'] = self.minimum_amount
+            if self.minimum_requirements:
+                minimum_requirements_dict["knowledge"] = \
+                    1 if 'knowledge' in minimum_requirements else 0
+                minimum_requirements_dict["inherence"] = \
+                    1 if 'inherence' in minimum_requirements else 0
+                minimum_requirements_dict["possession"] = \
+                    1 if 'possession' in minimum_requirements else 0
+            self._policy['minimum_requirements'] = [minimum_requirements_dict]
 
     def get_policy(self):
         """
@@ -391,15 +410,20 @@ class AuthPolicy(object):
         # returned value as of now
         if minimum_requirements:
             requirement = minimum_requirements[0]
+            if self.minimum_requirements is None and (
+                    requirement.get('knowledge') or
+                    requirement.get('inherence') or
+                    requirement.get('possession')):
+                self.minimum_requirements = []
             if 'knowledge' in requirement and requirement['knowledge']:
                 self.minimum_requirements.append('knowledge')
             if 'inherence' in requirement and requirement['inherence']:
                 self.minimum_requirements.append('inherence')
             if 'possession' in requirement and requirement['possession']:
                 self.minimum_requirements.append('possession')
-            if 'all' in requirement and requirement['all']:
+            if 'all' in requirement and requirement['all'] is not None:
                 self.minimum_amount = requirement['all']
-            if 'any' in requirement and requirement['any']:
+            if 'any' in requirement and requirement['any'] is not None:
                 self.minimum_amount = requirement['any']
 
     def _parse_factors(self, factors):
@@ -408,6 +432,7 @@ class AuthPolicy(object):
                     and factor['attributes']:
                 if factor['factor'] == 'geofence' \
                         and 'locations' in factor['attributes']:
+                    self.geofences = []
                     for fence in factor['attributes']['locations']:
                         self.geofences.append(
                             GeoFence(fence['latitude'], fence['longitude'],
@@ -417,6 +442,8 @@ class AuthPolicy(object):
                         and 'factor enabled' in factor['attributes']:
                     if factor['attributes']['factor enabled']:
                         self.jailbreak_protection = True
+                    else:
+                        self.jailbreak_protection = False
 
     def __repr__(self):
         return "AuthPolicy <" \
@@ -687,9 +714,9 @@ class ServiceSecurityPolicy(AuthPolicy):
     used in Auth Requests
     """
 
-    def __init__(self, any=0, knowledge=False, inherence=False,
-                 possession=False, jailbreak_protection=False):
-        self.timefences = []
+    def __init__(self, any=None, knowledge=None, inherence=None,
+                 possession=None, jailbreak_protection=None):
+        self.timefences = None
 
         super(ServiceSecurityPolicy, self).__init__(
             any, knowledge, inherence, possession, jailbreak_protection)
@@ -705,11 +732,12 @@ class ServiceSecurityPolicy(AuthPolicy):
         """
         if name is None:
             raise ValueError("name expected not to be None!")
-        for fence in self.geofences:
-            if fence.name.lower() == name.lower():
-                # If the name exists, we should raise an
-                # error since they should to be unique
-                raise DuplicateGeoFenceName
+        if self.geofences:
+            for fence in self.geofences:
+                if fence.name.lower() == name.lower():
+                    # If the name exists, we should raise an
+                    # error since they should to be unique
+                    raise DuplicateGeoFenceName
         return super(ServiceSecurityPolicy, self).add_geofence(
             latitude, longitude, radius, name)
 
@@ -737,6 +765,8 @@ class ServiceSecurityPolicy(AuthPolicy):
         :param sunday: Bool. Whether the Time-Fence should be valid on Sundays
         :return:
         """
+        if self.timefences is None:
+            self.timefences = []
         fence = TimeFence(name, start_time, end_time, monday=monday,
                           tuesday=tuesday, wednesday=wednesday,
                           thursday=thursday, friday=friday, saturday=saturday,
@@ -790,6 +820,9 @@ class ServiceSecurityPolicy(AuthPolicy):
                         if location['name'].lower() == name_.lower():
                             del self._policy['factors'][key]['attributes'][
                                 'time fences'][loc_key]
+                            if not self._policy['factors'][key][
+                                    'attributes']['time fences']:
+                                del self._policy['factors'][key]
                             return True
             return False
 
@@ -797,6 +830,8 @@ class ServiceSecurityPolicy(AuthPolicy):
             for time_key, time in enumerate(self.timefences):
                 if time.name.lower() == name_.lower():
                     del self.timefences[time_key]
+                    if not self.timefences:
+                        self.timefences = None
                     return True
             return False
 
@@ -811,6 +846,7 @@ class ServiceSecurityPolicy(AuthPolicy):
                     and factor['attributes']:
                 if factor['factor'] == 'timefence' \
                         and 'time fences' in factor['attributes']:
+                    self.timefences = []
                     for fence in factor['attributes']['time fences']:
                         # Dict comp to convert the days list into kwargs
                         kwargs = {day.lower(): True for day in fence['days']}

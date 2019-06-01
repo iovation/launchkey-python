@@ -524,29 +524,29 @@ class TestHandleWebhook(unittest.TestCase):
 @ddt
 class TestPolicyObject(unittest.TestCase):
 
-    @data(1, True, 0, False)
+    @data(1, True, 0, False, None)
     def test_knowledge_factor_success(self, value):
         AuthPolicy(knowledge=value)
 
-    @data(1, True, 0, False)
+    @data(1, True, 0, False, None)
     def test_inherence_factor_success(self, value):
         AuthPolicy(inherence=value)
 
-    @data(1, True, 0, False)
+    @data(1, True, 0, False, None)
     def test_possession_factor_success(self, value):
         AuthPolicy(possession=value)
 
-    @data(2, 3, 4, 5, None)
+    @data(2, 3, 4, 5)
     def test_knowledge_factor_failure(self, value):
         with self.assertRaises(InvalidParameters):
             AuthPolicy(knowledge=value)
 
-    @data(2, 3, 4, 5, None)
+    @data(2, 3, 4, 5)
     def test_inherence_factor_failure(self, value):
         with self.assertRaises(InvalidParameters):
             AuthPolicy(inherence=value)
 
-    @data(2, 3, 4, 5, None)
+    @data(2, 3, 4, 5)
     def test_possession_factor_failure(self, value):
         with self.assertRaises(InvalidParameters):
             AuthPolicy(possession=value)
@@ -577,9 +577,7 @@ class TestPolicyObject(unittest.TestCase):
 
     def test_jailbreak_protection_default(self):
         policy = AuthPolicy()
-        self.assertEqual(len(policy.get_policy()['factors']), 1)
-        self.assertEqual(policy.get_policy()['factors'][0]['factor'], 'device integrity')
-        self.assertEqual(policy.get_policy()['factors'][0]['attributes']['factor enabled'], 0)
+        self.assertEqual(len(policy.get_policy()['factors']), 0)
 
     def test_jailbreak_protection_true(self):
         policy = AuthPolicy(jailbreak_protection=True)
@@ -589,6 +587,14 @@ class TestPolicyObject(unittest.TestCase):
         self.assertEqual(factor['factor'], 'device integrity')
         self.assertEqual(factor['attributes']['factor enabled'], 1)
 
+    def test_jailbreak_protection_false(self):
+        policy = AuthPolicy(jailbreak_protection=False)
+        retrieved = policy.get_policy()
+        self.assertEqual(len(retrieved['factors']), 1)
+        factor = retrieved['factors'][0]
+        self.assertEqual(factor['factor'], 'device integrity')
+        self.assertEqual(factor['attributes']['factor enabled'], 0)
+
     def test_add_geofence_success(self):
         policy = AuthPolicy()
         latitude = MagicMock(spec=int)
@@ -596,8 +602,8 @@ class TestPolicyObject(unittest.TestCase):
         radius = MagicMock(spec=int)
         policy.add_geofence(latitude, longitude, radius)
         retrieved = policy.get_policy()
-        self.assertEqual(len(retrieved['factors']), 2)
-        factor = retrieved['factors'][1] if retrieved['factors'][1]['factor'] == 'geofence' else retrieved['factors'][0]
+        self.assertEqual(len(retrieved['factors']), 1)
+        factor = retrieved['factors'][0]
         self.assertEqual(factor['factor'], 'geofence')
         self.assertEqual(len(factor['attributes']['locations']), 1)
         location = factor['attributes']['locations'][0]
@@ -610,14 +616,43 @@ class TestPolicyObject(unittest.TestCase):
         radius2 = MagicMock(spec=int)
         policy.add_geofence(latitude2, longitude2, radius2)
         retrieved = policy.get_policy()
-        self.assertEqual(len(retrieved['factors']), 2)
-        factor = retrieved['factors'][1] if retrieved['factors'][1]['factor'] == 'geofence' else retrieved['factors'][0]
+        self.assertEqual(len(retrieved['factors']), 1)
+        factor = retrieved['factors'][0]
         self.assertEqual(factor['factor'], 'geofence')
         self.assertEqual(len(factor['attributes']['locations']), 2)
         location = factor['attributes']['locations'][1]
         self.assertEqual(location['latitude'], float(latitude2))
         self.assertEqual(location['longitude'], float(longitude2))
         self.assertEqual(location['radius'], float(radius2))
+
+    def test_add_geofence_with_jailbreak_protection(self):
+        policy = AuthPolicy(jailbreak_protection=True)
+        latitude = MagicMock(spec=int)
+        longitude = MagicMock(spec=int)
+        radius = MagicMock(spec=int)
+        policy.add_geofence(latitude, longitude, radius)
+        retrieved = policy.get_policy()
+        self.assertEqual(len(retrieved['factors']), 2)
+        factor = retrieved['factors'][0] if retrieved['factors'][0]['factor'] == "geofence" else \
+        retrieved['factors'][1]
+        self.assertEqual(factor['factor'], 'geofence')
+        self.assertEqual(len(factor['attributes']['locations']), 1)
+        location = factor['attributes']['locations'][0]
+        self.assertEqual(location['latitude'], float(latitude))
+        self.assertEqual(location['longitude'], float(longitude))
+        self.assertEqual(location['radius'], float(radius))
+
+    def test_remove_geofence_with_jailbreak_protection(self):
+        policy = AuthPolicy(jailbreak_protection=True)
+        latitude = MagicMock(spec=int)
+        longitude = MagicMock(spec=int)
+        radius = MagicMock(spec=int)
+        policy.add_geofence(latitude, longitude, radius, name='myfence')
+        policy.remove_geofence('myfence')
+        retrieved = policy.get_policy()
+        factor = retrieved['factors'][0]
+        self.assertEqual(factor['factor'], 'device integrity')
+        self.assertEqual(factor['attributes']['factor enabled'], 1)
 
     @data('invalid', None, "")
     def test_add_geofence_invalid_lat_input(self, value):
@@ -637,23 +672,29 @@ class TestPolicyObject(unittest.TestCase):
         with self.assertRaises(InvalidParameters):
             policy.add_geofence(0, 0, value)
 
-    @data('myfence', 'my fence', '** fence 1234')
-    def test_remove_geofence(self, name):
+    def test_remove_geofence(self):
+        name = 'myfence'
         policy = AuthPolicy()
         retrieved = policy.get_policy()
-        self.assertEqual(len(retrieved['factors']), 1)
-        self.assertEqual(policy.geofences, [])
+        self.assertEqual(len(retrieved['factors']), 0)
+        self.assertIsNone(policy.geofences)
 
         policy.add_geofence(MagicMock(spec=int), MagicMock(spec=int), MagicMock(spec=int), name)
         self.assertEqual(len(policy.geofences), 1)
         retrieved = policy.get_policy()
-        self.assertEqual(len(retrieved['factors']), 2)
-        self.assertEqual(len(retrieved['factors'][1]['attributes']['locations']), 1)
+        self.assertEqual(len(retrieved['factors']), 1)
+        self.assertEqual(len(retrieved['factors'][0]['attributes']['locations']), 1)
 
         policy.remove_geofence(name)
-        self.assertEqual(policy.geofences, [])
+        self.assertIsNone(policy.geofences)
         retrieved = policy.get_policy()
-        self.assertEqual(len(retrieved['factors'][1]['attributes']['locations']), 0)
+        self.assertEqual(len(retrieved['factors']), 0)
+
+        policy.add_geofence(MagicMock(spec=int), MagicMock(spec=int), MagicMock(spec=int), name)
+        self.assertEqual(len(policy.geofences), 1)
+        retrieved = policy.get_policy()
+        self.assertEqual(len(retrieved['factors']), 1)
+        self.assertEqual(len(retrieved['factors'][0]['attributes']['locations']), 1)
 
     def test_remove_invalid_geofence(self):
         policy = AuthPolicy()
@@ -701,7 +742,6 @@ class TestPolicyObject(unittest.TestCase):
     @data(True, False)
     def test_require_jailbreak_protection_new(self, status):
         policy = AuthPolicy()
-        policy._policy['factors'] = []
         policy.require_jailbreak_protection(status)
         retrieved = policy.get_policy()
         self.assertEqual(len(retrieved['factors']), 1)
@@ -709,7 +749,7 @@ class TestPolicyObject(unittest.TestCase):
 
     @data(True, False)
     def test_require_jailbreak_protection_existing(self, status):
-        policy = AuthPolicy()
+        policy = AuthPolicy(jailbreak_protection=False)
         policy.require_jailbreak_protection(status)
         retrieved = policy.get_policy()
         self.assertEqual(len(retrieved['factors']), 1)
@@ -717,12 +757,12 @@ class TestPolicyObject(unittest.TestCase):
 
     def test_set_policy_dict(self):
         policy = AuthPolicy()
-        self.assertEqual(len(policy.geofences), 0)
+        self.assertIsNone(policy.geofences)
         policy.set_policy({'minimum_requirements': [], 'factors': []})
 
     def test_set_policy_json(self):
         policy = AuthPolicy()
-        self.assertEqual(len(policy.geofences), 0)
+        self.assertIsNone(policy.geofences)
         policy.set_policy(dumps({'minimum_requirements': [], 'factors': []}))
 
     def test_set_policy_invalid_json(self):
@@ -736,7 +776,7 @@ class TestPolicyObject(unittest.TestCase):
 
     def test_set_policy_geofence(self):
         policy = AuthPolicy()
-        self.assertEqual(len(policy.geofences), 0)
+        self.assertIsNone(policy.geofences)
         policy.set_policy(
             {
                 'minimum_requirements': [],
@@ -763,7 +803,7 @@ class TestPolicyObject(unittest.TestCase):
     @data(1, 0)
     def test_set_policy_jailbreak(self, enabled):
         policy = AuthPolicy()
-        self.assertEqual(len(policy.geofences), 0)
+        self.assertIsNone(policy.geofences)
         policy.set_policy(
             {
                 'minimum_requirements': [],
@@ -801,7 +841,8 @@ class TestPolicyObject(unittest.TestCase):
         self.assertIn('inherence', policy.minimum_requirements)
         self.assertIn('knowledge', policy.minimum_requirements)
 
-    @data((1, 1, 1, 1), (1, 1, 1, 0), (1, 1, 0, 1), (1, 0, 1, 1), (1, 0, 0, 1), (0, 0, 0, 0), (0, 0, 0, 1))
+    @data((1, 1, 1, 1), (1, 1, 1, 0), (1, 1, 0, 1), (1, 0, 1, 1),
+          (1, 0, 0, 1), (0, 0, 0, 0), (0, 0, 0, 1))
     @unpack
     def test_set_minimum_requirements(self, possession, inherence, knowledge, minimum_requirements):
         policy = AuthPolicy()
@@ -820,15 +861,18 @@ class TestPolicyObject(unittest.TestCase):
             }
         )
         self.assertEqual(policy.minimum_amount, minimum_requirements)
-        if possession:
-            self.assertIn('possession', policy.minimum_requirements)
+        if not inherence and not knowledge and not possession:
+            self.assertIsNone(policy.minimum_requirements)
         else:
-            self.assertNotIn('possession', policy.minimum_requirements)
-        if inherence:
-            self.assertIn('inherence', policy.minimum_requirements)
-        else:
-            self.assertNotIn('inherence', policy.minimum_requirements)
-        if knowledge:
-            self.assertIn('knowledge', policy.minimum_requirements)
-        else:
-            self.assertNotIn('knowledge', policy.minimum_requirements)
+            if possession:
+                self.assertIn('possession', policy.minimum_requirements)
+            else:
+                self.assertNotIn('possession', policy.minimum_requirements)
+            if inherence:
+                self.assertIn('inherence', policy.minimum_requirements)
+            else:
+                self.assertNotIn('inherence', policy.minimum_requirements)
+            if knowledge:
+                self.assertIn('knowledge', policy.minimum_requirements)
+            else:
+                self.assertNotIn('knowledge', policy.minimum_requirements)

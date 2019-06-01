@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.6.0
+-----
+
+* Bugfix that was erroneously causing AuthPolicy objects to default amount, types, and device integrity checks to be set
+
 3.5.0
 -----
 
