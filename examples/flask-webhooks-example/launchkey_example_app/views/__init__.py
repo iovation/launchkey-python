@@ -27,9 +27,10 @@ class LinkView(MethodView):
 
 class LinkUserView(MethodView):
 
-    def __init__(self, launchkey_service, database_service):
+    def __init__(self, launchkey_service, database_service, logger):
         self.launchkey_service = launchkey_service
         self.database_service = database_service
+        self.logger = logger
 
     def post(self):
         username = request.values['username']
@@ -37,6 +38,11 @@ class LinkUserView(MethodView):
 
         linking_request = self.launchkey_service.link_device(username)
         session['device_id'] = linking_request.device_id
+
+        self.logger.info(
+            f"Link request created for user {username} "
+            f"and device {linking_request.device_id}"
+        )
 
         user = self.database_service.get_or_create_user(username)
 
@@ -60,9 +66,10 @@ class LinkUserView(MethodView):
 
 class LoginView(MethodView):
 
-    def __init__(self, launchkey_service, database_service):
+    def __init__(self, launchkey_service, database_service, logger):
         self.launchkey_service = launchkey_service
         self.database_service = database_service
+        self.logger = logger
 
     @staticmethod
     def get():
@@ -119,8 +126,7 @@ class UserView(MethodView):
         username = session['username']
         if not self.database_service.is_user_logged_in(username):
             return redirect("/login")
-        devices = self.database_service.get_user_devices(username)
-        return render_template('user.html', username=username, devices=devices)
+        return render_template('user.html', username=username)
 
 
 class LoginStatusView(MethodView):
@@ -151,9 +157,10 @@ class LogoutView(MethodView):
 
 class ServiceWebhookView(MethodView):
 
-    def __init__(self, launchkey_service, database_service):
+    def __init__(self, launchkey_service, database_service, logger):
         self.launchkey_service = launchkey_service
         self.database_service = database_service
+        self.logger = logger
 
     def post(self):
         package = self.launchkey_service.handle_service_webhook(
@@ -176,27 +183,56 @@ class ServiceWebhookView(MethodView):
                 )
 
                 self.database_service.db.session.commit()
+
+                if auth_request.authorized:
+                    self.logger.info(
+                        f"Auth request approved and session created for "
+                        f"{user.username} for auth {auth_request.id}"
+                    )
+                else:
+                    self.logger.info(
+                        f"Auth request denied for {user.username} "
+                        f"for auth {auth_request.id}"
+                    )
+            else:
+                self.logger.warn(
+                    f"Auth Response WebHook received for unknown auth id "
+                    f"{package.authorization_request_id}"
+                )
         elif isinstance(package, SessionEndRequest):
             user = self.database_service.get_user_from_service_user_hash(
                 package.service_user_hash)
             self.database_service.clear_user_session(user)
+            self.logger.info(
+                f"Session ended for {user.username}"
+            )
         return "", 204
 
 
 class DirectoryWebhookView(MethodView):
 
-    def __init__(self, launchkey_service, database_service):
+    def __init__(self, launchkey_service, database_service, logger):
         self.launchkey_service = launchkey_service
         self.database_service = database_service
+        self.logger = logger
 
     def post(self):
         package = self.launchkey_service.handle_directory_webhook(
             request.data, request.headers, request.method, request.path)
         if isinstance(package, DeviceLinkCompletionResponse):
+            self.logger.info(f"Device link request received:\n"
+                             f"device id: {package.device_id}\n"
+                             f"public key id: {package.device_public_key_id}\n"
+                             f"public key: {package.device_public_key}")
             device = self.database_service.get_device(package.device_id)
             if device:
                 device.public_key = package.device_public_key
                 device.public_key_id = package.device_public_key_id
                 self.database_service.db.session.add(device)
                 self.database_service.db.session.commit()
+            else:
+                self.logger.warn(
+                    f"Device Link Completion WebHook received for unknown "
+                    f"device id {package.device_id}"
+                )
         return "", 204
