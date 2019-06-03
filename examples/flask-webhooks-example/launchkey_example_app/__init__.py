@@ -1,3 +1,5 @@
+import logging
+
 from launchkey import LAUNCHKEY_PRODUCTION
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -10,6 +12,12 @@ from .views import IndexView, AuthStatusView, DirectoryWebhookView, \
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile("config.py")
+
+
+@app.before_first_request
+def setup_logging():
+    if not app.debug:
+        app.logger.setLevel(logging.INFO)
 
 
 launchkey_service = LaunchKeyService(
@@ -80,13 +88,15 @@ app.add_url_rule(
     '/link-user',
     view_func=LinkUserView.as_view('link_user_view',
                                    launchkey_service=launchkey_service,
-                                   database_service=database_service)
+                                   database_service=database_service,
+                                   logger=app.logger)
 )
 app.add_url_rule(
     '/login',
     view_func=LoginView.as_view('login_view',
                                 launchkey_service=launchkey_service,
-                                database_service=database_service)
+                                database_service=database_service,
+                                logger=app.logger)
 )
 app.add_url_rule(
     '/auth-status',
@@ -111,11 +121,13 @@ app.add_url_rule(
     '/webhooks/service',
     view_func=ServiceWebhookView.as_view('service_webhook_view',
                                          launchkey_service=launchkey_service,
-                                         database_service=database_service)
+                                         database_service=database_service,
+                                         logger=app.logger)
 )
 app.add_url_rule(
     '/webhooks/directory',
     view_func=DirectoryWebhookView.as_view('directory_webhook_view',
                                            launchkey_service=launchkey_service,
-                                           database_service=database_service)
+                                           database_service=database_service,
+                                           logger=app.logger)
 )

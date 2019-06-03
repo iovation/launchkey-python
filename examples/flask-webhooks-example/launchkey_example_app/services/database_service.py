@@ -43,10 +43,6 @@ class DatabaseService:
     def get_device(self, device_id):
         return self.device_model.query.filter_by(id=device_id).first()
 
-    def get_user_devices(self, username):
-        user = self.get_or_create_user(username)
-        return self.device_model.query.filter_by(user_id=user.id).all()
-
     def create_pending_auth_request(self, user_id, auth_request_id):
         auth = self.auth_request_model(id=auth_request_id, user_id=user_id)
         self.db.session.add(auth)

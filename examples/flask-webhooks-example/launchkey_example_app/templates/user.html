@@ -3,19 +3,6 @@
 Hello, {{username}}
 {% endblock %}
 {% block content %}
-{% if devices %}
-<table>
-    <thead>
-        <th width="300px">Device ID</th><th>Device Public Key ID</th><th>Device Public Key</th>
-    </thead>
-    {% for device in devices -%}
-    <tr>
-        <td>{{device.id}}</td><td>{{device.public_key_id}}</td><td>{{device.public_key}}</td>
-    </tr>
-    {%- endfor %}
-</table>
-{% endif %}
-
 <script>
     function getLinkStatus() {
         $.get( "/login-status", function( data ) {
