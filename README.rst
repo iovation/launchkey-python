@@ -26,12 +26,12 @@ Examples
 CLI Example
 ***********
 
-`Go to the README <examples/cli/README.md>`_
+`Go to the CLI code <https://github.com/iovation/launchkey-python/tree/master/examples/cli>`_
 
 Flask Webhooks Example
 **********************
 
-`Go to the README <examples/flask-webhooks-example/README.md>`_
+`Go to the Example App code <https://github.com/iovation/launchkey-python/tree/master/examples/flask-webhooks-example>`_
 
 Installation
 ------------
