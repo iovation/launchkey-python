@@ -20,6 +20,49 @@ class Directory(object):
         self.id = data['id']
         self.denial_context_inquiry_enabled = \
             data['denial_context_inquiry_enabled']
+        self.webhook_url = data['webhook_url']
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __eq__(self, other):
+        if isinstance(other, Directory):
+            eq = self.service_ids == other.service_ids and \
+                      self.sdk_keys == other.sdk_keys and \
+                      self.premium == other.premium and \
+                      self.name == other.name and \
+                      self.android_key == other.android_key and \
+                      self.ios_certificate_fingerprint == \
+                      other.ios_certificate_fingerprint and \
+                      self.active == other.active and \
+                      self.id == other.id and \
+                      self.denial_context_inquiry_enabled == \
+                      other.denial_context_inquiry_enabled and \
+                      self.webhook_url == other.webhook_url
+        else:
+            eq = False
+        return eq
+
+    def __repr__(self):
+        return "Directory <id=\"{id}\", name=\"{name}\", " \
+               "service_ids={service_ids}, sdk_keys={sdk_keys}, " \
+               "premium={premium}, " \
+               "ios_certificate_fingerprint=" \
+               "\"{ios_certificate_fingerprint}\", " \
+               "active={active}, " \
+               "denial_context_inquiry_enabled=" \
+               "{denial_context_inquiry}, webhook_url=\"{webhook_url}\">". \
+            format(
+                id=self.id,
+                name=self.name,
+                service_ids=self.service_ids,
+                sdk_keys=self.sdk_keys,
+                premium=self.premium,
+                ios_certificate_fingerprint=self.ios_certificate_fingerprint,
+                active=self.active,
+                denial_context_inquiry=self.denial_context_inquiry_enabled,
+                webhook_url=self.webhook_url
+            )
 
 
 class Session(object):
@@ -39,6 +82,16 @@ class DirectoryUserDeviceLinkData(object):
     def __init__(self, data):
         self.qrcode = data['qrcode']
         self.code = data['code']
+        self.device_id = data['device_id']
+
+
+class DeviceLinkCompletionResponse(object):
+    """Package returned on the event that a device finishes linking"""
+
+    def __init__(self, data):
+        self.device_id = data['device_id']
+        self.device_public_key = data['device_public_key']
+        self.device_public_key_id = data['device_public_key_id']
 
 
 class DeviceStatus(object):
@@ -72,6 +125,14 @@ class DeviceStatus(object):
         """
         return self._status_map[self._status_code][0]
 
+    def __repr__(self):
+        return \
+            "DeviceStatus <status_code=\"{status_code}\", " \
+            "is_active={is_active}>".format(
+                status_code=self.status_code,
+                is_active=self.is_active
+            )
+
 
 class Device(object):
     """Device object belonging to a directory user"""
@@ -81,3 +142,13 @@ class Device(object):
         self.name = data['name']
         self.status = DeviceStatus(data['status'])
         self.type = data['type']
+
+    def __repr__(self):
+        return "Device <id=\"{id}\", name=\"{name}\", " \
+               "status={status}, type=\"{type}\">". \
+            format(
+                id=self.id,
+                name=self.name,
+                status=self.status,
+                type=self.type
+            )

@@ -85,7 +85,8 @@ class OrganizationClient(ServiceManagingBaseClient):
 
     @api_call
     def update_directory(self, directory_id, ios_p12=False, android_key=False,
-                         active=None, denial_context_inquiry_enabled=None):
+                         active=None, denial_context_inquiry_enabled=None,
+                         webhook_url=False):
         """
         Updates a Directories's settings. If an optional parameter is not
         included it will not be updated.
@@ -98,6 +99,8 @@ class OrganizationClient(ServiceManagingBaseClient):
         :param denial_context_inquiry_enabled: Boolean. Should the user be
         prompted for denial context when they deny authorization requests
         for any and all child services.
+        :param webhook_url: The URL to which web hooks for this Directory
+        will be made.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :return:
@@ -113,6 +116,8 @@ class OrganizationClient(ServiceManagingBaseClient):
         if denial_context_inquiry_enabled is not None:
             kwargs['denial_context_inquiry_enabled'] = \
                 denial_context_inquiry_enabled
+        if webhook_url is not False:
+            kwargs['webhook_url'] = webhook_url
         self._transport.patch("/organization/v3/directories", self._subject,
                               **kwargs)
 
@@ -248,3 +253,19 @@ class OrganizationClient(ServiceManagingBaseClient):
         self._transport.delete("/organization/v3/directory/sdk-keys",
                                self._subject, directory_id=str(directory_id),
                                sdk_key=sdk_key)
+
+    @api_call
+    def get_all_directory_sdk_keys(self, directory_id):
+        """
+        Retrieves a list of Authenticator SDK keys from a Directory
+        :param directory_id: Unique Directory ID
+        :raise: launchkey.exceptions.InvalidParameters - Input parameters
+        were not correct
+        :raise: launchkey.exceptions.EntityNotFound - Input Directory ID does
+        not exist
+        :return:
+        """
+        return self._transport.post(
+            "/organization/v3/directory/sdk-keys/list",
+            self._subject, directory_id=str(directory_id)
+        ).data

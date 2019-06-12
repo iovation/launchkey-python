@@ -2,10 +2,19 @@
 
 # pylint: disable=too-many-arguments
 
+import warnings
+from json import loads
+from formencode import Invalid
 from ..entities.validation import DirectoryGetDeviceResponseValidator, \
-    DirectoryGetSessionsValidator, DirectoryUserDeviceLinkResponseValidator
-from ..entities.directory import Session, DirectoryUserDeviceLinkData, Device
+    DirectoryGetSessionsValidator, DirectoryUserDeviceLinkResponseValidator, \
+    DirectoryDeviceLinkCompletionValidator
+from ..entities.directory import Session, DirectoryUserDeviceLinkData, Device,\
+    DeviceLinkCompletionResponse
 from .base import ServiceManagingBaseClient, api_call
+from ..exceptions import UnableToDecryptWebhookRequest, \
+    UnexpectedWebhookRequest, XiovJWTValidationFailure, \
+    XiovJWTDecryptionFailure
+from ..utils.shared import XiovJWTService
 
 
 class DirectoryClient(ServiceManagingBaseClient):
@@ -16,9 +25,10 @@ class DirectoryClient(ServiceManagingBaseClient):
     def __init__(self, subject_id, transport):
         super(DirectoryClient, self).__init__('dir', subject_id, transport,
                                               "/directory/v3/services")
+        self.x_iov_jwt_service = XiovJWTService(self._transport, self._subject)
 
     @api_call
-    def link_device(self, user_id):
+    def link_device(self, user_id, ttl=None):
         """
         Begin the process of Linking a Subscriber Authenticator Device with an
         End User based on the Directory User ID. If no Directory User exists
@@ -28,6 +38,9 @@ class DirectoryClient(ServiceManagingBaseClient):
         User between the your application(s) and the LaunchKey API. This
         will be used for authorization requests as well as managing the End
         User's Devices.
+        :param ttl: Number of seconds the linking code returned in the response
+        should be valid. If no value is provided, the system default will be
+        used.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.InvalidDirectoryIdentifier - Input
@@ -35,9 +48,13 @@ class DirectoryClient(ServiceManagingBaseClient):
         :return: launchkey.entities.directory.DirectoryUserDeviceLinkData -
         Contains data needed to complete the linking process
         """
+        kwargs = {"identifier": user_id}
+        if ttl is not None:
+            kwargs['ttl'] = ttl
+
         response = self._transport.post("/directory/v3/devices",
                                         self._subject,
-                                        identifier=user_id)
+                                        **kwargs)
         data = self._validate_response(
             response,
             DirectoryUserDeviceLinkResponseValidator)
@@ -121,3 +138,46 @@ class DirectoryClient(ServiceManagingBaseClient):
             sessions.append(session)
 
         return sessions
+
+    def handle_webhook(self, body, headers, method, path):
+        """
+        Handle a webhook callback
+        :param body: The raw body that was send in the POST content
+        :param headers: A generic map of response headers. These will be used
+        to access and validate authorization
+        :param path:  The path of the request
+        :param method: The HTTP method of the request
+        :return: launchkey.entities.directory.
+        DirectoryUserDeviceLinkCompletionWebhookPackage
+        :raises launchkey.exceptions.UnexpectedWebhookRequest: when the
+        request or its cannot be parsed or fails
+        validation.
+        :raises launchkey.exceptions.UnableToDecryptWebhookRequest: when the
+        request is an authorization response webhook and the request body
+        cannot be decrypted
+        :raises launchkey.exceptions.UnexpectedKeyID: when the auth package in
+        an authorization response webhook request body is decrypted using a
+        public key whose private key is not known by the client. This can be
+        a configuration issue.
+        :raises launchkey.exceptions.WebhookAuthorizationError: when the
+        "Authorization" header in the headers.
+        """
+        result = None
+        try:
+            decrypted_body = self.x_iov_jwt_service.decrypt_jwe(body, headers,
+                                                                method, path)
+            payload = loads(decrypted_body)
+            device_link_data = DirectoryDeviceLinkCompletionValidator(
+            ).to_python(payload)
+            result = DeviceLinkCompletionResponse(
+                device_link_data
+            )
+        except Invalid:
+            warnings.warn("Invalid Directory Webhook received. There may be"
+                          " an update available to add support.")
+        except XiovJWTDecryptionFailure as reason:
+            raise UnableToDecryptWebhookRequest(reason=reason)
+        except XiovJWTValidationFailure as reason:
+            raise UnexpectedWebhookRequest(reason)
+
+        return result

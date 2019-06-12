@@ -1,12 +1,96 @@
 import unittest
-from launchkey.utils.shared import iso_format, UUIDHelper
-from launchkey.entities.validation import ValidateISODate
+from datetime import datetime
+from uuid import UUID
+
+from mock import MagicMock, patch
 from ddt import ddt, data
 from formencode import Invalid
-from datetime import datetime
+from jwkest import JWKESTException
 import pytz
-from uuid import UUID
-from launchkey.exceptions import InvalidIssuerVersion, InvalidIssuerFormat
+
+from launchkey.exceptions import InvalidIssuerVersion, InvalidIssuerFormat, WebhookAuthorizationError, JWTValidationFailure, XiovJWTValidationFailure, InvalidJWTResponse, XiovJWTDecryptionFailure
+from launchkey.utils.shared import iso_format, UUIDHelper, XiovJWTService
+from launchkey.entities.validation import ValidateISODate
+from launchkey.transports import JOSETransport
+
+
+class TestXiovJwtService(unittest.TestCase):
+
+    def setUp(self):
+        self._transport = MagicMock(spec=JOSETransport)
+        self.x_iov_jwt_service = XiovJWTService(self._transport, "subject")
+        self._headers = {"X-IOV-JWT": "jwt", "Other Header": "jwt"}
+
+    def test_verify_jwt_request_returns_body_on_success(self):
+        response = self.x_iov_jwt_service.verify_jwt_request(
+            "body", self._headers, "method", "path"
+        )
+        self.assertEqual(response, "body")
+
+    def test_verify_jwt_request_returns_decoded_body_when_given_as_bytes(self):
+        response = self.x_iov_jwt_service.verify_jwt_request(
+            b"body", self._headers, "method", "path"
+        )
+        self.assertEqual(response, u"body")
+
+    def test_verify_jwt_missing_x_iov_jwt_raises_webhook_authorization_error(self):
+        with self.assertRaises(WebhookAuthorizationError):
+            self.x_iov_jwt_service.verify_jwt_request(
+                "body", {}, "method", "path"
+            )
+
+    def test_transport_verify_jwt_request_called_with_correct_params(self):
+        self.x_iov_jwt_service.verify_jwt_request(
+            "body", self._headers, "method", "path"
+        )
+        self._transport.verify_jwt_request.assert_called_with(
+            "jwt", "subject", "method", "path", "body"
+        )
+
+    def test_transport_verify_jwt_request_jwt_validation_failure_raises_x_iov_jwt_validation_failure(self):
+        self._transport.verify_jwt_request.side_effect = JWTValidationFailure
+        with self.assertRaises(XiovJWTValidationFailure):
+            self.x_iov_jwt_service.verify_jwt_request(
+                "body", self._headers, "method", "path"
+            )
+
+    def test_transport_verify_jwt_request_invalid_jwt_response_raises_x_iov_jwt_validation_failure(self):
+        self._transport.verify_jwt_request.side_effect = InvalidJWTResponse
+        with self.assertRaises(XiovJWTValidationFailure):
+            self.x_iov_jwt_service.verify_jwt_request(
+                "body", self._headers, "method", "path"
+            )
+
+    def test_decrypt_jwe_calls_verify_jwt_request(self):
+        patched = patch.object(self.x_iov_jwt_service, 'verify_jwt_request')
+        verify_jwt_request_patch = patched.start()
+        self.addCleanup(patched.stop)
+
+        self.x_iov_jwt_service.decrypt_jwe(
+            "body", self._headers, "method", "path"
+        )
+        verify_jwt_request_patch.assert_called_with(
+            "body", self._headers, "method", "path"
+        )
+
+    def test_decrypt_jwe_transport_decrtypt_response_params(self):
+        patched = patch.object(self.x_iov_jwt_service, 'verify_jwt_request')
+        verify_jwt_request_patch = patched.start()
+        self.addCleanup(patched.stop)
+
+        self.x_iov_jwt_service.decrypt_jwe(
+            "body", self._headers, "method", "path"
+        )
+        self._transport.decrypt_response.assert_called_with(
+            verify_jwt_request_patch.return_value
+        )
+
+    def test_decrypt_jwe_jwekest_exception_raises_x_iov_jwt_decryption_failure(self):
+        self._transport.decrypt_response.side_effect = JWKESTException
+        with self.assertRaises(XiovJWTDecryptionFailure):
+            self.x_iov_jwt_service.decrypt_jwe(
+                "body", self._headers, "method", "path"
+            )
 
 
 @ddt

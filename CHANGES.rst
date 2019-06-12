@@ -1,6 +1,30 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.5.0
+-----
+
+* Added get_all_directory_sdk_keys method to Organization client
+* Added integration testing suite
+* Added device failure sensor type
+* Added auth_methods and auth_policy attributes to the AuthorizationResponse object
+* Added handle_webhook as well as DeviceLinkCompletionResponse into the DirectoryClient
+* Updated the OrganizationClient update_directory() method and Directory object to include a webhook_url kwarg / attribute
+* Added Webhook example app
+
+3.4.0
+-----
+
+* Added example CLI to codebase
+* Added ttl parameter to the DirectoryClient link_device method
+* Added cancel_authorization_request method to the ServiceClient
+* Fixed bug in ServiceClient which prevented handling of session end webhook request data when presented as a bytearray
+
+3.3.1
+-----
+
+* Updated HTTP transport to no longer use sessions due to a bug that was causing BadStatusLine exceptions on long lived connections.
+
 3.3.0
 -----
 
@@ -24,7 +48,6 @@ CHANGELOG for LaunchKey Python SDK
 * Added full webhook validation
 * Cleaned up error handling and raising for webhooks
 * Switch RequestsTransport to use session in order to provide connection sharing between requests
-* Added dynamic auth TTL and title functionality
 
 3.1.1
 -----

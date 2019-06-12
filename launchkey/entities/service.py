@@ -5,6 +5,7 @@
 # pylint: disable=too-many-locals
 
 import datetime
+import warnings
 from json import loads, dumps
 from enum import Enum
 from formencode import Invalid
@@ -28,6 +29,7 @@ class AuthResponseReason(Enum):
     AUTHENTICATION = "AUTHENTICATION"
     CONFIGURATION = "CONFIGURATION"
     BUSY_LOCAL = "BUSY_LOCAL"
+    SENSOR = "SENSOR"
     OTHER = "OTHER"
 
 
@@ -39,13 +41,51 @@ class AuthResponseType(Enum):
     OTHER = "OTHER"
 
 
+class AuthMethodType(Enum):
+    """Authentication Request Method Type Enum"""
+    PIN_CODE = "PIN_CODE"
+    CIRCLE_CODE = "CIRCLE_CODE"
+    GEOFENCING = "GEOFENCING"
+    LOCATIONS = "LOCATIONS"
+    WEARABLES = "WEARABLES"
+    FINGERPRINT = "FINGERPRINT"
+    FACE = "FACE"
+    OTHER = "OTHER"
+
+
 class GeoFence(object):
     """Geo-Fence entity"""
     def __init__(self, latitude, longitude, radius, name):
-        self.latitude = latitude
-        self.longitude = longitude
-        self.radius = radius
-        self.name = name
+        self.latitude = float(latitude)
+        self.longitude = float(longitude)
+        self.radius = float(radius)
+        self.name = str(name) if name else None
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __eq__(self, other):
+        if isinstance(other, GeoFence):
+            eq = self.name == other.name and \
+                      self.latitude == other.latitude and \
+                      self.longitude == other.longitude and \
+                      self.radius == other.radius
+        else:
+            eq = False
+        return eq
+
+    def __repr__(self):
+        return "GeoFence <" \
+               "name=\"{name}\", " \
+               "latitude={latitude}, " \
+               "longitude={longitude}, " \
+               "radius={radius}>". \
+            format(
+                name=self.name,
+                latitude=self.latitude,
+                longitude=self.longitude,
+                radius=self.radius
+            )
 
 
 class TimeFence(object):
@@ -86,6 +126,51 @@ class TimeFence(object):
         if self.sunday:
             self.days.append("Sunday")
         self.timezone = start_time.tzname() if start_time.tzname() else "UTC"
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __eq__(self, other):
+        if isinstance(other, TimeFence):
+            eq = self.name == other.name and \
+                      self.start_time == other.start_time and \
+                      self.end_time == other.end_time and \
+                      self.monday == other.monday and \
+                      self.tuesday == other.tuesday and \
+                      self.wednesday == other.wednesday and \
+                      self.thursday == other.thursday and \
+                      self.friday == other.friday and \
+                      self.saturday == other.saturday and \
+                      self.sunday == other.sunday and \
+                      self.days == other.days
+        else:
+            eq = False
+        return eq
+
+    def __repr__(self):
+        return "TimeFence <" \
+               "name=\"{name}\", " \
+               "start_time=\"{start_time}\", " \
+               "end_time=\"{end_time}\", " \
+               "monday={monday}, " \
+               "tuesday={tuesday}, " \
+               "wednesday={wednesday}, " \
+               "thursday={thursday}, " \
+               "friday={friday}, " \
+               "saturday={saturday}, " \
+               "sunday={sunday}>".\
+            format(
+                name=self.name,
+                start_time=self.start_time,
+                end_time=self.end_time,
+                monday=self.monday,
+                tuesday=self.tuesday,
+                wednesday=self.wednesday,
+                thursday=self.thursday,
+                friday=self.friday,
+                saturday=self.saturday,
+                sunday=self.sunday
+            )
 
 
 class DenialReason(object):
@@ -143,6 +228,9 @@ class AuthPolicy(object):
         self.jailbreak_protection = jailbreak_protection
         self.require_jailbreak_protection(jailbreak_protection)
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __eq__(self, other):
         if isinstance(other, AuthPolicy):
             eq = self.get_policy() == other.get_policy()
@@ -158,15 +246,17 @@ class AuthPolicy(object):
         :param radius: Float. Radius of the Geo-Fence in meters
         :param name: String. Optional identifier for the Geo-Fence.
         """
-        self.geofences.append(GeoFence(latitude, longitude, radius, name))
         try:
-            location = {"radius": float(radius),
-                        "latitude": float(latitude),
-                        "longitude": float(
-                            longitude)}
-            if name is not None:
-                location['name'] = str(name)
-        except TypeError:
+            geofence = GeoFence(latitude, longitude, radius, name)
+            self.geofences.append(geofence)
+            location = {
+                "radius": geofence.radius,
+                "latitude": geofence.latitude,
+                "longitude": geofence.longitude
+            }
+            if geofence.name is not None:
+                location['name'] = geofence.name
+        except (TypeError, ValueError):
             raise InvalidParameters("Latitude, Longitude, and Radius "
                                     "must all be numbers.")
         for i, factor in enumerate(self._policy['factors']):
@@ -337,6 +427,17 @@ class AuthPolicy(object):
                     if factor['attributes']['factor enabled']:
                         self.jailbreak_protection = True
 
+    def __repr__(self):
+        return "AuthPolicy <" \
+               "minimum_requirements={minimum_requirements}, " \
+               "minimum_amount={minimum_amount}, " \
+               "geofences={geofences}>".\
+            format(
+                minimum_requirements=self.minimum_requirements,
+                minimum_amount=self.minimum_amount,
+                geofences=self.geofences
+            )
+
 
 class AuthorizationRequest(object):
     """
@@ -347,6 +448,71 @@ class AuthorizationRequest(object):
     def __init__(self, auth_request, push_package):
         self.auth_request = auth_request
         self.push_package = push_package
+
+    def __repr__(self):
+        return "AuthorizationRequest <" \
+               "auth_request=\"{auth_request}\", " \
+               "push_package=\"{push_package}\">".\
+            format(
+                auth_request=self.auth_request,
+                push_package=self.push_package
+            )
+
+
+class AuthMethod(object):
+    """
+    Auth method that describes the state of an object the policy utilized by
+    the device while processing the identified authorization request.
+    """
+
+    def __init__(self, method, set, active, allowed, supported, user_required,
+                 passed, error):
+        self.method = method
+        self.set = set
+        self.active = active
+        self.allowed = allowed
+        self.supported = supported
+        self.user_required = user_required
+        self.passed = passed
+        self.error = error
+
+    def __repr__(self):
+        return "AuthMethod <" \
+               "method={method}, " \
+               "set={set}, " \
+               "active={active}, " \
+               "allowed={allowed}, " \
+               "supported={supported}, " \
+               "user_required={user_required}, " \
+               "passed={passed}, " \
+               "error={error}>".\
+            format(
+                method=self.method.value if self.method else None,
+                set=self.set,
+                active=self.active,
+                allowed=self.allowed,
+                supported=self.supported,
+                user_required=self.user_required,
+                passed=self.passed,
+                error=self.error
+            )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __eq__(self, other):
+        if isinstance(other, AuthMethod):
+            eq = self.method == other.method and \
+                 self.set == other.set and \
+                 self.active == other.active and \
+                 self.allowed == other.allowed and \
+                 self.supported == other.supported and \
+                 self.user_required == other.user_required and \
+                 self.passed == other.passed and \
+                 self.error == other.error
+        else:
+            eq = False
+        return eq
 
 
 class AuthorizationResponse(object):
@@ -404,6 +570,49 @@ class AuthorizationResponse(object):
             )
         self.device_id = decrypted_jwe.get("device_id")
         self.service_pins = decrypted_jwe.get("service_pins")
+
+        auth_methods = decrypted_jwe.get("auth_methods")
+        if auth_methods:
+            self.auth_methods = [
+                AuthMethod(
+                    self._retrieve_enum_from_value(
+                        AuthMethodType, method['method'].upper()),
+                    method['set'],
+                    method['active'],
+                    method['allowed'],
+                    method['supported'],
+                    method['user_required'],
+                    method['passed'],
+                    method['error']
+                )
+                for method in auth_methods
+            ]
+
+        auth_policy = decrypted_jwe.get("auth_policy")
+        if auth_policy:
+            kwargs = {}
+            if auth_policy['requirement'] == "amount":
+                kwargs['any'] = auth_policy['amount']
+            elif auth_policy['requirement'] == "types":
+                for item in auth_policy['types']:
+                    type = item.lower()
+                    if type in ['knowledge', 'inherence', 'possession']:
+                        kwargs[type] = True
+                    else:
+                        warnings.warn(
+                            "Invalid policy type given: %s. "
+                            "It will be ignored, but this could "
+                            "signify the need for an update." % type)
+
+            if auth_policy.get('geofences') or kwargs:
+                self.auth_policy = AuthPolicy(**kwargs)
+                for fence in auth_policy.get('geofences', []):
+                    self.auth_policy.add_geofence(
+                        fence['latitude'],
+                        fence['longitude'],
+                        fence['radius'],
+                        name=fence['name']
+                    )
 
     def _parse_device_response_from_auth_package(self, auth_package, key_id,
                                                  transport):
@@ -468,6 +677,8 @@ class AuthorizationResponse(object):
         self.reason = None
         self.denial_reason = None
         self.fraud = None
+        self.auth_policy = None
+        self.auth_methods = None
         self._parse_device_response(data, transport)
 
 

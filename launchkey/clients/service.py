@@ -3,13 +3,13 @@
 # pylint: disable=too-many-arguments
 
 import warnings
-
 from json import loads
-from jwkest import JWKESTException
+
 from launchkey.exceptions import InvalidParameters, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
-    UnexpectedAPIResponse, UnexpectedWebhookRequest, JWTValidationFailure, \
-    InvalidJWTResponse, WebhookAuthorizationError
+    UnexpectedAPIResponse, UnexpectedWebhookRequest, XiovJWTValidationFailure,\
+    XiovJWTDecryptionFailure
+from launchkey.utils.shared import XiovJWTService
 from launchkey.entities.validation import AuthorizationResponseValidator, \
     AuthorizeSSEValidator, AuthorizeValidator
 from launchkey.entities.service import AuthPolicy, AuthorizationResponse, \
@@ -22,6 +22,7 @@ class ServiceClient(BaseClient):
 
     def __init__(self, subject_id, transport):
         super(ServiceClient, self).__init__('svc', subject_id, transport)
+        self.x_iov_jwt_service = XiovJWTService(self._transport, self._subject)
 
     @api_call
     def authorize(self, user, context=None, policy=None, title=None, ttl=None,
@@ -124,6 +125,10 @@ class ServiceClient(BaseClient):
         :raise: launchkey.exceptions.InvalidPolicy - The input policy is not
         valid. It should be a launchkey.clients.service.AuthPolicy.
         Please wait and try again.
+        :raise: launchkey.exceptions.AuthorizationInProgress - Authorization
+        request already exists for the requesting user. That request either
+        needs to be responded to, expire out, or be canceled with
+        cancel_authorization_request().
         :return AuthorizationResponse: Unique identifier for tracking status
         of the authorization request
         """
@@ -172,12 +177,15 @@ class ServiceClient(BaseClient):
         """
         Request the response for a previous authorization call.
         :param authorization_request_id: Unique identifier returned by
-        authorize()
+        authorization_request()
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.RequestTimedOut - The authorization
         request has not been responded to before the
         timeout period (5 minutes)
+        :raise: launchkey.exceptions.AuthorizationRequestCanceled - The
+        authorization request has been canceled so a response cannot be
+        retrieved.
         :return: None if the user has not responded otherwise a
         launchkey.entities.service.AuthorizationResponse object
                  with the user's response
@@ -201,6 +209,26 @@ class ServiceClient(BaseClient):
         return authorization_response
 
     @api_call
+    def cancel_authorization_request(self, authorization_request_id):
+        """
+        Request to cancel an authorization request for the End User
+        :param authorization_request_id: Unique identifier returned by
+        authorization_request()
+        :raise: launchkey.exceptions.InvalidParameters - Input parameters were
+        not correct
+        :raise: launchkey.exceptions.EntityNotFound - The authorization
+        request does not exist.
+        :raise: launchkey.exceptions.AuthorizationRequestCanceled - The
+        authorization request has already been canceled.
+        :raise: launchkey.exceptions.AuthorizationResponseExists - The
+        authorization request has already been responded to so it cannot be
+        canceled.
+        """
+        self._transport.delete(
+            "/service/v3/auths/%s" % authorization_request_id,
+            self._subject)
+
+    @api_call
     def session_start(self, user, authorization_request_id):
         """
         Request to start a Service Session for the End User which was derived
@@ -208,7 +236,7 @@ class ServiceClient(BaseClient):
         :param user: LaunchKey Username, User Push ID, or Directory User ID for
         the End User
         :param authorization_request_id: Unique identifier returned by
-        authorize()
+        authorization_request()
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.EntityNotFound - The input username was
@@ -276,47 +304,34 @@ class ServiceClient(BaseClient):
             warnings.warn("Not passing a valid request path string is "
                           "deprecated and will be required in the next "
                           "major version", PendingDeprecationWarning)
-
-        compact_jwt = None
-        for header_key, header_value in headers.items():
-            if header_key.lower() == 'x-iov-jwt':
-                compact_jwt = header_value
-
-        if compact_jwt is None:
-            raise WebhookAuthorizationError(
-                "The X-IOV-JWT header was not found in the supplied headers "
-                "from the request!")
-
         try:
-            self._transport.verify_jwt_request(
-                compact_jwt,
-                self._subject,
-                method,
-                path,
-                body)
-        except (JWTValidationFailure, InvalidJWTResponse) as reason:
-            raise UnexpectedWebhookRequest(reason=reason)
-        if "service_user_hash" in body:
-            try:
-                body = self._validate_response(
-                    loads(body),
-                    AuthorizeSSEValidator)
-            except UnexpectedAPIResponse as reason:
-                raise UnexpectedWebhookRequest(reason=reason)
-            result = SessionEndRequest(
-                body['service_user_hash'],
-                self._transport.parse_api_time(body['api_time']))
-        else:
-            try:
-                decrypted_body = self._transport.decrypt_response(body)
-                auth_response = loads(decrypted_body)
-                result = AuthorizationResponse(
-                    auth_response,
-                    self._transport
-                )
-            except JWKESTException as reason:
-                raise UnableToDecryptWebhookRequest(reason=reason)
-            except KeyError as reason:
-                raise UnexpectedAuthorizationResponse(reason=reason)
+            if "service_user_hash" in "%s" % body:
+                body = self.x_iov_jwt_service.verify_jwt_request(body, headers,
+                                                                 method, path)
+                try:
+                    body = self._validate_response(
+                        loads(body),
+                        AuthorizeSSEValidator)
+                except UnexpectedAPIResponse as reason:
+                    raise UnexpectedWebhookRequest(reason=reason)
+                result = SessionEndRequest(
+                    body['service_user_hash'],
+                    self._transport.parse_api_time(body['api_time']))
+            else:
+                try:
+                    decrypted_body = self.x_iov_jwt_service.decrypt_jwe(
+                        body, headers, method, path
+                    )
+                    auth_response = loads(decrypted_body)
+                    result = AuthorizationResponse(
+                        auth_response,
+                        self._transport
+                    )
+                except XiovJWTDecryptionFailure as reason:
+                    raise UnableToDecryptWebhookRequest(reason=reason)
+                except KeyError as reason:
+                    raise UnexpectedAuthorizationResponse(reason=reason)
+        except XiovJWTValidationFailure as reason:
+            raise UnexpectedWebhookRequest(reason)
 
         return result

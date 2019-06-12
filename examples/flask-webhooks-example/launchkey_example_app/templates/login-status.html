@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block header %}
+Login
+{% endblock %}
+{% block content %}
+Waiting for user response...
+
+<script>
+    function getLinkStatus() {
+        $.get( "/auth-status", function( data ) {
+        }).done(function() {
+            window.location.replace("/user");
+        })
+        .fail(function(e) {
+            if(e.status === 403) {
+                // The auth was denied, so redirect back to login
+                window.location.replace("/login");
+            }
+            else {
+                setTimeout(getLinkStatus, 1000);
+            }
+        });
+    }
+    getLinkStatus()
+</script>
+{{code}}
+{% endblock %}

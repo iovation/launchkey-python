@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block header %}
+Link Device
+{% endblock %}
+{% block content %}
+<img src="{{qrcode}}" /><br />
+
+<script>
+    function getLinkStatus() {
+        $.get( "/link-user", function( data ) {
+        }).done(function() {
+            window.location.replace("/login");
+        })
+        .fail(function() {
+            setTimeout(getLinkStatus, 1000);
+        });
+    }
+    getLinkStatus()
+</script>
+{{code}}
+{% endblock %}

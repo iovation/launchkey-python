@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block header %}
+Hello, {{username}}
+{% endblock %}
+{% block content %}
+<script>
+    function getLinkStatus() {
+        $.get( "/login-status", function( data ) {
+        }).done(function() {
+            setTimeout(getLinkStatus, 1000);
+        })
+        .fail(function(e) {
+            window.location.replace("/login");
+        });
+    }
+    getLinkStatus()
+</script>
+
+<a href="/logout">Logout</a>
+{{code}}
+{% endblock %}

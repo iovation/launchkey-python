@@ -1,12 +1,18 @@
 import unittest
-from mock import MagicMock, ANY
+from json import dumps
+from mock import MagicMock, ANY, patch
 from uuid import uuid4
 from launchkey.clients import DirectoryClient
 from launchkey.clients.directory import Session
 from launchkey.entities.directory import DeviceStatus
-from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, InvalidDirectoryIdentifier, EntityNotFound, \
-    UnexpectedAPIResponse, InvalidDeviceStatus
+from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
+    InvalidDirectoryIdentifier, EntityNotFound, \
+    UnexpectedAPIResponse, InvalidDeviceStatus, UnexpectedWebhookRequest, \
+    XiovJWTValidationFailure, XiovJWTDecryptionFailure, \
+    UnableToDecryptWebhookRequest
+from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse
+from launchkey.entities.directory import DeviceLinkCompletionResponse
 from .shared import SharedTests
 import six
 from datetime import datetime
@@ -39,12 +45,24 @@ class TestDirectoryClient(unittest.TestCase):
                                                  self._transport)
 
     def test_link_device_success(self):
-        self._response.data = {"qrcode": ANY, "code": "abcdefg"}
+        self._response.data = {"qrcode": ANY, "code": "abcdefg",
+                               "device_id": ANY}
         expected_identifier = "user_id"
         self._directory_client.link_device(expected_identifier[:])
         self._transport.post.assert_called_once_with(
             "/directory/v3/devices", self._expected_subject,
             identifier=expected_identifier)
+
+    def test_link_device_with_ttl_includes_kwarg_to_transport(self):
+        self._response.data = {"qrcode": ANY, "code": "abcdefg",
+                               "device_id": ANY}
+        expected_identifier = "user_id"
+        expected_ttl = 123
+        self._directory_client.link_device(expected_identifier[:],
+                                           ttl=expected_ttl)
+        self._transport.post.assert_called_once_with(
+            "/directory/v3/devices", self._expected_subject,
+            identifier=expected_identifier, ttl=123)
 
     def test_link_device_unexpected_result(self):
         self._response.data = {MagicMock(), MagicMock()}
@@ -175,3 +193,66 @@ class TestDirectoryClient(unittest.TestCase):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
         with self.assertRaises(InvalidParameters):
             self._directory_client.get_all_service_sessions(ANY)
+
+
+class TestHandleWebhook(unittest.TestCase):
+
+    def setUp(self):
+        patcher = patch("launchkey.clients.directory.XiovJWTService")
+        self._x_iov_jwt_service_patch = patcher.start().return_value
+        self._x_iov_jwt_service_patch.decrypt_jwe.return_value = dumps(
+            {
+                "type": "DEVICE_LINK_COMPLETION",
+                "device_public_key": "public key",
+                "device_public_key_id": "public key id",
+                "device_id": "device id"
+            }
+        )
+        self.addCleanup(patcher.stop)
+
+        self._directory_id = uuid4()
+        self._transport = MagicMock(spec=JOSETransport)
+        self._headers = {"X-IOV-JWT": "jwt", "Other Header": "jwt"}
+        self.client = DirectoryClient(self._directory_id, self._transport)
+
+    def test_x_iov_jwt_validation_failure_raises_unexpected_webhook_request(self):
+        self._x_iov_jwt_service_patch.decrypt_jwe.side_effect = XiovJWTValidationFailure
+        with self.assertRaises(UnexpectedWebhookRequest):
+            self.client.handle_webhook("body", self._headers, "method", "path")
+
+    @patch("launchkey.clients.directory.warnings")
+    def test_invalid_webhook_payload_causes_warning(self, warnings_patch):
+        self._x_iov_jwt_service_patch.decrypt_jwe.return_value = dumps(
+            {
+                "type": "UNKNOWN_WEBHOOK_TYPE",
+                "device_public_key": "public key",
+                "device_public_key_id": "public key id",
+                "device_id": "device id"
+            }
+        )
+        self.client.handle_webhook("body", self._headers, "method", "path")
+        warnings_patch.warn.assert_called_with(
+            "Invalid Directory Webhook received. There may be an update "
+            "available to add support."
+        )
+
+    def test_x_iov_jwt_decryption_failure_raises_unable_to_decrypt_webhook_request(self):
+        self._x_iov_jwt_service_patch.decrypt_jwe.side_effect = XiovJWTDecryptionFailure
+        with self.assertRaises(UnableToDecryptWebhookRequest):
+            self.client.handle_webhook("body", self._headers, "method", "path")
+
+    def test_decrypt_jwe_params(self):
+        self.client.handle_webhook("body", self._headers, "method", "path")
+        self._x_iov_jwt_service_patch.decrypt_jwe.assert_called_with(
+            "body",
+            self._headers,
+            "method",
+            "path"
+        )
+
+    def test_returns_directory_user_device_link_completion_webhook_package(self):
+        returned = self.client.handle_webhook("body", self._headers, "method", "path")
+        self.assertIsInstance(returned, DeviceLinkCompletionResponse)
+        self.assertEqual(returned.device_id, 'device id')
+        self.assertEqual(returned.device_public_key, 'public key')
+        self.assertEqual(returned.device_public_key_id, 'public key id')
