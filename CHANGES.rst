@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.6.0
+-----
+
+* Bug fix to ensure that requests do not follow redirects
+
 3.5.0
 -----
 

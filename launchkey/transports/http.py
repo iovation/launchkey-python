@@ -15,6 +15,7 @@ class RequestsTransport(object):
     url = LAUNCHKEY_PRODUCTION
     testing = False
     verify_ssl = True
+    allow_redirects = False
 
     def set_url(self, url, testing):
         """
@@ -59,7 +60,8 @@ class RequestsTransport(object):
         :return:
         """
         response = requests.get(self.url + path, params=data,
-                                headers=headers, verify=self.verify_ssl)
+                                headers=headers, verify=self.verify_ssl,
+                                allow_redirects=self.allow_redirects)
         return self._parse_response(response)
 
     def post(self, path, headers=None, data=None):
@@ -72,7 +74,8 @@ class RequestsTransport(object):
         :return:
         """
         response = requests.post(self.url + path, data=data,
-                                 headers=headers, verify=self.verify_ssl)
+                                 headers=headers, verify=self.verify_ssl,
+                                 allow_redirects=self.allow_redirects)
         return self._parse_response(response)
 
     def put(self, path, headers=None, data=None):
@@ -85,7 +88,8 @@ class RequestsTransport(object):
         :return:
         """
         response = requests.put(self.url + path, data=data,
-                                headers=headers, verify=self.verify_ssl)
+                                headers=headers, verify=self.verify_ssl,
+                                allow_redirects=self.allow_redirects)
         return self._parse_response(response)
 
     def delete(self, path, headers=None, data=None):
@@ -99,7 +103,8 @@ class RequestsTransport(object):
         """
         response = requests.delete(self.url + path, data=data,
                                    headers=headers,
-                                   verify=self.verify_ssl)
+                                   verify=self.verify_ssl,
+                                   allow_redirects=self.allow_redirects)
         return self._parse_response(response)
 
     def patch(self, path, headers=None, data=None):
@@ -112,5 +117,6 @@ class RequestsTransport(object):
         :return:
         """
         response = requests.patch(self.url + path, data=data,
-                                  headers=headers, verify=self.verify_ssl)
+                                  headers=headers, verify=self.verify_ssl,
+                                  allow_redirects=self.allow_redirects)
         return self._parse_response(response)
