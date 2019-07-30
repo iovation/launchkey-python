@@ -115,6 +115,15 @@ class JOSETransport(object):
 
     @staticmethod
     def __get_kid_from_api_response_headers(headers):
+        """
+        Gets `kid` property from a JWT token within the headers of a
+        LaunchKey API response.
+        :param headers: Response headers
+        :return: string of the `kid`
+        :raises launchkey.exceptions.UnexpectedAPIResponse: if unable to unpack the JWT
+            or if the JWT header does not exist
+        :raises launchkey.exceptions.JWTValidationFailure: if `kid` is missing or invalid
+        """
         try:
             jwt = headers.get("X-IOV-JWT")
             jwt_headers = JWT().unpack(jwt).headers
@@ -134,6 +143,12 @@ class JOSETransport(object):
         return kid
 
     def _get_kid_from_api_response(self, response):
+        """
+        Gets `kid` property from a JWT token within a LaunchKey API
+        response.
+        :param response: Response object
+        :return: string of the `kid`
+        """
         return self.__get_kid_from_api_response_headers(response.headers)
 
     @staticmethod
@@ -164,6 +179,11 @@ class JOSETransport(object):
 
     @property
     def api_public_keys(self):
+        """
+        List of public keys that have been retrieved from the LaunchKey
+        API. Generated from public keys in the public key cache.
+        :return: List of RSAKeys
+        """
         now = int(time())
         current_kid, current_key_timestamp = self._current_kid
 
@@ -176,14 +196,29 @@ class JOSETransport(object):
         return list(rsa_keys)
 
     def _get_key_by_kid(self, kid):
+        """
+        Gets public key from LaunchKey API by `kid` string.
+        :param kid: string of the `kid`
+        :return: string of the public key
+        """
         response = self.get("/public/v3/public-key/%s" % kid)
         return self._handle_public_key_api_response(response)[1]
 
     def _get_current_kid_and_key(self):
+        """
+        Gets the current `kid` public key from LaunchKey API.
+        :return: tuple with string of the `kid` and string of the public key
+        """
         response = self.get("/public/v3/public-key")
         return self._handle_public_key_api_response(response)
 
     def _handle_public_key_api_response(self, response):
+        """
+        Parses a LaunchKey public key API response.
+        :return: tuple with string of the `kid` and string of the public key
+        :raises UnexpectedAPIResponse: if the LaunchKey API returns a 404
+            or if the response object contains no data
+        """
         if response.status_code == 404:
             raise UnexpectedAPIResponse("Key was not found.")
 
@@ -199,11 +234,24 @@ class JOSETransport(object):
         return kid, public_key
 
     def _cache_key(self, kid, public_key):
+        """
+        Stores the current `kid` with the timestamp, and appends the supplied
+        public key to the public key cache
+        :param kid: string of the `kid`
+        :param public_key: string of the public key
+        :return:
+        """
         now = int(time())
         self._current_kid = kid, now
         self._public_key_cache[kid] = public_key
 
     def _find_key_by_kid(self, kid):
+        """
+        Finds a public key within the public key cache given a `kid`. If
+        none exists, retrieves from the LaunchKey API by `kid`.
+        :param kid: string of the `kid`
+        :return: string of the public key
+        """
         key = self._public_key_cache.get(kid)
         if not key:
             return self._get_key_by_kid(kid)
@@ -211,6 +259,13 @@ class JOSETransport(object):
         return key
 
     def _generate_rsa_keys_from_cache(self):
+        """
+        Generates a list of RSAKeys from the public keys within the public
+        key cache.
+        :return: list of RSAKeys
+        :raises UnexpectedAPIResponse: in the event that a RSAKey cannot
+            be generated from the public key supplied by the LaunchKey API
+        """
         rsa_keys = []
 
         for kid, public_key in self._public_key_cache.items():
