@@ -68,6 +68,7 @@ class TestRequestsHTTPTransport(unittest.TestCase):
         self.assertEqual(self._transport.url, LAUNCHKEY_PRODUCTION)
         self.assertEqual(self._transport.testing, False)
         self.assertEqual(self._transport.verify_ssl, True)
+        self.assertFalse(self._transport.allow_redirects)
 
     def test_set_url(self):
         url = MagicMock(spec=str)
