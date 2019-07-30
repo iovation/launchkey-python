@@ -5,6 +5,7 @@ CHANGELOG for LaunchKey Python SDK
 -----
 
 * Bug fix to ensure that requests do not follow redirects
+* Bug fix to ensure that public key is cached using `kid` header of JWT found within a response header
 
 3.5.0
 -----
