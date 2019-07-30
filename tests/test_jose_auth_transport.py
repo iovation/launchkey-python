@@ -1,9 +1,11 @@
 import unittest
 
+from Cryptodome.PublicKey.RSA import RsaKey
 from ddt import data, ddt
 from jwkest import JWKESTException
 from jwkest.jws import JWS
-from mock import MagicMock, ANY, patch
+from jwkest.jwt import JWT
+from mock import MagicMock, ANY, patch, call
 from launchkey.transports import JOSETransport, RequestsTransport
 from launchkey.transports.base import APIResponse, APIErrorResponse
 from launchkey.exceptions import InvalidAlgorithm, UnexpectedAPIResponse, \
@@ -770,3 +772,88 @@ class TestJOSETransportSupportedAlgorithms(unittest.TestCase):
     def test_supported_content_hash_algorithm_failure(self):
         with self.assertRaises(InvalidAlgorithm):
             JOSETransport(content_hash_algorithm="Invalid")
+
+
+class TestTempKeyID(unittest.TestCase):
+    def setUp(self):
+        self._requests_transport = MagicMock(spec=RequestsTransport)
+        self._requests_transport.get.return_value = MagicMock(spec=APIResponse)
+
+        patch.object(JOSETransport, "_verify_jwt_payload").start()
+        patch.object(JOSETransport, "_verify_jwt_response_headers").start()
+        patch.object(JOSETransport, "_verify_jwt_content_hash").start()
+
+        self._transport = JOSETransport(http_client=self._requests_transport)
+        self._import_rsa_key_patch = patch(
+            "launchkey.transports.jose_auth.import_rsa_key",
+            return_value=MagicMock(spec=RsaKey)).start()
+        self._jwt_patch = patch("launchkey.transports.jose_auth.JWT", return_value=MagicMock(spec=JWT)).start()
+
+        self.jti = str(uuid4())
+        self._faux_kid = "59:12:e2:f6:3f:79:d5:1e:18:75:c5:25:ff:b3:b7:f2"
+
+        jwt_headers = {
+            "alg": "RS512",
+            "typ": "JWT",
+            "kid": self._faux_kid
+        }
+
+        minified_jwt_payload = {
+            "jti": self.jti,
+            "response": {"status": 200}
+        }
+
+        self._jwt_patch.return_value.unpack.return_value.headers = jwt_headers
+        self._jws_patch = patch("launchkey.transports.jose_auth.JWS", return_value=MagicMock(spec=JWS)).start()
+        self._jws_patch.return_value.verify_compact.return_value = minified_jwt_payload
+
+        self.addCleanup(patch.stopall)
+
+    def test_key_retrieved_by_id_in_jwt_header(self):
+        self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+        self._requests_transport.get.assert_called_once_with(
+            "/public/v3/public-key/%s" % self._faux_kid,
+            data={})
+
+    def test_key_is_cached_by_id(self):
+        self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+        self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+        self._requests_transport.get.assert_called_once()
+
+    def test_key_is_retrieved_by_id_when_key_changed(self):
+        jwt1 = MagicMock()
+        jwt1.headers = {
+            "alg": "RS512",
+            "typ": "JWT",
+            "kid": "jwt1keyid"
+        }
+
+        jwt2 = MagicMock()
+        jwt2.headers = {
+            "alg": "RS512",
+            "typ": "JWT",
+            "kid": "jwt2keyid"
+        }
+
+        self._jwt_patch.return_value.unpack.side_effect = [jwt1, jwt1, jwt2, jwt2]
+
+        self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+        self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+        self._requests_transport.get.assert_has_calls([
+            call('/public/v3/public-key/jwt1keyid', data={}),
+            call('/public/v3/public-key/jwt2keyid', data={})
+        ], any_order=True)
+
+    @patch("launchkey.transports.jose_auth.RSAKey")
+    def test_key_retrieved_is_used_to_verify_payload(self, rsa_key_patch):
+        self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+
+        # Verify that verify_compact is called one time with key created by our jwkest key patch
+        self._jws_patch.return_value.verify_compact.assert_called_once_with(ANY, keys=[rsa_key_patch.return_value])
+
+        # Assert that the jwkest key patch is built using the import_rsa_key patch return value and the key id
+        # from the header
+        rsa_key_patch.assert_called_with(key=self._import_rsa_key_patch.return_value, kid=self._faux_kid)
+
+        # Verify that we used the correct key to retrieve the key id from the header
+        self._requests_transport.get.return_value.headers.get.assert_called_with("X-IOV-JWT")

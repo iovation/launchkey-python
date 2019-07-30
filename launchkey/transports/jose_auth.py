@@ -17,7 +17,7 @@ from jwkest import JWKESTException
 from jwkest.jwk import RSAKey, import_rsa_key
 from jwkest.jws import JWS, NoSuitableSigningKeys
 from jwkest.jwe import JWE, JWEnc
-from jwkest.jwt import BadSyntax
+from jwkest.jwt import JWT, BadSyntax
 
 import six
 
@@ -63,7 +63,21 @@ class JOSETransport(object):
         self.loaded_issuer_private_keys = {}
         self.issuer_private_keys = []
         self._server_time_difference = None, None
+
+        # Question here... is it safe to assume we can make this a list
+        # of dicts or tuples, where each dict contains its own timestamp?
+        # That way expiration time can be per key instead of one expiration
+        # time for each. If so, will refactor this to become
+        # `self._public_key_cache`.
         self._api_public_keys = [], None
+
+        # Single key ID with timestamp of when it was set.
+        self._current_kid = None, None
+
+        # List of dictionaries of keys. Fields should include `kid` and
+        # `public_key`. These keys should _not_ have a corresponding
+        # expiration date.
+        self._public_key_cache = {}
 
         self.jwt_algorithm = self.__verify_supported_algorithm(
             jwt_algorithm, JOSE_SUPPORTED_JWT_ALGS)
@@ -108,6 +122,29 @@ class JOSETransport(object):
             md5digest[i:i + 2] for i in range(0, len(md5digest), 2))
 
     @staticmethod
+    def __get_kid_from_api_response_headers(headers):
+        try:
+            jwt = headers.get("X-IOV-JWT")
+            jwt_headers = JWT().unpack(jwt).headers
+
+        except (BadSyntax, ValueError):
+            raise InvalidJWTResponse("JWT was missing or malformed in API response.")
+
+        kid = jwt_headers.get("kid")
+
+        if not kid:
+            raise JWTValidationFailure("Expected JWT to contain a `kid` header "
+                                       "but none existed.")
+
+        if not isinstance(kid, six.string_types):
+            raise JWTValidationFailure("`kid` header in JWT was not a valid type.")
+
+        return kid
+
+    def _get_kid_from_api_response(self, response):
+        return self.__get_kid_from_api_response_headers(response.headers)
+
+    @staticmethod
     def parse_api_time(api_time):
         """
         Parses LaunchKey api_time to a unix timestamp
@@ -134,7 +171,7 @@ class JOSETransport(object):
         return self._server_time_difference[0]
 
     @property
-    def api_public_keys(self):
+    def api_public_keys_bak(self):
         """
         The public key retrieved from the LaunchKey API. The result is
         cached for API_CACHE_TIME
@@ -157,6 +194,68 @@ class JOSETransport(object):
                 self._api_public_keys[0].append(key)
             self._api_public_keys = self._api_public_keys[0], now
         return self._api_public_keys[0]
+
+    def _get_key_by_kid(self, kid):
+        response = self.get("/public/v3/public-key/%s" % kid)
+        return self._handle_public_key_api_response(response)[1]
+
+    def _get_current_kid_and_key(self):
+        response = self.get("/public/v3/public-key")
+        return self._handle_public_key_api_response(response)
+
+    def _handle_public_key_api_response(self, response):
+        if response.status_code == 404:
+            raise UnexpectedAPIResponse("Key was not found.")
+
+        kid = self._get_kid_from_api_response(response)
+
+        try:
+            public_key = response.data
+
+        except AttributeError:
+            raise UnexpectedAPIResponse("Unexpected API public key response"
+                                        "received: %s" % response.data)
+
+        return kid, public_key
+
+    def _cache_key(self, kid, public_key):
+        now = int(time())
+        self._current_kid = kid, now
+        self._public_key_cache[kid] = public_key
+
+    def _find_key_by_kid(self, kid):
+        key = self._public_key_cache.get(kid)
+        if not key:
+            return self._get_key_by_kid(kid)
+
+        return key
+
+    def _generate_rsa_keys_from_cache(self):
+        rsa_keys = []
+
+        for kid, public_key in self._public_key_cache.items():
+            try:
+                rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
+                rsa_keys.append(rsa_key)
+
+            except ValueError:
+                raise UnexpectedAPIResponse("RSA parsing error for public key"
+                                            ": %s" % public_key)
+
+        return rsa_keys
+
+    @property
+    def api_public_keys(self):
+        now = int(time())
+        current_kid, current_key_timestamp = self._current_kid
+
+        if (not current_kid or not isinstance(current_key_timestamp, int)) \
+                or now - current_key_timestamp > API_CACHE_TIME:
+            new_kid, new_public_key = self._get_current_kid_and_key()
+            self._cache_key(new_kid, new_public_key)
+
+        rsa_keys = self._generate_rsa_keys_from_cache()
+        return list(rsa_keys)
 
     def add_issuer_key(self, private_key):
         """
@@ -385,6 +484,12 @@ class JOSETransport(object):
 
         ci_headers = {k.lower(): v for k, v in headers.items()}
         auth = headers.get('X-IOV-JWT')
+
+        # Ensure key exists in cache, fetch from API by ID otherwise
+        kid = self.__get_kid_from_api_response_headers(headers)
+        public_key = self._find_key_by_kid(kid)
+        self._cache_key(kid, public_key)
+
         try:
             payload = self._get_jwt_payload(auth)
         except JWKESTException as reason:
