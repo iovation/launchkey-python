@@ -67,7 +67,8 @@ class JOSETransport(object):
         # Single key ID with timestamp of when it was set.
         self._current_kid = None, None
 
-        # Dictionary
+        # Dictionary of public keys with `kid` being the dict key
+        # and the public key being the value
         self._public_key_cache = {}
 
         self.jwt_algorithm = self.__verify_supported_algorithm(
@@ -160,31 +161,6 @@ class JOSETransport(object):
                 raise UnexpectedAPIResponse(
                     "Unexpected api time received: %s" % response.data)
         return self._server_time_difference[0]
-
-    @property
-    def api_public_keys_bak(self):
-        """
-        The public key retrieved from the LaunchKey API. The result is
-        cached for API_CACHE_TIME
-        """
-        now = int(time())
-        if self._api_public_keys[1] is None \
-                or now - self._api_public_keys[1] > API_CACHE_TIME:
-            response = self.get("/public/v3/public-key", None)
-            try:
-                key = RSAKey(key=import_rsa_key(response.data),
-                             kid=response.headers.get('X-IOV-KEY-ID'))
-            except (IndexError, TypeError):
-                raise UnexpectedAPIResponse(
-                    "Unexpected api public key received: %s" % response.data)
-            except ValueError:
-                raise UnexpectedAPIResponse("Unexpected api public key "
-                                            "received, RSA parsing error"
-                                            ": %s" % response.data)
-            if key not in self._api_public_keys[0]:
-                self._api_public_keys[0].append(key)
-            self._api_public_keys = self._api_public_keys[0], now
-        return self._api_public_keys[0]
 
     @property
     def api_public_keys(self):
