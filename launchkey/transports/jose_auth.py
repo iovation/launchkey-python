@@ -64,19 +64,10 @@ class JOSETransport(object):
         self.issuer_private_keys = []
         self._server_time_difference = None, None
 
-        # Question here... is it safe to assume we can make this a list
-        # of dicts or tuples, where each dict contains its own timestamp?
-        # That way expiration time can be per key instead of one expiration
-        # time for each. If so, will refactor this to become
-        # `self._public_key_cache`.
-        self._api_public_keys = [], None
-
         # Single key ID with timestamp of when it was set.
         self._current_kid = None, None
 
-        # List of dictionaries of keys. Fields should include `kid` and
-        # `public_key`. These keys should _not_ have a corresponding
-        # expiration date.
+        # Dictionary
         self._public_key_cache = {}
 
         self.jwt_algorithm = self.__verify_supported_algorithm(
@@ -127,8 +118,8 @@ class JOSETransport(object):
             jwt = headers.get("X-IOV-JWT")
             jwt_headers = JWT().unpack(jwt).headers
 
-        except (BadSyntax, ValueError):
-            raise InvalidJWTResponse("JWT was missing or malformed in API response.")
+        except (BadSyntax, IndexError, ValueError):
+            raise UnexpectedAPIResponse("JWT was missing or malformed in API response.")
 
         kid = jwt_headers.get("kid")
 
@@ -195,6 +186,19 @@ class JOSETransport(object):
             self._api_public_keys = self._api_public_keys[0], now
         return self._api_public_keys[0]
 
+    @property
+    def api_public_keys(self):
+        now = int(time())
+        current_kid, current_key_timestamp = self._current_kid
+
+        if (not current_kid or not isinstance(current_key_timestamp, int)) \
+                or now - current_key_timestamp > API_CACHE_TIME:
+            new_kid, new_public_key = self._get_current_kid_and_key()
+            self._cache_key(new_kid, new_public_key)
+
+        rsa_keys = self._generate_rsa_keys_from_cache()
+        return list(rsa_keys)
+
     def _get_key_by_kid(self, kid):
         response = self.get("/public/v3/public-key/%s" % kid)
         return self._handle_public_key_api_response(response)[1]
@@ -238,24 +242,11 @@ class JOSETransport(object):
                 rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
                 rsa_keys.append(rsa_key)
 
-            except ValueError:
+            except (TypeError, ValueError):
                 raise UnexpectedAPIResponse("RSA parsing error for public key"
                                             ": %s" % public_key)
 
         return rsa_keys
-
-    @property
-    def api_public_keys(self):
-        now = int(time())
-        current_kid, current_key_timestamp = self._current_kid
-
-        if (not current_kid or not isinstance(current_key_timestamp, int)) \
-                or now - current_key_timestamp > API_CACHE_TIME:
-            new_kid, new_public_key = self._get_current_kid_and_key()
-            self._cache_key(new_kid, new_public_key)
-
-        rsa_keys = self._generate_rsa_keys_from_cache()
-        return list(rsa_keys)
 
     def add_issuer_key(self, private_key):
         """
