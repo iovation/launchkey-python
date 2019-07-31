@@ -805,7 +805,7 @@ class TestCacheAndRetrieveKeyByKid(unittest.TestCase):
         }
 
         self._requests_transport = MagicMock(spec=RequestsTransport)
-        self._requests_transport.get.return_value = MagicMock(spec=APIResponse)
+        self._requests_transport.get.return_value = APIResponse(valid_private_key, {}, 200)
         self._transport = JOSETransport(http_client=self._requests_transport)
         self._import_rsa_key_patch = patch(
             "launchkey.transports.jose_auth.import_rsa_key",
@@ -858,6 +858,8 @@ class TestCacheAndRetrieveKeyByKid(unittest.TestCase):
 
     @patch("launchkey.transports.jose_auth.RSAKey")
     def test_key_retrieved_is_used_to_verify_payload(self, rsa_key_patch):
+        self._requests_transport.get.return_value = MagicMock(spec=APIResponse)
+        self._requests_transport.get.return_value.data = valid_public_key
         self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
 
         # Verify that verify_compact is called one time with key created by our jwkest key patch
@@ -869,3 +871,35 @@ class TestCacheAndRetrieveKeyByKid(unittest.TestCase):
 
         # Verify that we used the correct key to retrieve the key id from the header
         self._requests_transport.get.return_value.headers.get.assert_called_with("X-IOV-JWT")
+
+    def test_raises_when_kid_header_is_missing(self):
+        headers_without_kid = {"alg": "RS512", "typ": "JWT"}
+        jwt = MagicMock()
+        jwt.headers = headers_without_kid
+        self._jwt_patch.return_value.unpack.side_effect = jwt
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+
+    def test_raises_when_kid_header_is_malformed(self):
+        headers_with_kid_of_wrong_type = {"alg": "RS512", "typ": "JWT", "kid": 1234}
+        jwt = MagicMock()
+        jwt.headers = headers_with_kid_of_wrong_type
+        self._jwt_patch.return_value.unpack.side_effect = jwt
+        with self.assertRaises(JWTValidationFailure):
+            self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+
+    def test_raises_on_api_404(self):
+        self._requests_transport.get.return_value = APIResponse("Not Found", {}, 404)
+        with self.assertRaises(UnexpectedAPIResponse):
+            self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+
+    def test_raises_on_malformed_response_object(self):
+        self._requests_transport.get.return_value = APIResponse(None, {}, 200)
+        with self.assertRaises(UnexpectedAPIResponse):
+            self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+
+    @patch("launchkey.transports.jose_auth.RSAKey")
+    def test_raises_on_rsa_key_parsing_error(self, rsa_key_patch):
+        rsa_key_patch.side_effect = TypeError
+        with self.assertRaises(UnexpectedAPIResponse):
+            self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)

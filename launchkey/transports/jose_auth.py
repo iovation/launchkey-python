@@ -133,12 +133,8 @@ class JOSETransport(object):
 
         kid = jwt_headers.get("kid")
 
-        if not kid:
-            raise JWTValidationFailure("Expected JWT to contain a `kid` header "
-                                       "but none existed.")
-
         if not isinstance(kid, six.string_types):
-            raise JWTValidationFailure("`kid` header in JWT was not a valid type.")
+            raise JWTValidationFailure("`kid` header in JWT was missing or invalid.")
 
         return kid
 
@@ -223,13 +219,11 @@ class JOSETransport(object):
             raise UnexpectedAPIResponse("Key was not found.")
 
         kid = self._get_kid_from_api_response(response)
+        public_key = response.data
 
-        try:
-            public_key = response.data
-
-        except AttributeError:
+        if not isinstance(public_key, six.string_types):
             raise UnexpectedAPIResponse("Unexpected API public key response"
-                                        "received: %s" % response.data)
+                                        " received: %s" % response.data)
 
         return kid, public_key
 
