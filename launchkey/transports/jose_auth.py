@@ -179,8 +179,8 @@ class JOSETransport(object):
     @property
     def api_public_keys(self):
         """
-        List of public keys that have been retrieved from the LaunchKey
-        API. Generated from public keys in the public key cache.
+        List of RSA keys that have been generated from public keys supplied
+        by the LaunchKey API.
         :return: List of RSAKeys
         """
         now = int(time())
@@ -191,7 +191,9 @@ class JOSETransport(object):
             new_kid, new_public_key = self._get_current_kid_and_key()
             self._cache_key(new_kid, new_public_key)
 
-        rsa_keys = self._generate_rsa_keys_from_cache()
+        # Generate list of RSAKeys from the _public_key_cache dictionary
+        rsa_keys = map(lambda kv: kv[1], self._public_key_cache.items())
+
         return list(rsa_keys)
 
     def _get_key_by_kid(self, kid):
@@ -232,15 +234,23 @@ class JOSETransport(object):
 
     def _cache_key(self, kid, public_key):
         """
-        Stores the current `kid` with the timestamp, and appends the supplied
-        public key to the public key cache
+        Stores the current `kid` with the timestamp, then generate an RSAKey
+        with the public key, and store within the public key cache.
         :param kid: string of the `kid`
         :param public_key: string of the public key
         :return:
         """
         now = int(time())
         self._current_kid = kid, now
-        self._public_key_cache[kid] = public_key
+
+        try:
+            rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
+
+        except (TypeError, ValueError):
+            raise UnexpectedAPIResponse("RSA parsing error for public key"
+                                        ": %s" % public_key)
+
+        self._public_key_cache[kid] = rsa_key
 
     def _find_key_by_kid(self, kid):
         """
@@ -254,27 +264,6 @@ class JOSETransport(object):
             return self._get_key_by_kid(kid)
 
         return key
-
-    def _generate_rsa_keys_from_cache(self):
-        """
-        Generates a list of RSAKeys from the public keys within the public
-        key cache.
-        :return: list of RSAKeys
-        :raises UnexpectedAPIResponse: in the event that a RSAKey cannot
-            be generated from the public key supplied by the LaunchKey API
-        """
-        rsa_keys = []
-
-        for kid, public_key in self._public_key_cache.items():
-            try:
-                rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
-                rsa_keys.append(rsa_key)
-
-            except (TypeError, ValueError):
-                raise UnexpectedAPIResponse("RSA parsing error for public key"
-                                            ": %s" % public_key)
-
-        return rsa_keys
 
     def add_issuer_key(self, private_key):
         """
