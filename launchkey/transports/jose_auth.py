@@ -120,21 +120,24 @@ class JOSETransport(object):
         LaunchKey API response.
         :param headers: Response headers
         :return: string of the `kid`
-        :raises launchkey.exceptions.UnexpectedAPIResponse: if unable to unpack the JWT
-            or if the JWT header does not exist
-        :raises launchkey.exceptions.JWTValidationFailure: if `kid` is missing or invalid
+        :raises launchkey.exceptions.UnexpectedAPIResponse: if unable to unpack
+            the JWT or if the JWT header does not exist
+        :raises launchkey.exceptions.JWTValidationFailure: if `kid` is missing
+            or invalid
         """
         try:
             jwt = headers.get("X-IOV-JWT")
             jwt_headers = JWT().unpack(jwt).headers
 
         except (BadSyntax, IndexError, ValueError):
-            raise UnexpectedAPIResponse("JWT was missing or malformed in API response.")
+            raise UnexpectedAPIResponse("JWT was missing or malformed in API "
+                                        "response.")
 
         kid = jwt_headers.get("kid")
 
         if not isinstance(kid, six.string_types):
-            raise JWTValidationFailure("`kid` header in JWT was missing or invalid.")
+            raise JWTValidationFailure("`kid` header in JWT was missing or"
+                                       " invalid.")
 
         return kid
 
