@@ -450,6 +450,9 @@ class TestJOSETransportJWTRequest(unittest.TestCase):
 
         self._transport.content_hash_function().hexdigest.return_value = self._content_hash
 
+        self._jwt_patch = patch("launchkey.transports.jose_auth.JWT", return_value=MagicMock(spec=JWT)).start()
+        self._jwt_patch.return_value.unpack.return_value.headers = faux_jwt_headers
+
         patcher = patch('launchkey.transports.jose_auth.sha256')
         patched = patcher.start()
         patched.return_value = MagicMock()
@@ -752,7 +755,7 @@ class TestJOSETransportAPIPing(unittest.TestCase):
         call_count = 10
         time_patch.return_value = 0
         for i in range(0, call_count):
-            self._transport.api_public_keys
+            self._transport._set_current_kid()
             time_patch.return_value += API_CACHE_TIME + 1
         self.assertEqual(self._transport.get.call_count, call_count)
 

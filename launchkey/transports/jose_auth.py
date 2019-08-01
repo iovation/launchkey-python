@@ -180,21 +180,31 @@ class JOSETransport(object):
     def api_public_keys(self):
         """
         List of RSA keys that have been generated from public keys supplied
-        by the LaunchKey API.
+        by the LaunchKey API. If no keys exist in the public key cache,
+        then fetch from LaunchKey API
         :return: List of RSAKeys
         """
-        now = int(time())
-        current_kid, current_key_timestamp = self._current_kid
+        if not self._public_key_cache:
+            self._set_current_kid()
 
-        if (not current_kid or not isinstance(current_key_timestamp, int)) \
-                or now - current_key_timestamp > API_CACHE_TIME:
-            new_kid, new_public_key = self._get_current_kid_and_key()
-            self._cache_key(new_kid, new_public_key)
-
-        # Generate list of RSAKeys from the _public_key_cache dictionary
         rsa_keys = map(lambda kv: kv[1], self._public_key_cache.items())
-
         return list(rsa_keys)
+
+    def _set_current_kid(self):
+        """
+        Determines whether a new current key is necessary, and if so, retrieves
+        new `kid` and public key from LaunchKey API, sets the current `kid`
+        with current timestamp, and caches the new key.
+        :return:
+        """
+        now = int(time())
+        current_kid, current_kid_timestamp = self._current_kid
+
+        if (not current_kid or not isinstance(current_kid_timestamp, int)) \
+                or now - current_kid_timestamp > API_CACHE_TIME:
+            new_kid, new_public_key = self._get_current_kid_and_key()
+            self._current_kid = new_kid, now
+            self._cache_public_key(new_kid, new_public_key)
 
     def _get_key_by_kid(self, kid):
         """
@@ -232,17 +242,14 @@ class JOSETransport(object):
 
         return kid, public_key
 
-    def _cache_key(self, kid, public_key):
+    def _cache_public_key(self, kid, public_key):
         """
-        Stores the current `kid` with the timestamp, then generate an RSAKey
-        with the public key, and store within the public key cache.
+        Generate an RSAKey with the public key, and store within the public
+        key cache.
         :param kid: string of the `kid`
         :param public_key: string of the public key
         :return:
         """
-        now = int(time())
-        self._current_kid = kid, now
-
         try:
             rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
 
@@ -496,7 +503,7 @@ class JOSETransport(object):
         # Ensure key exists in cache, fetch from API by ID otherwise
         kid = self.__get_kid_from_api_response_headers(headers)
         public_key = self._find_key_by_kid(kid)
-        self._cache_key(kid, public_key)
+        self._cache_public_key(kid, public_key)
 
         try:
             payload = self._get_jwt_payload(auth)
@@ -558,6 +565,7 @@ class JOSETransport(object):
         :return: The claims of the JWT
         """
         try:
+            self._set_current_kid()
             payload = self._get_jwt_payload(compact_jwt)
         except JWKESTException as reason:
             raise JWTValidationFailure("Unable to parse JWT", reason=reason)
