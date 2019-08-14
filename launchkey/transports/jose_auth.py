@@ -245,19 +245,21 @@ class JOSETransport(object):
     def _cache_public_key(self, kid, public_key):
         """
         Generate an RSAKey with the public key, and store within the public
-        key cache.
+        key cache. This only occurs if an RSAKey has not already been cached
+        for the given `kid` and public key.
         :param kid: string of the `kid`
         :param public_key: string of the public key
         :return:
         """
-        try:
-            rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
+        if not self._public_key_cache.get(kid):
+            try:
+                rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
 
-        except (TypeError, ValueError):
-            raise UnexpectedAPIResponse("RSA parsing error for public key"
-                                        ": %s" % public_key)
+            except (TypeError, ValueError):
+                raise UnexpectedAPIResponse("RSA parsing error for public key"
+                                            ": %s" % public_key)
 
-        self._public_key_cache[kid] = rsa_key
+            self._public_key_cache[kid] = rsa_key
 
     def _find_key_by_kid(self, kid):
         """
