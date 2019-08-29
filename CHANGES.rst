@@ -4,6 +4,7 @@ CHANGELOG for LaunchKey Python SDK
 -----
 * Added Policies: ConditionalGeofence, MethodAmount, Factors
 * Deprecated: TimeFence
+* enum34 only required on python versions < 3.4
 
 3.6.0
 -----

@@ -6,8 +6,9 @@ from ddt import ddt, data
 from mock import ANY
 from six import assertRaisesRegex
 
-from launchkey.entities.service import Service, ServiceSecurityPolicy, ConditionalGeoFencePolicy, FactorsPolicy, \
-    MethodAmountPolicy, Factor
+from launchkey.entities.service import Service, ServiceSecurityPolicy
+from launchkey.entities.service.policy import  ConditionalGeoFencePolicy, \
+    FactorsPolicy, MethodAmountPolicy, Factor
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, ServiceNameTaken, LastRemainingKey, \
     PublicKeyDoesNotExist, ServiceNotFound, InvalidPublicKey, PublicKeyAlreadyInUse, Forbidden, NestedPolicyTypeError, \
     UnknownPolicyException

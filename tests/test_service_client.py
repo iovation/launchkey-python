@@ -12,8 +12,11 @@ from six import assertRaisesRegex, assertCountEqual
 
 from launchkey.clients import ServiceClient
 from launchkey.clients.service import AuthorizationResponse, SessionEndRequest, AuthPolicy
-from launchkey.entities.service import AuthorizationRequest, DenialReason, FactorsPolicy, ConditionalGeoFencePolicy, \
-    GeoCircleFence, TerritoryFence, GeoFence, MethodAmountPolicy, Factor, TimeFence
+from launchkey.entities.service import AuthorizationRequest, DenialReason, \
+    GeoFence, TimeFence
+from launchkey.entities.service.policy import FactorsPolicy, \
+    ConditionalGeoFencePolicy, GeoCircleFence, TerritoryFence, \
+    MethodAmountPolicy, Factor
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     InvalidPolicyInput, PolicyFailure, \
     EntityNotFound, RateLimited, RequestTimedOut, UnexpectedAPIResponse, \

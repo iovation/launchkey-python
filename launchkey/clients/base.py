@@ -2,18 +2,18 @@
 
 # pylint: disable=too-few-public-methods, too-many-arguments
 
-from uuid import UUID
 from functools import wraps
-from formencode import Invalid
-from launchkey.entities.shared import PublicKey
+from uuid import UUID
 
-from ..utils.shared import iso_format
-from ..entities.service import Service, ServiceSecurityPolicy, \
-    ConditionalGeoFencePolicy, GeoCircleFence, TerritoryFence, \
+from formencode import Invalid
+
+from launchkey.entities.service import Service, ServiceSecurityPolicy
+from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
+    GeoCircleFence, TerritoryFence, \
     MethodAmountPolicy, FactorsPolicy
+from launchkey.entities.shared import PublicKey
 from ..entities.validation import ServiceValidator, PublicKeyValidator, \
     ServiceSecurityPolicyValidator
-
 from ..exceptions import InvalidEntityID, LaunchKeyAPIException, \
     InvalidParameters, EntityNotFound, PolicyFailure, InvalidPolicyInput, \
     RequestTimedOut, RateLimited, InvalidDirectoryIdentifier, \
@@ -24,6 +24,7 @@ from ..exceptions import InvalidEntityID, LaunchKeyAPIException, \
     AuthorizationInProgress, Conflict, AuthorizationResponseExists, \
     AuthorizationRequestCanceled, NestedPolicyTypeError, UnknownPolicyException
 from ..transports.base import APIResponse
+from ..utils.shared import iso_format
 
 ERROR_CODE_MAP = {
     "ARG-001": InvalidParameters,
