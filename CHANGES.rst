@@ -1,5 +1,9 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
+3.7.0
+-----
+* Added Policies: ConditionalGeofence, MethodAmount, Factors
+* Deprecated: TimeFence
 
 3.6.0
 -----

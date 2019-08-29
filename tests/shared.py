@@ -1,12 +1,17 @@
 import unittest
-from mock import ANY
-from launchkey.entities.service import Service, ServiceSecurityPolicy
-from launchkey.transports.base import APIResponse
-from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, ServiceNameTaken, LastRemainingKey, \
-    PublicKeyDoesNotExist, ServiceNotFound, InvalidPublicKey, PublicKeyAlreadyInUse, Forbidden
 from datetime import datetime
+
 import pytz
 from ddt import ddt, data
+from mock import ANY
+from six import assertRaisesRegex
+
+from launchkey.entities.service import Service, ServiceSecurityPolicy, ConditionalGeoFencePolicy, FactorsPolicy, \
+    MethodAmountPolicy, Factor
+from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, ServiceNameTaken, LastRemainingKey, \
+    PublicKeyDoesNotExist, ServiceNotFound, InvalidPublicKey, PublicKeyAlreadyInUse, Forbidden, NestedPolicyTypeError, \
+    UnknownPolicyException
+from launchkey.transports.base import APIResponse
 
 
 class SharedTests(object):
@@ -488,3 +493,251 @@ class SharedTests(object):
                                                                        400)
             with self.assertRaises(ServiceNotFound):
                 self._client.remove_service_policy(ANY)
+
+        def test_get_service_policy_conditional_geofence(self):
+            self._response.data = {
+                "type": "COND_GEO",
+                "fences": [{
+                               "name": "Ontario",
+                               "type": "TERRITORY",
+                               "country": "CA",
+                               "administrative_area": "CA-ON"}
+                ],
+                "inside": {
+                    "type": "FACTORS",
+                    "fences": [],
+                    "factors": ["POSSESSION"]
+                },
+                "outside": {
+                    "type": "METHOD_AMOUNT",
+                    "fences": [],
+                    "amount": 1
+                }
+            }
+
+            expected_service_id = 'expected-service-id'
+            policy = self._client.get_service_policy(expected_service_id[:])
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/policy/item',
+                self._expected_subject,
+                service_id=expected_service_id
+            )
+            print(type(policy))
+            self.assertIsInstance(policy, ConditionalGeoFencePolicy)
+            self.assertEqual(policy.type, "COND_GEO")
+            self.assertIsInstance(policy.inside, FactorsPolicy)
+            self.assertEqual(policy.inside.type, "FACTORS")
+            self.assertEqual(1, len(policy.inside.factors))
+            self.assertEqual(policy.inside.factors[0], Factor.POSSESSION)
+            self.assertEqual(0, len(policy.inside.fences))
+            self.assertIsInstance(policy.outside, MethodAmountPolicy)
+            self.assertEqual(policy.outside.type, "METHOD_AMOUNT")
+            self.assertEqual(0, len(policy.outside.fences))
+            self.assertEqual(1, policy.outside.amount)
+
+        def test_get_service_policy_legacy(self):
+            self._response.data = {
+                'minimum_requirements': [
+                    {
+                        'possession': 1,
+                        'requirement': 'authenticated',
+                        'all': 1,
+                        'inherence': 1,
+                        'knowledge': 1
+                    }
+                ],
+                'factors': []
+            }
+
+            expected_service_id = 'expected-service-id'
+            policy = self._client.get_service_policy(expected_service_id[:])
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/policy/item',
+                self._expected_subject,
+                service_id=expected_service_id
+            )
+            self.assertIsInstance(policy, ServiceSecurityPolicy)
+            self.assertEqual(0, len(policy.geofences))
+            self.assertEqual(0, len(policy.timefences))
+            self.assertEqual(3, len(policy.minimum_requirements))
+            self.assertEqual(1, policy.minimum_amount)
+
+        def test_get_service_policy_method_amount(self):
+            self._response.data = {
+                "type": "METHOD_AMOUNT",
+                "amount": 1,
+                "fences": [
+                    {
+                        "name": "LV-89102",
+                        "type": "TERRITORY",
+                        "country": "US",
+                        "postal_code": "89012"
+                    },
+                    {
+                        "name": "California",
+                        "type": "TERRITORY",
+                        "country": "US",
+                        "administrative_area": "US-CA",
+                        "postal_code": "92535"
+                    },
+                    {
+                        "name": "Ontario",
+                        "type": "TERRITORY",
+                        "country": "CA",
+                        "administrative_area": "CA-ON"
+                    }
+                ]
+            }
+
+            expected_service_id = 'expected-service-id'
+            policy = self._client.get_service_policy(expected_service_id[:])
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/policy/item',
+                self._expected_subject,
+                service_id=expected_service_id
+            )
+            self.assertIsInstance(policy, MethodAmountPolicy)
+            self.assertEqual(policy.type, "METHOD_AMOUNT")
+            self.assertEqual(policy.amount, 1)
+            self.assertEqual(len(policy.fences), 3)
+
+        def test_get_service_policy_factors(self):
+            self._response.data = {
+                "type": "FACTORS",
+                "factors": ["POSSESSION"],
+                "fences": [
+                    {
+                        "name": "LV-89102",
+                        "type": "TERRITORY",
+                        "country": "US",
+                        "postal_code": "89012"
+                    },
+                    {
+                        "name": "Point A",
+                        "type": "GEO_CIRCLE",
+                        "latitude": 123.45,
+                        "longitude": -23.45,
+                        "radius": 105
+                    }
+                ]
+            }
+
+            expected_service_id = 'expected-service-id'
+            policy = self._client.get_service_policy(expected_service_id[:])
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + '/policy/item',
+                self._expected_subject,
+                service_id=expected_service_id
+            )
+            self.assertIsInstance(policy, FactorsPolicy)
+            self.assertEqual(policy.type, "FACTORS")
+            self.assertEqual(len(policy.factors), 1)
+            self.assertEqual(policy.factors[0], Factor.POSSESSION)
+            self.assertEqual(len(policy.fences), 2)
+
+        def test_get_service_policy_conditional_geofence_inside_conditional_geofence_throws_exception(self):
+            self._response.data = {
+                "type": "COND_GEO",
+                "fences": [{
+                    "name": "Ontario",
+                    "type": "TERRITORY",
+                    "country": "CA",
+                    "administrative_area": "CA-ON"}
+                ],
+                "inside": {
+                    "type": "FACTORS",
+                    "fences": [],
+                    "factors": ["POSSESSION"]
+                },
+                "outside": {
+                    "type": "COND_GEO",
+                    "fences": [{
+                        "name": "Ontario",
+                        "type": "TERRITORY",
+                        "country": "CA",
+                        "administrative_area": "CA-ON"}
+                    ],
+                    "inside": {
+                        "type": "FACTORS",
+                        "fences": [],
+                        "factors": ["POSSESSION"]
+                    },
+                    "outside": {
+                        "type": "METHOD_AMOUNT",
+                        "fences": [],
+                        "amount": 1
+                    }
+                }
+            }
+
+            expected_service_id = 'expected-service-id'
+            with assertRaisesRegex(self, NestedPolicyTypeError,
+                                   "Valid nested Policy types for ConditionalGeofence Policies are:"):
+                self._client.get_service_policy(expected_service_id[:])
+
+        def test_geofence_raises_not_implemented(self):
+            self._response.data = {
+                "type": "COND_GEO",
+                "fences": [{
+                    "name": "GEOFENCE",
+                    "type": "GEO_FENCE",
+                    "latitude": 123.45,
+                    "longitude": -23.45,
+                    "radius": 105
+                }],
+                "inside": {
+                    "type": "FACTORS",
+                    "fences": [],
+                    "factors": ["POSSESSION"]
+                },
+                "outside": {
+                    "type": "FACTORS",
+                    "fences": [],
+                    "factors": ["POSSESSION", "KNOWLEDGE"]
+                }
+            }
+
+            expected_service_id = 'expected-service-id'
+            with self.assertRaises(NotImplementedError):
+                self._client.get_service_policy(expected_service_id[:])
+
+        # TODO: Remove these tests or modify them based on what Brad and Adam say about the UnknownPolicyException
+        def test_new_policy_type_raises_unknown_policy_exception(self):
+            self._response.data = {
+                "type": "NEW_POLICY",
+                "fences": [],
+                "inside": {
+                    "type": "FACTORS",
+                    "fences": [],
+                    "factors": ["POSSESSION"]
+                },
+                "outside": {
+                    "type": "FACTORS",
+                    "fences": [],
+                    "factors": ["POSSESSION", "KNOWLEDGE"]
+                }
+            }
+
+            expected_service_id = 'expected-service-id'
+            with self.assertRaises(UnknownPolicyException):
+                self._client.get_service_policy(expected_service_id[:])
+
+        # def test_new_policy_missing_type_raises_unknown_policy_exception(self):
+        #     self._response.data = {
+        #         "type": "NEW_POLICY",
+        #         "fences": [],
+        #         "inside": {
+        #             "type": "FACTORS",
+        #             "fences": [],
+        #             "factors": ["POSSESSION"]
+        #         },
+        #         "outside": {
+        #             "type": "FACTORS",
+        #             "fences": [],
+        #             "factors": ["POSSESSION", "KNOWLEDGE"]
+        #         }
+        #     }
+        #
+        #     expected_service_id = 'expected-service-id'
+        #     with self.assertRaises(NotImplementedError):
+        #         self._client.get_service_policy(expected_service_id[:])
