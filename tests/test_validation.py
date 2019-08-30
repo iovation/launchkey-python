@@ -347,5 +347,3 @@ class TestConditionalGeoFenceValidator(TestCase):
         }
         with assertRaisesRegex(self, Invalid, "^outside: Missing value$"):
             self._validator().to_python(self._data)
-
-# TODO: WRITE TEST WITH ROOT POLICY OBJECT BEING A LEGACY WITH/WITHOUT TYPE WORKS

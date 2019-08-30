@@ -12,7 +12,7 @@ from json import loads, dumps
 import pytz
 from formencode import Invalid
 
-from launchkey.entities.service.policy import Fence, Policy
+from launchkey.entities.service.policy import Policy
 
 from launchkey.entities.validation import \
     AuthorizationResponsePackageValidator, \
@@ -58,14 +58,16 @@ class AuthMethodType(Enum):
     OTHER = "OTHER"
 
 
-class GeoFence(Fence):
+class GeoFence(object):
     """Geo-Fence entity"""
     def __init__(self, latitude, longitude, radius, name):
+        warnings.warn(
+            "GeoFence has been deprecated and will be removed in the next "
+            "major version.", category=DeprecationWarning)
         self.latitude = float(latitude)
         self.longitude = float(longitude)
         self.radius = float(radius)
         self.name = str(name) if name else None
-        self.type = "GEO_FENCE"
 
     def __ne__(self, other):
         return not self.__eq__(other)

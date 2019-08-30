@@ -882,13 +882,14 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
         assertCountEqual(self, fences, geofence_policy.fences)
         self.assertEqual(fences, geofence_policy.fences)
 
-    def test_old_fence_does_not_throw_exception(self):
+    def test_old_fence_raises_exception(self):
         fences = [GeoFence(200, 100, 200, "OldFence")]
-        geofence_policy = ConditionalGeoFencePolicy(
-            self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY, deny_rooted_jailbroken=False,
-            deny_emulator_simulator=True, fences=fences
-        )
-        self.assertIn(fences[0], geofence_policy.fences)
+
+        with assertRaisesRegex(self, InvalidFenceType, "Invalid Fence object. Fence must be one of the following"):
+            ConditionalGeoFencePolicy(
+                self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY, deny_rooted_jailbroken=False,
+                deny_emulator_simulator=True, fences=fences
+            )
 
     def test_time_fence_throws_exception(self):
         from datetime import time
@@ -1001,10 +1002,10 @@ class TestMethodAmountPolicy(unittest.TestCase):
         method_policy = MethodAmountPolicy(fences=fences)
         self.assertEqual(fences, method_policy.fences)
 
-    def test_setting_old_fence_does_not_throw_exception(self):
+    def test_setting_old_fence_raises_invalid_fence_type(self):
         fences = [GeoFence(200, 100, 200, "OldFence")]
-        method_policy = MethodAmountPolicy(fences=fences)
-        self.assertIn(fences[0], method_policy.fences)
+        with self.assertRaises(InvalidFenceType):
+            MethodAmountPolicy(fences=fences)
 
     def test_to_json_is_serializable(self):
         fences = [TerritoryFence("US", "US-CA", 90245)]
@@ -1060,11 +1061,10 @@ class TestFactorsPolicy(unittest.TestCase):
         factor_policy = FactorsPolicy(fences=fences)
         self.assertEqual(fences, factor_policy.fences)
 
-    def test_setting_old_fences_does_not_raise(self):
+    def test_setting_old_fences_raises_invalid_fence_type(self):
         fences = [GeoFence(200, 100, 200, "OldFence")]
-        factor_policy = FactorsPolicy(fences=fences)
-
-        self.assertIn(fences[0], factor_policy.fences)
+        with self.assertRaises(InvalidFenceType):
+            FactorsPolicy(fences=fences)
 
     def test_to_json_is_serializable(self):
         factor_policy = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, factors=["KNOWLEDGE"])

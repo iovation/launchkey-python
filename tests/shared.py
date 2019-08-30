@@ -523,7 +523,6 @@ class SharedTests(object):
                 self._expected_subject,
                 service_id=expected_service_id
             )
-            print(type(policy))
             self.assertIsInstance(policy, ConditionalGeoFencePolicy)
             self.assertEqual(policy.type, "COND_GEO")
             self.assertIsInstance(policy.inside, FactorsPolicy)
@@ -702,7 +701,6 @@ class SharedTests(object):
             with self.assertRaises(NotImplementedError):
                 self._client.get_service_policy(expected_service_id[:])
 
-        # TODO: Remove these tests or modify them based on what Brad and Adam say about the UnknownPolicyException
         def test_new_policy_type_raises_unknown_policy_exception(self):
             self._response.data = {
                 "type": "NEW_POLICY",
@@ -722,23 +720,3 @@ class SharedTests(object):
             expected_service_id = 'expected-service-id'
             with self.assertRaises(UnknownPolicyException):
                 self._client.get_service_policy(expected_service_id[:])
-
-        # def test_new_policy_missing_type_raises_unknown_policy_exception(self):
-        #     self._response.data = {
-        #         "type": "NEW_POLICY",
-        #         "fences": [],
-        #         "inside": {
-        #             "type": "FACTORS",
-        #             "fences": [],
-        #             "factors": ["POSSESSION"]
-        #         },
-        #         "outside": {
-        #             "type": "FACTORS",
-        #             "fences": [],
-        #             "factors": ["POSSESSION", "KNOWLEDGE"]
-        #         }
-        #     }
-        #
-        #     expected_service_id = 'expected-service-id'
-        #     with self.assertRaises(NotImplementedError):
-        #         self._client.get_service_policy(expected_service_id[:])
