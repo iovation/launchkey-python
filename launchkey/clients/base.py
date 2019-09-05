@@ -12,9 +12,9 @@ from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
     GeoCircleFence, TerritoryFence, \
     MethodAmountPolicy, FactorsPolicy
 from launchkey.entities.shared import PublicKey
-from ..entities.validation import ServiceValidator, PublicKeyValidator, \
-    ServiceSecurityPolicyValidator
-from ..exceptions import InvalidEntityID, LaunchKeyAPIException, \
+from launchkey.entities.validation import ServiceValidator, \
+    PublicKeyValidator, ServiceSecurityPolicyValidator
+from launchkey.exceptions import InvalidEntityID, LaunchKeyAPIException, \
     InvalidParameters, EntityNotFound, PolicyFailure, InvalidPolicyInput, \
     RequestTimedOut, RateLimited, InvalidDirectoryIdentifier, \
     UnexpectedAPIResponse, Forbidden, Unauthorized, InvalidRoute, \
@@ -22,9 +22,9 @@ from ..exceptions import InvalidEntityID, LaunchKeyAPIException, \
     InvalidPublicKey, PublicKeyDoesNotExist, LastRemainingKey, \
     LastRemainingSDKKey, InvalidSDKKey, DirectoryNameInUse, \
     AuthorizationInProgress, Conflict, AuthorizationResponseExists, \
-    AuthorizationRequestCanceled, NestedPolicyTypeError, UnknownPolicyException
-from ..transports.base import APIResponse
-from ..utils.shared import iso_format
+    AuthorizationRequestCanceled, UnknownPolicyException, InvalidFenceType
+from launchkey.transports.base import APIResponse
+from launchkey.utils.shared import iso_format
 
 ERROR_CODE_MAP = {
     "ARG-001": InvalidParameters,
@@ -397,23 +397,30 @@ class ServiceManagingBaseClient(BaseClient):
         else:
             fences = list()
             for fence in policy_data["fences"]:
-                if "type" in fence:
-                    if fence["type"] == "GEO_CIRCLE":
-                        fences.append(
-                            GeoCircleFence(fence["latitude"],
-                                           fence["longitude"],
-                                           fence["radius"]
-                                           )
+                if fence["type"] == "GEO_CIRCLE":
+                    fences.append(
+                        GeoCircleFence(
+                            latitude=fence["latitude"],
+                            longitude=fence["longitude"],
+                            radius=fence["radius"],
+                            name=fence["name"]
                         )
-                    elif fence["type"] == "TERRITORY":
-                        fences.append(
-                            TerritoryFence(fence["country"],
-                                           fence["administrative_area"],
-                                           fence["postal_code"]
-                                           )
+                    )
+                elif fence["type"] == "TERRITORY":
+                    fences.append(
+                        TerritoryFence(
+                            country=fence["country"],
+                            administrative_area=fence["administrative_area"],
+                            postal_code=fence["postal_code"],
+                            name=fence["name"]
                         )
-                    elif fence["type"] == "GEO_FENCE":
-                        raise NotImplementedError
+                    )
+                else:
+                    raise InvalidFenceType(
+                        "Fence type \"{0}\" was not a valid Fence type".format(
+                            fence["type"]
+                        )
+                    )
 
             if policy_data["type"] == "COND_GEO":
                 inside = self.__process_nested_service_policy(
@@ -473,7 +480,7 @@ class ServiceManagingBaseClient(BaseClient):
                 fences=policy["fences"]
             )
         else:
-            raise NestedPolicyTypeError(
+            raise UnknownPolicyException(
                 "Valid nested Policy types for ConditionalGeofence Policies "
                 "are: [\"METHOD_AMOUNT\", \"FACTORS\"]"
             )

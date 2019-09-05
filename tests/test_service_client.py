@@ -26,7 +26,7 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
     WebhookAuthorizationError, AuthorizationRequestCanceled, \
     AuthorizationResponseExists, XiovJWTValidationFailure, \
-    XiovJWTDecryptionFailure, InvalidFenceType, InvalidPolicyType, InvalidPolicyAttributes
+    XiovJWTDecryptionFailure, InvalidFenceType, InvalidPolicyAttributes, UnknownPolicyException
 from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse
 
@@ -838,7 +838,7 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
     def test_default_instantiation(self):
         geofence_policy = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY)
 
-        self.assertEqual("COND_GEO", geofence_policy.type)
+        self.assertIsInstance(geofence_policy, ConditionalGeoFencePolicy)
         self.assertEqual(0, len(geofence_policy.fences))
         self.assertEqual(None, geofence_policy.inside.deny_emulator_simulator)
         self.assertEqual(None, geofence_policy.inside.deny_rooted_jailbroken)
@@ -904,12 +904,14 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
                                                        deny_rooted_jailbroken=False, deny_emulator_simulator=False)
 
         # Test Inside Policy
-        with assertRaisesRegex(self, InvalidPolicyType, "Inside and Outside policies must be one of the following:"):
+        with assertRaisesRegex(self, UnknownPolicyException, "Inside and Outside policies must be one of the "
+                                                           "following:"):
             ConditionalGeoFencePolicy(conditional_policy, self.DEFAULT_OUTSIDE_POLICY,
                                       deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
         # Test Outside Policy
-        with assertRaisesRegex(self, InvalidPolicyType, "Inside and Outside policies must be one of the following:"):
+        with assertRaisesRegex(self, UnknownPolicyException, "Inside and Outside policies must be one of the "
+                                                             "following:"):
             ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, conditional_policy,
                                       deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
@@ -944,7 +946,7 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
         with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_emulator_simulator is not allowed"):
             ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
-    def test_inside_policy_has_fences(self):
+    def test_inside_policy_fences_throws_exception(self):
         fences = [GeoCircleFence(100,200,300,"TestGeoCircleFence")]
         inside = FactorsPolicy(
             deny_rooted_jailbroken=False, deny_emulator_simulator=False, factors=["KNOWLEDGE"], fences=fences
@@ -957,26 +959,17 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
         fences = [GeoCircleFence(200, 320, 350)]
         conditional_geo_fence = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY,
                                                           fences=fences)
-        expected = {
-            'type': 'COND_GEO',
-            'fences': [{
-                'type': 'GEO_CIRCLE',
-                'name': None,
-                'latitude': 200.0,
-                'longitude': 320.0,
-                'radius': 350.0}],
-            'inside': {
-                'type': 'FACTORS',
-                'fences': [],
-                'factors': ['KNOWLEDGE']},
-            'outside': {
-                'type': 'FACTORS',
-                'fences': [],
-                'factors': ['POSSESSION']},
-            'deny_rooted_jailbroken': False,
-            'deny_emulator_simulator': False
-        }
-        self.assertEqual(repr(conditional_geo_fence), str(expected))
+        expected = "ConditionalGeoFencePolicy <inside=FactorsPolicy " \
+                   "<factors=[<Factor.KNOWLEDGE: 'KNOWLEDGE'>], " \
+                   "deny_rooted_jailbroken=None, deny_emulator_simulator=" \
+                   "None, fences=[]>, outside=FactorsPolicy " \
+                   "<factors=[<Factor.POSSESSION: 'POSSESSION'>], " \
+                   "deny_rooted_jailbroken=None, deny_emulator_simulator=" \
+                   "None, fences=[]>, deny_rooted_jailbroken=False, " \
+                   "deny_emulator_simulator=False, fences=[GeoCircleFence " \
+                   "<latitude=200.0, longitude=320.0, radius=350.0, " \
+                   "name=\"None\">]>"
+        self.assertEqual(repr(conditional_geo_fence), expected)
 
 
 class TestMethodAmountPolicy(unittest.TestCase):
@@ -987,7 +980,7 @@ class TestMethodAmountPolicy(unittest.TestCase):
         self.assertEqual(False, method_policy.deny_rooted_jailbroken)
         self.assertEqual(False, method_policy.deny_emulator_simulator)
         self.assertEqual(list(), method_policy.fences)
-        self.assertEqual("METHOD_AMOUNT", method_policy.type)
+        self.assertIsInstance(method_policy, MethodAmountPolicy)
 
     def test_setting_deny_rooted_jailbroken(self):
         method_policy = MethodAmountPolicy(deny_rooted_jailbroken=True)
@@ -1017,19 +1010,13 @@ class TestMethodAmountPolicy(unittest.TestCase):
         fences = [TerritoryFence("US", "US-CA", 90245)]
         method_policy = MethodAmountPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, amount=2,
                                            fences=fences)
-        expected = {
-            'type': 'METHOD_AMOUNT',
-            'fences': [{
-                'type': 'TERRITORY',
-                'name': None,
-                'administrative_area': 'US-CA',
-                'country': 'US',
-                'postal_code': '90245'}],
-            'amount': 2,
-            'deny_rooted_jailbroken': False,
-            'deny_emulator_simulator': True
-        }
-        self.assertEqual(repr(method_policy), str(expected))
+        expected = "MethodAmountPolicy <amount=2, " \
+                   "deny_rooted_jailbroken=False, " \
+                   "deny_emulator_simulator=True, " \
+                   "fences=[TerritoryFence <country=\"US\", " \
+                   "administrative_area=\"US-CA\", postal_code=\"90245\", " \
+                   "name=\"None\">]>"
+        self.assertEqual(repr(method_policy), expected)
 
 
 class TestFactorsPolicy(unittest.TestCase):
@@ -1039,7 +1026,7 @@ class TestFactorsPolicy(unittest.TestCase):
         self.assertEqual(False, factor_policy.deny_emulator_simulator)
         self.assertEqual(False, factor_policy.deny_rooted_jailbroken)
         self.assertEqual([], factor_policy.factors)
-        self.assertEqual("FACTORS", factor_policy.type)
+        self.assertIsInstance(factor_policy, FactorsPolicy)
 
     def test_setting_deny_rooted_jailbroken(self):
         factor_policy = FactorsPolicy(deny_rooted_jailbroken=True)
@@ -1074,19 +1061,11 @@ class TestFactorsPolicy(unittest.TestCase):
         fences = [GeoCircleFence(100, 200, 300, "TestFence")]
         factor_policy = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, factors=["KNOWLEDGE"],
                                       fences=fences)
-        expected = {
-            'type': 'FACTORS',
-            'fences': [{
-                'type': 'GEO_CIRCLE',
-                'name': 'TestFence',
-                'latitude': 100.0,
-                'longitude': 200.0,
-                'radius': 300.0}],
-            'factors': ['KNOWLEDGE'],
-            'deny_rooted_jailbroken': False,
-            'deny_emulator_simulator': True
-        }
-        self.assertEqual(repr(factor_policy), str(expected))
+        expected = "FactorsPolicy <factors=[<Factor.KNOWLEDGE: 'KNOWLEDGE'>]" \
+                   ", deny_rooted_jailbroken=False, deny_emulator_simulator=" \
+                   "True, fences=[GeoCircleFence <latitude=100.0, " \
+                   "longitude=200.0, radius=300.0, name=\"TestFence\">]>"
+        self.assertEqual(repr(factor_policy), expected)
 
 
 class TestGeoCircleFence(unittest.TestCase):
@@ -1095,7 +1074,7 @@ class TestGeoCircleFence(unittest.TestCase):
         self.assertEqual(100, geo_circle_fence.latitude)
         self.assertEqual(200, geo_circle_fence.longitude)
         self.assertEqual(300, geo_circle_fence.radius)
-        self.assertEqual("GEO_CIRCLE", geo_circle_fence.type)
+        self.assertIsInstance(geo_circle_fence, GeoCircleFence)
         self.assertIsNone(geo_circle_fence.name)
 
     def test_name_can_be_set(self):
@@ -1108,14 +1087,9 @@ class TestGeoCircleFence(unittest.TestCase):
 
     def test_repr(self):
         geo_circle_fence = GeoCircleFence(100, 200, 300, "TestCircle")
-        expected = {
-            'type': 'GEO_CIRCLE',
-            'name': 'TestCircle',
-            'latitude': 100.0,
-            'longitude': 200.0,
-            'radius': 300.0
-        }
-        self.assertEqual(repr(geo_circle_fence), str(expected))
+        expected = "GeoCircleFence <latitude=100.0, longitude=200.0, " \
+                   "radius=300.0, name=\"TestCircle\">"
+        self.assertEqual(repr(geo_circle_fence), expected)
 
 
 class TestTerritoryFence(unittest.TestCase):
@@ -1124,7 +1098,7 @@ class TestTerritoryFence(unittest.TestCase):
         self.assertEqual("US", territory_fence.country)
         self.assertEqual("US-CA", territory_fence.administrative_area)
         self.assertEqual("90145", territory_fence.postal_code)
-        self.assertEqual("TERRITORY", territory_fence.type)
+        self.assertIsInstance(territory_fence, TerritoryFence)
         self.assertIsNone(territory_fence.name)
 
     def test_name_can_be_set(self):
@@ -1137,11 +1111,6 @@ class TestTerritoryFence(unittest.TestCase):
 
     def test_repr(self):
         territory_fence = TerritoryFence("US", "US-CA", 90145, "TestTerritory")
-        expected = {
-            'type': 'TERRITORY',
-            'name': 'TestTerritory',
-            'administrative_area': 'US-CA',
-            'country': 'US',
-            'postal_code': '90145'
-        }
-        self.assertEqual(repr(territory_fence), str(expected))
+        expected = "TerritoryFence <country=\"US\", administrative_area=" \
+                   "\"US-CA\", postal_code=\"90145\", name=\"TestTerritory\">"
+        self.assertEqual(repr(territory_fence), expected)

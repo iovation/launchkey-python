@@ -81,16 +81,8 @@ class UnknownPolicyException(Exception):
     """Policy Type was unknown to this version of the SDK"""
 
 
-class InvalidPolicyType(Exception):
-    """Invalid Policy Type Exception"""
-
-
 class InvalidPolicyAttributes(Exception):
     """Invalid Policy Attributes on Inside or Outside Policies"""
-
-
-class NestedPolicyTypeError(Exception):
-    """Invalid Nested Policy Type Inside ConditionalGeofencePolicy"""
 
 
 class LaunchKeyAPIException(Exception):

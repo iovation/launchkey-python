@@ -140,10 +140,13 @@ class PolicyFenceValidator(Schema):
 
     @staticmethod
     def _validate_other(value, state):
-        if value["type"] == "TERRITORY":
-            value.update(PolicyTerritoryValidator().to_python(value, state))
-        elif value["type"] == "GEO_CIRCLE":
-            value.update(PolicyGeoCircleValidator().to_python(value, state))
+        if "type" in value:
+            if value["type"] == "TERRITORY":
+                value.update(PolicyTerritoryValidator().to_python(
+                    value, state))
+            elif value["type"] == "GEO_CIRCLE":
+                value.update(PolicyGeoCircleValidator().to_python(
+                    value, state))
         return value
 
 

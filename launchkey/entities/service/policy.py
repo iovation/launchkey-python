@@ -1,12 +1,10 @@
 """ Service Policy objects """
 
-# pylint: disable=too-few-public-methods, too-many-arguments
-
 from enum import Enum
 from json import dumps
 
 from launchkey.exceptions import InvalidFenceType, InvalidPolicyAttributes, \
-    InvalidPolicyType
+    UnknownPolicyException
 
 
 class Factor(Enum):
@@ -16,25 +14,30 @@ class Factor(Enum):
     POSSESSION = "POSSESSION"
 
 
+# pylint: disable=too-few-public-methods
 class Fence(object):
     """ Base class of all Fences """
 
+    def __init__(self, name):
+        self.name = name
 
+
+# pylint: disable=too-few-public-methods
 class Policy(object):
     """
     Base class for new policy objects
     """
-    @classmethod
-    def verify_fence_type(cls, fences):
-        """
-        Verifies the fence is of a valid type for the Policy
-        """
+    def __init__(self, fences):
+        if not fences:
+            fences = []
+
         for fence in fences:
             if not isinstance(fence, Fence):
                 raise InvalidFenceType("Invalid Fence object. Fence must be "
                                        "one of the following: "
                                        "[\"GeoCircleFence\", \"Territory"
                                        "Fence\", \"GeoFence\"]")
+        self.fences = fences
 
 
 class ConditionalGeoFencePolicy(Policy):
@@ -53,19 +56,13 @@ class ConditionalGeoFencePolicy(Policy):
     the fence(s)
     """
 
+    #  pylint: disable=too-many-arguments
     def __init__(self, inside, outside, deny_rooted_jailbroken=False,
                  deny_emulator_simulator=False, fences=None):
-        if not fences:
-            fences = []
-
-        super(ConditionalGeoFencePolicy, self)
+        super(ConditionalGeoFencePolicy, self).__init__(fences)
 
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
-
-        self.verify_fence_type(fences)
-
-        self.fences = fences
 
         if inside.fences or outside.fences:
             raise InvalidPolicyAttributes("Fences are not allowed on Inside or"
@@ -87,7 +84,6 @@ class ConditionalGeoFencePolicy(Policy):
 
         self.inside = self.__create_inner_policies(inside)
         self.outside = self.__create_inner_policies(outside)
-        self.type = "COND_GEO"
 
     def to_json(self):
         """
@@ -96,10 +92,22 @@ class ConditionalGeoFencePolicy(Policy):
         return dumps(dict(self))
 
     def __repr__(self):
-        return repr(dict(self))
+        return "ConditionalGeoFencePolicy <" \
+               "inside={inside}, " \
+               "outside={outside}, " \
+               "deny_rooted_jailbroken={deny_rooted_jailbroken}, " \
+               "deny_emulator_simulator={deny_emulator_simulator}, " \
+               "fences={fences}>". \
+            format(
+                inside=repr(self.inside),
+                outside=repr(self.outside),
+                deny_rooted_jailbroken=self.deny_rooted_jailbroken,
+                deny_emulator_simulator=self.deny_emulator_simulator,
+                fences=repr(self.fences)
+            )
 
     def __iter__(self):
-        yield "type", self.type
+        yield "type", "COND_GEO"
         yield "fences", [dict(fence) for fence in self.fences]
         yield "inside", dict(self.inside)
         yield "outside", dict(self.outside)
@@ -109,20 +117,21 @@ class ConditionalGeoFencePolicy(Policy):
     # noinspection PyTypeChecker
     @staticmethod
     def __create_inner_policies(policy):
-        if policy.type == "METHOD_AMOUNT":
+        if isinstance(policy, MethodAmountPolicy):
             policy = MethodAmountPolicy(
                 amount=policy.amount, fences=None,
                 deny_emulator_simulator=None, deny_rooted_jailbroken=None
             )
-        elif policy.type == "FACTORS":
+        elif isinstance(policy, FactorsPolicy):
             policy = FactorsPolicy(
                 factors=policy.factors, fences=None,
                 deny_rooted_jailbroken=None, deny_emulator_simulator=None
             )
         else:
-            raise InvalidPolicyType(
+            raise UnknownPolicyException(
                 "Inside and Outside policies must be one of the following: ["
-                "\"FACTORS\", \"METHOD_AMOUNT\"]")
+                "\"FACTORS\", \"METHOD_AMOUNT\"]"
+            )
 
         return policy
 
@@ -140,18 +149,10 @@ class MethodAmountPolicy(Policy):
     """
     def __init__(self, amount=0, deny_rooted_jailbroken=False,
                  deny_emulator_simulator=False, fences=None):
-        if not fences:
-            fences = []
-
-        super(MethodAmountPolicy, self)
+        super(MethodAmountPolicy, self).__init__(fences)
         self.amount = amount
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
-
-        self.verify_fence_type(fences)
-        self.fences = fences
-
-        self.type = "METHOD_AMOUNT"
 
     def to_json(self):
         """
@@ -160,10 +161,20 @@ class MethodAmountPolicy(Policy):
         return dumps(dict(self))
 
     def __repr__(self):
-        return repr(dict(self))
+        return "MethodAmountPolicy <" \
+               "amount={amount}, " \
+               "deny_rooted_jailbroken={deny_rooted_jailbroken}, " \
+               "deny_emulator_simulator={deny_emulator_simulator}, " \
+               "fences={fences}>". \
+            format(
+                amount=self.amount,
+                deny_rooted_jailbroken=self.deny_rooted_jailbroken,
+                deny_emulator_simulator=self.deny_emulator_simulator,
+                fences=repr(self.fences)
+            )
 
     def __iter__(self):
-        yield "type", self.type
+        yield "type", "METHOD_AMOUNT"
         yield "fences", [dict(fence) for fence in self.fences]
         yield "amount", self.amount
         if self.deny_rooted_jailbroken is not None:
@@ -186,21 +197,15 @@ class FactorsPolicy(Policy):
     """
     def __init__(self, factors=None, deny_rooted_jailbroken=False,
                  deny_emulator_simulator=False, fences=None):
-        if not fences:
-            fences = []
         if not factors:
             factors = []
 
-        super(FactorsPolicy, self)
+        super(FactorsPolicy, self).__init__(fences)
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
-
-        self.verify_fence_type(fences)
-        self.fences = fences
         self.factors = [
             Factor(factor) for factor in factors
         ]
-        self.type = "FACTORS"
 
     def to_json(self):
         """
@@ -209,10 +214,20 @@ class FactorsPolicy(Policy):
         return dumps(dict(self))
 
     def __repr__(self):
-        return repr(dict(self))
+        return "FactorsPolicy <" \
+               "factors={factors}, " \
+               "deny_rooted_jailbroken={deny_rooted_jailbroken}, " \
+               "deny_emulator_simulator={deny_emulator_simulator}, " \
+               "fences={fences}>". \
+            format(
+                factors=repr(self.factors),
+                deny_rooted_jailbroken=self.deny_rooted_jailbroken,
+                deny_emulator_simulator=self.deny_emulator_simulator,
+                fences=repr(self.fences)
+            )
 
     def __iter__(self):
-        yield "type", self.type
+        yield "type", "FACTORS"
         yield "fences", [dict(fence) for fence in self.fences]
         yield "factors", [factor.name for factor in self.factors]
         if self.deny_rooted_jailbroken is not None:
@@ -231,18 +246,26 @@ class GeoCircleFence(Fence):
     :param name: name of the Fence
     """
     def __init__(self, latitude, longitude, radius, name=None):
-        super(GeoCircleFence, self)
+        super(GeoCircleFence, self).__init__(name)
         self.latitude = float(latitude)
         self.longitude = float(longitude)
         self.radius = float(radius)
-        self.name = name
-        self.type = "GEO_CIRCLE"
 
     def __repr__(self):
-        return repr(dict(self))
+        return "GeoCircleFence <" \
+               "latitude={latitude}, " \
+               "longitude={longitude}, " \
+               "radius={radius}, " \
+               "name=\"{name}\">". \
+            format(
+                latitude=self.latitude,
+                longitude=self.longitude,
+                radius=self.radius,
+                name=self.name
+            )
 
     def __iter__(self):
-        yield "type", self.type
+        yield "type", "GEO_CIRCLE"
         yield "name", self.name
         yield "latitude", self.latitude
         yield "longitude", self.longitude
@@ -255,22 +278,31 @@ class TerritoryFence(Fence):
 
     :param country: two character representation of the country
     :param administrative_area:  ISO 3166-2 subdivision code ex: "US-CA"
-    :param postal_code: representation of area mail is delivered too
+    :param postal_code: string representation of area mail is delivered too
     :param name: name of the Fence
     """
-    def __init__(self, country, administrative_area, postal_code, name=None):
-        super(TerritoryFence, self)
+    def __init__(self, country, administrative_area=None, postal_code=None,
+                 name=None):
+        super(TerritoryFence, self).__init__(name)
         self.country = country
         self.administrative_area = administrative_area
         self.postal_code = str(postal_code)
-        self.name = name
-        self.type = "TERRITORY"
 
     def __repr__(self):
-        return repr(dict(self))
+        return "TerritoryFence <" \
+               "country=\"{country}\", " \
+               "administrative_area=\"{administrative_area}\", " \
+               "postal_code=\"{postal_code}\", " \
+               "name=\"{name}\">". \
+            format(
+                country=self.country,
+                administrative_area=self.administrative_area,
+                postal_code=self.postal_code,
+                name=self.name
+            )
 
     def __iter__(self):
-        yield "type", self.type
+        yield "type", "TERRITORY"
         yield "name", self.name
         yield "administrative_area", self.administrative_area
         yield "country", self.country

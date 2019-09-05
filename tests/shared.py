@@ -7,11 +7,11 @@ from mock import ANY
 from six import assertRaisesRegex
 
 from launchkey.entities.service import Service, ServiceSecurityPolicy
-from launchkey.entities.service.policy import  ConditionalGeoFencePolicy, \
+from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
     FactorsPolicy, MethodAmountPolicy, Factor
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, ServiceNameTaken, LastRemainingKey, \
-    PublicKeyDoesNotExist, ServiceNotFound, InvalidPublicKey, PublicKeyAlreadyInUse, Forbidden, NestedPolicyTypeError, \
-    UnknownPolicyException
+    PublicKeyDoesNotExist, ServiceNotFound, InvalidPublicKey, PublicKeyAlreadyInUse, Forbidden, UnknownPolicyException, \
+    InvalidFenceType
 from launchkey.transports.base import APIResponse
 
 
@@ -524,14 +524,14 @@ class SharedTests(object):
                 service_id=expected_service_id
             )
             self.assertIsInstance(policy, ConditionalGeoFencePolicy)
-            self.assertEqual(policy.type, "COND_GEO")
+            self.assertIsInstance(policy, ConditionalGeoFencePolicy)
             self.assertIsInstance(policy.inside, FactorsPolicy)
-            self.assertEqual(policy.inside.type, "FACTORS")
+            self.assertIsInstance(policy.inside, FactorsPolicy)
             self.assertEqual(1, len(policy.inside.factors))
             self.assertEqual(policy.inside.factors[0], Factor.POSSESSION)
             self.assertEqual(0, len(policy.inside.fences))
             self.assertIsInstance(policy.outside, MethodAmountPolicy)
-            self.assertEqual(policy.outside.type, "METHOD_AMOUNT")
+            self.assertIsInstance(policy.outside, MethodAmountPolicy)
             self.assertEqual(0, len(policy.outside.fences))
             self.assertEqual(1, policy.outside.amount)
 
@@ -597,7 +597,6 @@ class SharedTests(object):
                 service_id=expected_service_id
             )
             self.assertIsInstance(policy, MethodAmountPolicy)
-            self.assertEqual(policy.type, "METHOD_AMOUNT")
             self.assertEqual(policy.amount, 1)
             self.assertEqual(len(policy.fences), 3)
 
@@ -630,12 +629,11 @@ class SharedTests(object):
                 service_id=expected_service_id
             )
             self.assertIsInstance(policy, FactorsPolicy)
-            self.assertEqual(policy.type, "FACTORS")
             self.assertEqual(len(policy.factors), 1)
             self.assertEqual(policy.factors[0], Factor.POSSESSION)
             self.assertEqual(len(policy.fences), 2)
 
-        def test_get_service_policy_conditional_geofence_inside_conditional_geofence_throws_exception(self):
+        def test_nested_conditional_throws_exception(self):
             self._response.data = {
                 "type": "COND_GEO",
                 "fences": [{
@@ -671,16 +669,16 @@ class SharedTests(object):
             }
 
             expected_service_id = 'expected-service-id'
-            with assertRaisesRegex(self, NestedPolicyTypeError,
+            with assertRaisesRegex(self, UnknownPolicyException,
                                    "Valid nested Policy types for ConditionalGeofence Policies are:"):
                 self._client.get_service_policy(expected_service_id[:])
 
-        def test_geofence_raises_not_implemented(self):
+        def test_invalid_geofence_raises_not_implemented(self):
             self._response.data = {
                 "type": "COND_GEO",
                 "fences": [{
+                    "type": "OLD_GEOFENCE",
                     "name": "GEOFENCE",
-                    "type": "GEO_FENCE",
                     "latitude": 123.45,
                     "longitude": -23.45,
                     "radius": 105
@@ -698,8 +696,9 @@ class SharedTests(object):
             }
 
             expected_service_id = 'expected-service-id'
-            with self.assertRaises(NotImplementedError):
+            with self.assertRaises(InvalidFenceType):
                 self._client.get_service_policy(expected_service_id[:])
+
 
         def test_new_policy_type_raises_unknown_policy_exception(self):
             self._response.data = {

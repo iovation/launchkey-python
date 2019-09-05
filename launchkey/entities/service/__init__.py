@@ -12,8 +12,6 @@ from json import loads, dumps
 import pytz
 from formencode import Invalid
 
-from launchkey.entities.service.policy import Policy
-
 from launchkey.entities.validation import \
     AuthorizationResponsePackageValidator, \
     JWEAuthorizationResponsePackageValidator
@@ -204,7 +202,7 @@ class DenialReason(object):
         self.fraud = fraud
 
 
-class AuthPolicy(Policy):
+class AuthPolicy(object):
     """AuthPolicy object for performing dynamic authorizations"""
 
     def __init__(self, any=0, knowledge=False, inherence=False,
@@ -225,7 +223,8 @@ class AuthPolicy(Policy):
 
         warnings.warn("This object has been deprecated and will be removed in "
                       "the next major version. "
-                      "Please use the new policy objects",
+                      "Please use one of the new Policy objects in the "
+                      "policy submodule",
                       category=DeprecationWarning)
 
         if knowledge not in (True, False, 0, 1) \
@@ -385,8 +384,9 @@ class AuthPolicy(Policy):
         Retrieves json representation of the policy
         :return: Valid policy dict
         """
-        warnings.warn("This has been deprecated and will be removed in the "
-                      "next major version",
+        warnings.warn("This method has been deprecated and will be removed in "
+                      "the next major version. Please use "
+                      "to_json",
                       category=DeprecationWarning)
         return self.to_json()
 

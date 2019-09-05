@@ -179,6 +179,15 @@ class TestPolicyFenceValidator(TestCase):
             parsed
         )
 
+    def test_missing_type(self):
+        self._data = {
+            "latitude": 90,
+            "longitude": -90,
+            "radius": 105
+        }
+        with assertRaisesRegex(self, Invalid, "type: Missing value$"):
+            self._validator.to_python(self._data)
+
 
 class TestConditionalGeoFenceValidator(TestCase):
     def setUp(self):
