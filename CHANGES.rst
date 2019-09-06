@@ -1,16 +1,14 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
-3.7.0
------
-* Added Policies: ConditionalGeofence, MethodAmount, Factors
-* Deprecated: TimeFence
-* enum34 only required on python versions < 3.4
 
 3.6.0
 -----
 
 * Bug fix to ensure that requests do not follow redirects
 * Bug fix to ensure that public key is cached using `kid` header of JWT found within a response header
+* Added Policies: ConditionalGeofence, MethodAmount, Factors
+* Deprecated: TimeFence
+* enum34 only required on python versions < 3.4
 
 3.5.0
 -----
