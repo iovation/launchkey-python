@@ -210,6 +210,10 @@ class FactorsPolicy(Policy):
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
 
+        self.factors = [
+            Factor(factor.upper()) for factor in factors
+        ]
+
     def to_dict(self):
         """
         returns the JSON representation of the policy object

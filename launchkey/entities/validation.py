@@ -108,14 +108,6 @@ class GeoFenceValidator(Schema):
     radius = validators.Number()
 
 
-class AuthPolicyValidator(Schema):
-    """Auth policy validate for auth method insights"""
-    requirement = validators.String(if_missing=None, if_empty=None)
-    amount = validators.Number(if_missing=None)
-    types = ForEach(validators.String(), if_missing=None)
-    geofences = ForEach(GeoFenceValidator(), if_missing=[], if_empty=[])
-
-
 class PolicyTerritoryValidator(Schema):
     """Validates Territory fences inside policies"""
     allow_extra_fields = True
@@ -209,6 +201,14 @@ class ServiceSecurityPolicyValidator(PolicyBaseValidator):
     allow_extra_fields = True
     deny_rooted_jailbroken = validators.Bool(if_missing=None)
     deny_emulator_simulator = validators.Bool(if_missing=None)
+
+
+class AuthPolicyValidator(Schema):
+    """Auth policy validate for auth method insights"""
+    requirement = validators.String(if_missing=None, if_empty=None)
+    amount = validators.Number(if_missing=None)
+    types = ForEach(validators.String(), if_missing=None)
+    geofences = ForEach(PolicyFenceValidator(), if_missing=[], if_empty=[])
 
 
 class JWEAuthorizationResponsePackageValidator(Schema):

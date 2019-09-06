@@ -12,6 +12,8 @@ from json import loads, dumps
 import pytz
 from formencode import Invalid
 
+from launchkey.entities.service.policy import MethodAmountPolicy, \
+    TerritoryFence, GeoCircleFence, Factor, FactorsPolicy
 from launchkey.entities.validation import \
     AuthorizationResponsePackageValidator, \
     JWEAuthorizationResponsePackageValidator
@@ -618,28 +620,65 @@ class AuthorizationResponse(object):
         auth_policy = decrypted_jwe.get("auth_policy")
         if auth_policy:
             kwargs = {}
-            if auth_policy['requirement'] == "amount":
-                kwargs['any'] = auth_policy['amount']
-            elif auth_policy['requirement'] == "types":
-                for item in auth_policy['types']:
-                    type = item.lower()
-                    if type in ['knowledge', 'inherence', 'possession']:
-                        kwargs[type] = True
-                    else:
-                        warnings.warn(
-                            "Invalid policy type given: %s. "
-                            "It will be ignored, but this could "
-                            "signify the need for an update." % type)
+            if auth_policy['requirement'] == "cond_geo":
+                fences = []
 
-            if auth_policy.get('geofences') or kwargs:
-                self.auth_policy = AuthPolicy(**kwargs)
-                for fence in auth_policy.get('geofences', []):
-                    self.auth_policy.add_geofence(
-                        fence['latitude'],
-                        fence['longitude'],
-                        fence['radius'],
-                        name=fence['name']
+                for fence in auth_policy["geofences"]:
+                    if fence["type"] == "TERRITORY":
+                        TerritoryFence(
+                            country=fence["country"],
+                            administrative_area=fence["administrative_area"],
+                            postal_code=fence["postal_code"],
+                            name=fence["name"]
+                        )
+                    elif fence["type"] == "GEO_CIRCLE":
+                        GeoCircleFence(
+                            latitude=fence["latitude"],
+                            longitude=fence["longitude"],
+                            radius=fence["radius"],
+                            name=fence["name"]
+                        )
+
+                if auth_policy["amount"] is not None:
+                    self.auth_policy = MethodAmountPolicy(
+                        amount=auth_policy["amount"],
+                        deny_rooted_jailbroken=None,
+                        deny_emulator_simulator=None,
+                        fences=fences
                     )
+                elif auth_policy["types"] is not None:
+                    self.auth_policy = FactorsPolicy(
+                        factors=auth_policy["types"],
+                        deny_rooted_jailbroken=None,
+                        deny_emulator_simulator=None,
+                        fences=fences
+                    )
+
+            else:
+                if auth_policy['requirement'] == "amount":
+                    kwargs['any'] = auth_policy['amount']
+                elif auth_policy['requirement'] == "types":
+                    for item in auth_policy['types']:
+                        type = item.lower()
+                        if type in ['knowledge', 'inherence', 'possession']:
+                            kwargs[type] = True
+                        else:
+                            warnings.warn(
+                                "Invalid policy type given: %s. "
+                                "It will be ignored, but this could "
+                                "signify the need for an update." % type)
+
+
+                # TODO: Rewrite to handle new policies
+                if auth_policy.get('geofences') or kwargs:
+                    self.auth_policy = AuthPolicy(**kwargs)
+                    for fence in auth_policy.get('geofences', []):
+                        self.auth_policy.add_geofence(
+                            fence['latitude'],
+                            fence['longitude'],
+                            fence['radius'],
+                            name=fence['name']
+                        )
 
     def _parse_device_response_from_auth_package(self, auth_package, key_id,
                                                  transport):

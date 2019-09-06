@@ -1,13 +1,14 @@
 import unittest
+from datetime import time
 
-from mock import MagicMock, patch
 from ddt import data, unpack, ddt
 from formencode import Invalid
-from datetime import time
+from mock import MagicMock, patch
 
 from launchkey.entities.service import AuthorizationResponse, \
     AuthResponseType, AuthResponseReason, GeoFence, TimeFence, \
-    AuthMethodType, AuthPolicy, AuthorizationRequest, AuthMethod
+    AuthMethodType, AuthPolicy, AuthorizationRequest, AuthMethod, \
+    FactorsPolicy, MethodAmountPolicy
 from launchkey.exceptions import UnexpectedDeviceResponse
 from launchkey.transports.jose_auth import JOSETransport
 
@@ -899,6 +900,129 @@ class TestAuthorizationResponseAuthMethodInsight(unittest.TestCase):
             response.auth_policy.minimum_requirements,
             []
         )
+
+    def test_13_test_new_device_response(self):
+        self.transport.decrypt_response.return_value = """{
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "FAILED",
+            "reason": "SENSOR",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+              "requirement": "cond_geo",
+              "types": ["knowledge"],
+              "geofences": [
+                {
+                  "name": "Great Britain",
+                  "type": "TERRITORY",
+                  "country": "GB"
+                },
+                {
+                  "name": "California",
+                  "type": "TERRITORY",
+                  "country": "US",
+                  "administrative_area": "US-CA",
+                  "postal_code": "92535"
+                },
+                {
+                  "name": "Point A",
+                  "type": "GEO_CIRCLE",
+                  "latitude": 123.45,
+                  "longitude": -23.45,
+                  "radius": 105
+                }
+              ]
+            },
+            "auth_methods": [{
+                                 "method": "wearables",
+                                 "set": true,
+                                 "active": true,
+                                 "allowed": true,
+                                 "supported": true,
+                                 "user_required": false,
+                                 "passed": null,
+                                 "error": true}, {
+                                 "method": "geofencing",
+                                 "set": null,
+                                 "active": true,
+                                 "allowed": true,
+                                 "supported": true,
+                                 "user_required": null,
+                                 "passed": null,
+                                 "error": null}, {
+                                 "method": "locations",
+                                 "set": true,
+                                 "active": true,
+                                 "allowed": true,
+                                 "supported": true,
+                                 "user_required": false,
+                                 "passed": null,
+                                 "error": null}, {
+                                 "method": "pin_code",
+                                 "set": false,
+                                 "active": false,
+                                 "allowed": true,
+                                 "supported": true,
+                                 "user_required": null,
+                                 "passed": null,
+                                 "error": null}, {
+                                 "method": "circle_code",
+                                 "set": false,
+                                 "active": false,
+                                 "allowed": true,
+                                 "supported": true,
+                                 "user_required": null,
+                                 "passed": null,
+                                 "error": null}, {
+                                 "method": "face",
+                                 "set": false,
+                                 "active": false,
+                                 "allowed": true,
+                                 "supported": true,
+                                 "user_required": null,
+                                 "passed": null,
+                                 "error": null}, {
+                                 "method": "fingerprint",
+                                 "set": false,
+                                 "active": false,
+                                 "allowed": true,
+                                 "supported": true,
+                                 "user_required": null,
+                                 "passed": null,
+                                 "error": null}]}
+        """
+        response = AuthorizationResponse(self.data, self.transport)
+        self.assertEqual(response.type, AuthResponseType.FAILED)
+        self.assertEqual(response.reason, AuthResponseReason.SENSOR)
+        wearable = response.auth_methods[0]
+        self.assertEqual(wearable.method, AuthMethodType.WEARABLES)
+        self.assertTrue(wearable.set)
+        self.assertTrue(wearable.active)
+        self.assertTrue(wearable.allowed)
+        self.assertTrue(wearable.supported)
+        self.assertFalse(wearable.user_required)
+        self.assertIsNone(wearable.passed)
+        self.assertTrue(wearable.error)
+        locations = response.auth_methods[2]
+        self.assertEqual(locations.method, AuthMethodType.LOCATIONS)
+        self.assertTrue(locations.set)
+        self.assertTrue(locations.active)
+        self.assertTrue(locations.allowed)
+        self.assertTrue(locations.supported)
+        self.assertFalse(locations.user_required)
+        self.assertIsNone(locations.passed)
+        self.assertIsNone(locations.error)
+        self.assertEqual(
+            response.auth_policy.fences,
+            []
+        )
+        self.assertIsInstance(response.auth_policy, FactorsPolicy)
+        self.assertEqual(
+            len(response.auth_policy.factors),
+            1
+        )
+
 
 
 class TestGeoFence(unittest.TestCase):
