@@ -6,13 +6,16 @@
 
 import datetime
 import warnings
-from json import loads, dumps
 from enum import Enum
-from formencode import Invalid
+from json import loads, dumps
+
 import pytz
-from .validation import AuthorizationResponsePackageValidator, \
+from formencode import Invalid
+
+from launchkey.entities.validation import \
+    AuthorizationResponsePackageValidator, \
     JWEAuthorizationResponsePackageValidator
-from ..exceptions import UnexpectedDeviceResponse, \
+from launchkey.exceptions import UnexpectedDeviceResponse, \
     InvalidGeoFenceName, InvalidTimeFenceEndTime, InvalidTimeFenceName, \
     InvalidTimeFenceStartTime, MismatchedTimeFenceTimezones, \
     DuplicateTimeFenceName, DuplicateGeoFenceName, InvalidPolicyFormat, \
@@ -56,6 +59,9 @@ class AuthMethodType(Enum):
 class GeoFence(object):
     """Geo-Fence entity"""
     def __init__(self, latitude, longitude, radius, name):
+        warnings.warn(
+            "GeoFence has been deprecated and will be removed in the next "
+            "major version.", category=DeprecationWarning)
         self.latitude = float(latitude)
         self.longitude = float(longitude)
         self.radius = float(radius)
@@ -93,6 +99,11 @@ class TimeFence(object):
     def __init__(self, name, start_time, end_time, monday=False, tuesday=False,
                  wednesday=False, thursday=False, friday=False,
                  saturday=False, sunday=False):
+
+        warnings.warn(
+            "TimeFence has been deprecated and will be removed in the next "
+            "major version.", category=DeprecationWarning)
+
         if not isinstance(start_time, datetime.time):
             raise InvalidTimeFenceStartTime
         elif not isinstance(end_time, datetime.time):
@@ -209,6 +220,12 @@ class AuthPolicy(object):
         :param jailbreak_protection: Boolean. Whether to allow jailbroken /
                rooted devices to authenticate
         """
+
+        warnings.warn("This object has been deprecated and will be removed in "
+                      "the next major version. "
+                      "Please use one of the new Policy objects in the "
+                      "policy submodule",
+                      category=DeprecationWarning)
 
         if knowledge not in (True, False, 0, 1) \
                 or inherence not in (True, False, 0, 1) \
@@ -366,6 +383,16 @@ class AuthPolicy(object):
         """
         Retrieves json representation of the policy
         :return: Valid policy dict
+        """
+        warnings.warn("This method has been deprecated and will be removed in "
+                      "the next major version. Please use "
+                      "to_json",
+                      category=DeprecationWarning)
+        return self.to_json()
+
+    def to_json(self):
+        """
+        returns the JSON representation of the policy object
         """
         try:
             dumps(self._policy)

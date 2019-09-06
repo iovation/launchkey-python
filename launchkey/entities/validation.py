@@ -116,6 +116,101 @@ class AuthPolicyValidator(Schema):
     geofences = ForEach(GeoFenceValidator(), if_missing=[], if_empty=[])
 
 
+class PolicyTerritoryValidator(Schema):
+    """Validates Territory fences inside policies"""
+    allow_extra_fields = True
+    country = validators.String(not_empty=True)
+    administrative_area = validators.String(if_missing=None)
+    postal_code = validators.String(if_missing=None, if_empty=None)
+
+
+class PolicyGeoCircleValidator(Schema):
+    """Validates GeoCircle fences inside policies"""
+    allow_extra_fields = True
+    latitude = validators.Number(not_empty=True)
+    longitude = validators.Number(not_empty=True)
+    radius = validators.Number(not_empty=True)
+
+
+class PolicyFenceValidator(Schema):
+    """Validates fence objects in policies"""
+    allow_extra_fields = True
+    type = validators.String(not_empty=True)
+    name = validators.String(if_missing=None, not_empty=True)
+
+    @staticmethod
+    def _validate_other(value, state):
+        if "type" in value:
+            if value["type"] == "TERRITORY":
+                value.update(PolicyTerritoryValidator().to_python(
+                    value, state))
+            elif value["type"] == "GEO_CIRCLE":
+                value.update(PolicyGeoCircleValidator().to_python(
+                    value, state))
+        return value
+
+
+class ConditionalGeoFenceValidator(Schema):
+    """Validates conditional geofence policies"""
+    allow_extra_fields = True
+    inside = validators.NotEmpty(accept_iterator=True)
+    outside = validators.NotEmpty(accept_iterator=True)
+    fences = ForEach(not_empty=True)
+
+    @staticmethod
+    def _validate_python(value, state):
+        if 'inside' in value and 'outside' in value:
+            value['inside'] = PolicyBaseValidator().to_python(
+                value['inside'], state)
+            value['outside'] = PolicyBaseValidator().to_python(
+                value['outside'], state)
+        return value
+
+
+class MethodAmountPolicyValidator(Schema):
+    """Validates method amount policies"""
+    allow_extra_fields = True
+    amount = validators.Int(not_empty=True)
+
+
+class FactorsPolicyValidator(Schema):
+    """Validates factors for policies"""
+    allow_extra_fields = True
+    factors = ForEach(validators.OneOf(
+        ["KNOWLEDGE", "INHERENCE", "POSSESSION"]), not_empty=True)
+
+
+class PolicyBaseValidator(Schema):
+    """Base policy validator for legacy and new policies"""
+    allow_extra_fields = True
+    type = validators.String(if_missing="LEGACY")
+    fences = ForEach(PolicyFenceValidator())
+
+    @staticmethod
+    def _validate_python(value, state):
+        if value["type"] == "COND_GEO":
+            value.update(ConditionalGeoFenceValidator().to_python(
+                value, state))
+        elif value["type"] == "METHOD_AMOUNT":
+            value.update(MethodAmountPolicyValidator().to_python(value, state))
+        elif value["type"] == "FACTORS":
+            value.update(FactorsPolicyValidator().to_python(value, state))
+        elif value["type"] == "LEGACY":
+            if "deny_rooted_jailbroken" in value:
+                del value["deny_rooted_jailbroken"]
+            if "deny_emulator_simulator" in value:
+                del value["deny_emulator_simulator"]
+            del value["fences"]
+        return value
+
+
+class ServiceSecurityPolicyValidator(PolicyBaseValidator):
+    """Service Policy validator"""
+    allow_extra_fields = True
+    deny_rooted_jailbroken = validators.Bool(if_missing=None)
+    deny_emulator_simulator = validators.Bool(if_missing=None)
+
+
 class JWEAuthorizationResponsePackageValidator(Schema):
     """Authorization Response JWE payload entity validator"""
     service_pins = ForEach()
@@ -151,9 +246,4 @@ class ServiceValidator(Schema):
     description = validators.String()
     active = validators.Bool()
     callback_url = validators.String()
-    allow_extra_fields = True
-
-
-class ServiceSecurityPolicyValidator(Schema):
-    """Service Security Policy entity validator"""
     allow_extra_fields = True

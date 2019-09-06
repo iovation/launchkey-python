@@ -253,6 +253,9 @@ Contributing
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Conform to the following standards:
+    * PEP-8
+    * Relative imports for same level or submodules
 3. Verify your code passes unit tests (`python setup.py test`)
 4. Verify your code passes tests, linting, and PEP-8 on all supported python
     versions (`tox`)

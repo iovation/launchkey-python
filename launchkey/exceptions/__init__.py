@@ -53,6 +53,10 @@ class InvalidGeoFenceName(Exception):
     """The input Geo-Fence name was not found"""
 
 
+class InvalidFenceType(Exception):
+    """The GeoFence provided was not allowed"""
+
+
 class DuplicateTimeFenceName(Exception):
     """The input Time-Fence name is already taken"""
 
@@ -71,6 +75,14 @@ class InvalidTimeFenceEndTime(Exception):
 
 class MismatchedTimeFenceTimezones(Exception):
     """Start time and end time timezones must match"""
+
+
+class UnknownPolicyException(Exception):
+    """Policy Type was unknown to this version of the SDK"""
+
+
+class InvalidPolicyAttributes(Exception):
+    """Invalid Policy Attributes on Inside or Outside Policies"""
 
 
 class LaunchKeyAPIException(Exception):

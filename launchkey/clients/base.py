@@ -2,17 +2,19 @@
 
 # pylint: disable=too-few-public-methods, too-many-arguments
 
-from uuid import UUID
 from functools import wraps
+from uuid import UUID
+
 from formencode import Invalid
+
+from launchkey.entities.service import Service, ServiceSecurityPolicy
+from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
+    GeoCircleFence, TerritoryFence, \
+    MethodAmountPolicy, FactorsPolicy
 from launchkey.entities.shared import PublicKey
-
-from ..utils.shared import iso_format
-from ..entities.service import Service, ServiceSecurityPolicy
-from ..entities.validation import ServiceValidator, PublicKeyValidator, \
-    ServiceSecurityPolicyValidator
-
-from ..exceptions import InvalidEntityID, LaunchKeyAPIException, \
+from launchkey.entities.validation import ServiceValidator, \
+    PublicKeyValidator, ServiceSecurityPolicyValidator
+from launchkey.exceptions import InvalidEntityID, LaunchKeyAPIException, \
     InvalidParameters, EntityNotFound, PolicyFailure, InvalidPolicyInput, \
     RequestTimedOut, RateLimited, InvalidDirectoryIdentifier, \
     UnexpectedAPIResponse, Forbidden, Unauthorized, InvalidRoute, \
@@ -20,8 +22,9 @@ from ..exceptions import InvalidEntityID, LaunchKeyAPIException, \
     InvalidPublicKey, PublicKeyDoesNotExist, LastRemainingKey, \
     LastRemainingSDKKey, InvalidSDKKey, DirectoryNameInUse, \
     AuthorizationInProgress, Conflict, AuthorizationResponseExists, \
-    AuthorizationRequestCanceled
-from ..transports.base import APIResponse
+    AuthorizationRequestCanceled, UnknownPolicyException, InvalidFenceType
+from launchkey.transports.base import APIResponse
+from launchkey.utils.shared import iso_format
 
 ERROR_CODE_MAP = {
     "ARG-001": InvalidParameters,
@@ -388,9 +391,100 @@ class ServiceManagingBaseClient(BaseClient):
         policy_data = self._validate_response(response.data,
                                               ServiceSecurityPolicyValidator)
 
-        policy = ServiceSecurityPolicy()
-        policy.set_policy(policy_data)
+        if policy_data["type"] == "LEGACY":
+            policy = ServiceSecurityPolicy()
+            policy.set_policy(policy_data)
+        else:
+            fences = list()
+            for fence in policy_data["fences"]:
+                if fence["type"] == "GEO_CIRCLE":
+                    fences.append(
+                        GeoCircleFence(
+                            latitude=fence["latitude"],
+                            longitude=fence["longitude"],
+                            radius=fence["radius"],
+                            name=fence["name"]
+                        )
+                    )
+                elif fence["type"] == "TERRITORY":
+                    fences.append(
+                        TerritoryFence(
+                            country=fence["country"],
+                            administrative_area=fence["administrative_area"],
+                            postal_code=fence["postal_code"],
+                            name=fence["name"]
+                        )
+                    )
+                else:
+                    raise InvalidFenceType(
+                        "Fence type \"{0}\" was not a valid Fence type".format(
+                            fence["type"]
+                        )
+                    )
+
+            if policy_data["type"] == "COND_GEO":
+                inside = self.__process_nested_service_policy(
+                    policy_data["inside"]
+                )
+                outside = self.__process_nested_service_policy(
+                    policy_data["outside"]
+                )
+
+                policy = ConditionalGeoFencePolicy(
+                    inside,
+                    outside,
+                    policy_data["deny_rooted_jailbroken"],
+                    policy_data["deny_emulator_simulator"],
+                    fences
+                )
+            elif policy_data["type"] == "METHOD_AMOUNT":
+                policy = MethodAmountPolicy(
+                    deny_rooted_jailbroken=policy_data[
+                        "deny_rooted_jailbroken"],
+                    deny_emulator_simulator=policy_data[
+                        "deny_emulator_simulator"],
+                    fences=fences,
+                    amount=policy_data["amount"]
+                )
+            elif policy_data["type"] == "FACTORS":
+                policy = FactorsPolicy(
+                    deny_rooted_jailbroken=policy_data[
+                        "deny_rooted_jailbroken"],
+                    deny_emulator_simulator=policy_data[
+                        "deny_emulator_simulator"],
+                    fences=fences,
+                    factors=policy_data["factors"]
+                )
+            else:
+                raise UnknownPolicyException(
+                    "The Policy {0} was not a known Policy type".format(
+                        policy_data["type"])
+                )
+
         return policy
+
+    @staticmethod
+    def __process_nested_service_policy(policy):
+        if policy["type"] == "METHOD_AMOUNT":
+            new_policy = MethodAmountPolicy(
+                amount=policy["amount"],
+                deny_rooted_jailbroken=None,
+                deny_emulator_simulator=None,
+                fences=policy["fences"]
+            )
+        elif policy["type"] == "FACTORS":
+            new_policy = FactorsPolicy(
+                factors=policy["factors"],
+                deny_rooted_jailbroken=None,
+                deny_emulator_simulator=None,
+                fences=policy["fences"]
+            )
+        else:
+            raise UnknownPolicyException(
+                "Valid nested Policy types for ConditionalGeofence Policies "
+                "are: [\"METHOD_AMOUNT\", \"FACTORS\"]"
+            )
+        return new_policy
 
     @api_call
     def set_service_policy(self, service_id, policy):
@@ -407,7 +501,7 @@ class ServiceManagingBaseClient(BaseClient):
         self._transport.put(
             "{}/policy".format(self.__service_base_path[0:-1]),
             self._subject, service_id=str(service_id),
-            policy=policy.get_policy())
+            policy=policy.to_json())
 
     @api_call
     def remove_service_policy(self, service_id):

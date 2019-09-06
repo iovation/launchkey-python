@@ -358,7 +358,7 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
             response.auth_policy.minimum_requirements,
             ['knowledge']
         )
-        warnings_patch.warn.assert_called_once()
+        warnings_patch.warn.assert_called()
 
     def test_amount_requirement(self):
         self.json_loads_patch.return_value['auth_policy']['requirement'] = 'amount'

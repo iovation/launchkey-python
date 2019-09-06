@@ -1,17 +1,22 @@
 import json
 import unittest
+from datetime import datetime
+from json import dumps
+from uuid import uuid4
 
+from ddt import ddt, data, unpack
+from formencode import Invalid
 from jwkest import JWKESTException
 from mock import MagicMock, ANY, patch
-from uuid import uuid4
-from json import dumps
-from formencode import Invalid
+from six import assertRaisesRegex, assertCountEqual
 
-from launchkey.entities.service import AuthorizationRequest, DenialReason
-from launchkey.transports import JOSETransport
-from launchkey.transports.base import APIResponse
 from launchkey.clients import ServiceClient
 from launchkey.clients.service import AuthorizationResponse, SessionEndRequest, AuthPolicy
+from launchkey.entities.service import AuthorizationRequest, DenialReason, \
+    GeoFence, TimeFence
+from launchkey.entities.service.policy import FactorsPolicy, \
+    ConditionalGeoFencePolicy, GeoCircleFence, TerritoryFence, \
+    MethodAmountPolicy, Factor
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     InvalidPolicyInput, PolicyFailure, \
     EntityNotFound, RateLimited, RequestTimedOut, UnexpectedAPIResponse, \
@@ -21,9 +26,9 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
     WebhookAuthorizationError, AuthorizationRequestCanceled, \
     AuthorizationResponseExists, XiovJWTValidationFailure, \
-    XiovJWTDecryptionFailure
-from datetime import datetime
-from ddt import ddt, data, unpack
+    XiovJWTDecryptionFailure, InvalidFenceType, InvalidPolicyAttributes, UnknownPolicyException
+from launchkey.transports import JOSETransport
+from launchkey.transports.base import APIResponse
 
 
 @ddt
@@ -257,14 +262,6 @@ class TestServiceClient(unittest.TestCase):
         self._transport.delete.assert_called_once_with(
             "/service/v3/auths/auth-request-id", self._issuer
         )
-
-    def test_cancel_authorization_request_invalid_params(self):
-        self._transport.delete.side_effect = LaunchKeyAPIException(
-            {"error_code": "ARG-001", "error_detail": ""}, 400)
-        with self.assertRaises(InvalidParameters):
-            self._service_client.cancel_authorization_request(
-                "auth-request-id"
-            )
 
     def test_cancel_authorization_request_authorization_response_exists(self):
         self._transport.delete.side_effect = LaunchKeyAPIException(
@@ -522,7 +519,7 @@ class TestHandleWebhook(unittest.TestCase):
 
 
 @ddt
-class TestPolicyObject(unittest.TestCase):
+class TestLegacyPolicyObject(unittest.TestCase):
 
     @data(1, True, 0, False)
     def test_knowledge_factor_success(self, value):
@@ -832,3 +829,288 @@ class TestPolicyObject(unittest.TestCase):
             self.assertIn('knowledge', policy.minimum_requirements)
         else:
             self.assertNotIn('knowledge', policy.minimum_requirements)
+
+
+class TestConditionalGeoFencePolicy(unittest.TestCase):
+    DEFAULT_INSIDE_POLICY = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, factors=["KNOWLEDGE"])
+    DEFAULT_OUTSIDE_POLICY = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, factors=["POSSESSION"])
+
+    def test_default_instantiation(self):
+        geofence_policy = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY)
+
+        self.assertIsInstance(geofence_policy, ConditionalGeoFencePolicy)
+        self.assertEqual(0, len(geofence_policy.fences))
+        self.assertEqual(None, geofence_policy.inside.deny_emulator_simulator)
+        self.assertEqual(None, geofence_policy.inside.deny_rooted_jailbroken)
+        self.assertEqual(list(), geofence_policy.inside.fences)
+        self.assertIn(Factor.KNOWLEDGE, geofence_policy.inside.factors)
+        self.assertEqual(None, geofence_policy.outside.deny_emulator_simulator)
+        self.assertEqual(None, geofence_policy.outside.deny_rooted_jailbroken)
+        self.assertEqual(list(), geofence_policy.outside.fences)
+        self.assertIn(Factor.POSSESSION, geofence_policy.outside.factors)
+        self.assertEqual(False, geofence_policy.deny_rooted_jailbroken)
+        self.assertEqual(False, geofence_policy.deny_emulator_simulator)
+
+    def test_set_inside_policy_as_method_policy(self):
+        inside = MethodAmountPolicy(amount=1)
+        geofence_policy = ConditionalGeoFencePolicy(inside=inside, outside=self.DEFAULT_OUTSIDE_POLICY)
+        self.assertEqual(1, geofence_policy.inside.amount)
+
+    def test_setting_deny_rooted_jailbroken(self):
+        geofence_policy = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY,
+                                                    deny_rooted_jailbroken=True, deny_emulator_simulator=False)
+        self.assertEqual(True, geofence_policy.deny_rooted_jailbroken)
+
+    def test_setting_deny_emulator_simulator(self):
+        geofence_policy = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY,
+                                                    deny_rooted_jailbroken=False, deny_emulator_simulator=True)
+        self.assertEqual(True, geofence_policy.deny_emulator_simulator)
+
+    def test_setting_fences(self):
+        fences = [GeoCircleFence(200, 320, 350)]
+        geofence_policy = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY,
+                                                    deny_rooted_jailbroken=False, deny_emulator_simulator=True,
+                                                    fences=fences)
+
+        self.assertEqual(fences, geofence_policy.fences)
+
+        fences = [GeoCircleFence(200, 250, 1000), TerritoryFence("US", "US-CA", "89172")]
+        geofence_policy = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY,
+                                                    deny_rooted_jailbroken=False, deny_emulator_simulator=True,
+                                                    fences=fences)
+
+        assertCountEqual(self, fences, geofence_policy.fences)
+        self.assertEqual(fences, geofence_policy.fences)
+
+    def test_old_fence_raises_exception(self):
+        fences = [GeoFence(200, 100, 200, "OldFence")]
+
+        with assertRaisesRegex(self, InvalidFenceType, "Invalid Fence object. Fence must be one of the following"):
+            ConditionalGeoFencePolicy(
+                self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY, deny_rooted_jailbroken=False,
+                deny_emulator_simulator=True, fences=fences
+            )
+
+    def test_time_fence_throws_exception(self):
+        from datetime import time
+        fences = [TimeFence("TimeFence", time(hour=9), time(hour=17), monday=True)]
+        with assertRaisesRegex(self, InvalidFenceType, "Invalid Fence object. Fence must be one of the following"):
+            ConditionalGeoFencePolicy(
+                self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY, fences=fences
+            )
+
+    def test_nested_conditional_geofence_raises_exception(self):
+        conditional_policy = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY,
+                                                       deny_rooted_jailbroken=False, deny_emulator_simulator=False)
+
+        # Test Inside Policy
+        with assertRaisesRegex(self, UnknownPolicyException, "Inside and Outside policies must be one of the "
+                                                           "following:"):
+            ConditionalGeoFencePolicy(conditional_policy, self.DEFAULT_OUTSIDE_POLICY,
+                                      deny_rooted_jailbroken=False, deny_emulator_simulator=True)
+
+        # Test Outside Policy
+        with assertRaisesRegex(self, UnknownPolicyException, "Inside and Outside policies must be one of the "
+                                                             "following:"):
+            ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, conditional_policy,
+                                      deny_rooted_jailbroken=False, deny_emulator_simulator=True)
+
+    def test_to_json_is_serializable(self):
+        fences = [GeoCircleFence(100, 200, 300)]
+        geofence_policy = ConditionalGeoFencePolicy(
+            self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY, deny_rooted_jailbroken=False,
+            deny_emulator_simulator=True, fences=fences
+        )
+
+        json.loads(geofence_policy.to_json())
+
+    def test_deny_rooted_jailbroken_cannot_be_set_on_inner_policy(self):
+        inside = FactorsPolicy(deny_rooted_jailbroken=True, deny_emulator_simulator=False, factors=["KNOWLEDGE"])
+        outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, factors=["POSSESSION"])
+        # TEST INSIDE
+        with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_rooted_jailbroken is not allowed"):
+            ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
+        # TEST OUTSIDE
+        outside = FactorsPolicy(deny_rooted_jailbroken=True, deny_emulator_simulator=False, factors=["KNOWLEDGE"])
+        with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_rooted_jailbroken is not allowed"):
+            ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
+
+    def test_deny_emulator_simulator_cannot_be_set_on_inner_policy(self):
+        inside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, factors=["KNOWLEDGE"])
+        outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, factors=["POSSESSION"])
+        # TEST INSIDE
+        with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_emulator_simulator is not allowed"):
+            ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
+        # TEST OUTSIDE
+        outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, factors=["KNOWLEDGE"])
+        with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_emulator_simulator is not allowed"):
+            ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
+
+    def test_inside_policy_fences_throws_exception(self):
+        fences = [GeoCircleFence(100,200,300,"TestGeoCircleFence")]
+        inside = FactorsPolicy(
+            deny_rooted_jailbroken=False, deny_emulator_simulator=False, factors=["KNOWLEDGE"], fences=fences
+        )
+        with assertRaisesRegex(self, InvalidPolicyAttributes,
+                                    "Fences are not allowed on Inside or Outside Policy objects"):
+            ConditionalGeoFencePolicy(inside=inside, outside=self.DEFAULT_OUTSIDE_POLICY)
+
+    def test_repr(self):
+        fences = [GeoCircleFence(200, 320, 350)]
+        conditional_geo_fence = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY,
+                                                          fences=fences)
+        expected = "ConditionalGeoFencePolicy <inside=FactorsPolicy " \
+                   "<factors=[<Factor.KNOWLEDGE: 'KNOWLEDGE'>], " \
+                   "deny_rooted_jailbroken=None, deny_emulator_simulator=" \
+                   "None, fences=[]>, outside=FactorsPolicy " \
+                   "<factors=[<Factor.POSSESSION: 'POSSESSION'>], " \
+                   "deny_rooted_jailbroken=None, deny_emulator_simulator=" \
+                   "None, fences=[]>, deny_rooted_jailbroken=False, " \
+                   "deny_emulator_simulator=False, fences=[GeoCircleFence " \
+                   "<latitude=200.0, longitude=320.0, radius=350.0, " \
+                   "name=\"None\">]>"
+        self.assertEqual(repr(conditional_geo_fence), expected)
+
+
+class TestMethodAmountPolicy(unittest.TestCase):
+    def test_default_instantiation(self):
+        method_policy = MethodAmountPolicy()
+
+        self.assertEqual(0, method_policy.amount)
+        self.assertEqual(False, method_policy.deny_rooted_jailbroken)
+        self.assertEqual(False, method_policy.deny_emulator_simulator)
+        self.assertEqual(list(), method_policy.fences)
+        self.assertIsInstance(method_policy, MethodAmountPolicy)
+
+    def test_setting_deny_rooted_jailbroken(self):
+        method_policy = MethodAmountPolicy(deny_rooted_jailbroken=True)
+        self.assertEqual(True, method_policy.deny_rooted_jailbroken)
+
+    def test_setting_deny_emulator_simulator(self):
+        method_policy = MethodAmountPolicy(deny_emulator_simulator=True)
+        self.assertEqual(True, method_policy.deny_emulator_simulator)
+
+    def test_setting_fences(self):
+        fences = [GeoCircleFence(234, 567, 2323, "TestFence")]
+        method_policy = MethodAmountPolicy(fences=fences)
+        self.assertEqual(fences, method_policy.fences)
+
+    def test_setting_old_fence_raises_invalid_fence_type(self):
+        fences = [GeoFence(200, 100, 200, "OldFence")]
+        with self.assertRaises(InvalidFenceType):
+            MethodAmountPolicy(fences=fences)
+
+    def test_to_json_is_serializable(self):
+        fences = [TerritoryFence("US", "US-CA", 90245)]
+        method_policy = MethodAmountPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, amount=2,
+                                           fences=fences)
+        json.loads(method_policy.to_json())
+
+    def test_repr(self):
+        fences = [TerritoryFence("US", "US-CA", 90245)]
+        method_policy = MethodAmountPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, amount=2,
+                                           fences=fences)
+        expected = "MethodAmountPolicy <amount=2, " \
+                   "deny_rooted_jailbroken=False, " \
+                   "deny_emulator_simulator=True, " \
+                   "fences=[TerritoryFence <country=\"US\", " \
+                   "administrative_area=\"US-CA\", postal_code=\"90245\", " \
+                   "name=\"None\">]>"
+        self.assertEqual(repr(method_policy), expected)
+
+
+class TestFactorsPolicy(unittest.TestCase):
+    def test_default_instantiation(self):
+        factor_policy = FactorsPolicy()
+        self.assertEqual(0, len(factor_policy.fences))
+        self.assertEqual(False, factor_policy.deny_emulator_simulator)
+        self.assertEqual(False, factor_policy.deny_rooted_jailbroken)
+        self.assertEqual([], factor_policy.factors)
+        self.assertIsInstance(factor_policy, FactorsPolicy)
+
+    def test_setting_deny_rooted_jailbroken(self):
+        factor_policy = FactorsPolicy(deny_rooted_jailbroken=True)
+        self.assertEqual(True, factor_policy.deny_rooted_jailbroken)
+
+    def test_setting_deny_emulator_simulator(self):
+        factor_policy = FactorsPolicy(deny_emulator_simulator=True)
+        self.assertEqual(True, factor_policy.deny_emulator_simulator)
+
+    def test_setting_factors(self):
+        factor_policy = FactorsPolicy(factors=["KNOWLEDGE", "INHERENCE", "POSSESSION"])
+        self.assertEqual(3, len(factor_policy.factors))
+        self.assertIn(Factor.KNOWLEDGE, factor_policy.factors)
+        self.assertIn(Factor.INHERENCE, factor_policy.factors)
+        self.assertIn(Factor.POSSESSION, factor_policy.factors)
+
+    def test_setting_fences(self):
+        fences = [GeoCircleFence(234, 567, 2323, "TestFence")]
+        factor_policy = FactorsPolicy(fences=fences)
+        self.assertEqual(fences, factor_policy.fences)
+
+    def test_setting_old_fences_raises_invalid_fence_type(self):
+        fences = [GeoFence(200, 100, 200, "OldFence")]
+        with self.assertRaises(InvalidFenceType):
+            FactorsPolicy(fences=fences)
+
+    def test_to_json_is_serializable(self):
+        factor_policy = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, factors=["KNOWLEDGE"])
+        json.loads(factor_policy.to_json())
+
+    def test_repr(self):
+        fences = [GeoCircleFence(100, 200, 300, "TestFence")]
+        factor_policy = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, factors=["KNOWLEDGE"],
+                                      fences=fences)
+        expected = "FactorsPolicy <factors=[<Factor.KNOWLEDGE: 'KNOWLEDGE'>]" \
+                   ", deny_rooted_jailbroken=False, deny_emulator_simulator=" \
+                   "True, fences=[GeoCircleFence <latitude=100.0, " \
+                   "longitude=200.0, radius=300.0, name=\"TestFence\">]>"
+        self.assertEqual(repr(factor_policy), expected)
+
+
+class TestGeoCircleFence(unittest.TestCase):
+    def test_default_instantiation(self):
+        geo_circle_fence = GeoCircleFence(100, 200, 300)
+        self.assertEqual(100, geo_circle_fence.latitude)
+        self.assertEqual(200, geo_circle_fence.longitude)
+        self.assertEqual(300, geo_circle_fence.radius)
+        self.assertIsInstance(geo_circle_fence, GeoCircleFence)
+        self.assertIsNone(geo_circle_fence.name)
+
+    def test_name_can_be_set(self):
+        geo_circle_fence = GeoCircleFence(100, 200, 300, "TestCircle")
+        self.assertEqual("TestCircle", geo_circle_fence.name)
+
+    def test_is_serializable(self):
+        geo_circle_fence = GeoCircleFence(100, 200, 300, "TestCircle")
+        json.dumps(dict(geo_circle_fence))
+
+    def test_repr(self):
+        geo_circle_fence = GeoCircleFence(100, 200, 300, "TestCircle")
+        expected = "GeoCircleFence <latitude=100.0, longitude=200.0, " \
+                   "radius=300.0, name=\"TestCircle\">"
+        self.assertEqual(repr(geo_circle_fence), expected)
+
+
+class TestTerritoryFence(unittest.TestCase):
+    def test_default_instantiation(self):
+        territory_fence = TerritoryFence("US", "US-CA", 90145)
+        self.assertEqual("US", territory_fence.country)
+        self.assertEqual("US-CA", territory_fence.administrative_area)
+        self.assertEqual("90145", territory_fence.postal_code)
+        self.assertIsInstance(territory_fence, TerritoryFence)
+        self.assertIsNone(territory_fence.name)
+
+    def test_name_can_be_set(self):
+        territory_fence = TerritoryFence("US", "US-CA", 90145, "TestTerritory")
+        self.assertEqual("TestTerritory", territory_fence.name)
+
+    def test_is_serializable(self):
+        territory_fence = TerritoryFence("US", "US-CA", 90145, "TestTerritory")
+        json.dumps(dict(territory_fence))
+
+    def test_repr(self):
+        territory_fence = TerritoryFence("US", "US-CA", 90145, "TestTerritory")
+        expected = "TerritoryFence <country=\"US\", administrative_area=" \
+                   "\"US-CA\", postal_code=\"90145\", name=\"TestTerritory\">"
+        self.assertEqual(repr(territory_fence), expected)
