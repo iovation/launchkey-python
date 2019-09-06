@@ -140,3 +140,145 @@ Feature: Organization Client can set Organization Service Policy
       | Name           | Latitude | Longitude | Radius |
       | Location Alpha | 12.3     | 23.4      | 500    |
       | Location Beta  | 32.1     | 43.2      | 1000   |
+
+  Scenario Outline: Setting Amount on a Method Amount policy works as expected
+    When I create a new Method Amount Policy
+    And I set the amount to "<amount>"
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the amount should be set to "<amount>"
+  Examples:
+  | amount |
+  | 0      |
+  | 1      |
+  | 2      |
+  | 3      |
+  | 4      |
+  | 5      |
+
+  Scenario: Setting Fences on a Method Amount Policy works as expected
+    When I create a new Method Amount Policy
+    And I add the following geo_circle fences:
+    | latitude | longitude | radius | name        |
+    | 300.0    | 500.0     | 15200  | Large Fence |
+    | 325.0    | 555.0     | 100    | Small Fence |
+    And I add the following territory fences:
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the Organization Service Policy has "4" fences
+
+  Scenario Outline: Setting Factors on a Factors Policy works as expected
+    When I create a new Factors Policy
+    And I set the factors to <factors>
+    And I set the Policy for the Current Organization Service
+    When I retrieve the Policy for the Current Organization Service
+    Then factors should be set to <factors>
+  Examples:
+  | factors                          |
+  | Knowledge                        |
+  | Inherence                        |
+  | Possession                       |
+  | Knowledge, Inherence             |
+  | Knowledge, Possession            |
+  | Inherence, Possession            |
+  | Knowledge, Inherence, Possession |
+
+  Scenario: Setting Fences on a Factors Policy works as expected
+    When I create a new Factors Policy
+    And I add the following geo_circle fences:
+    | latitude | longitude | radius | name        |
+    | 300.0    | 500.0     | 15200  | Large Fence |
+    | 325.0    | 555.0     | 100    | Small Fence |
+    And I add the following territory fences:
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the Organization Service Policy has "4" fences
+
+  Scenario: Setting Inside Policy to Factors Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set the inside Policy to the newly created Policy
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the inside Policy should be a FactorsPolicy
+
+  Scenario: Setting Inside Policy to Methods Amount Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I create a new Method Amount Policy
+    And I set the amount to "2"
+    And I set the inside Policy to the newly created Policy
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the inside Policy should be a MethodAmountPolicy
+
+  Scenario: Setting Outside Policy to Factors Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set the outside Policy to the newly created Policy
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the outside Policy should be a FactorsPolicy
+
+  Scenario: Setting Outside Policy to Methods Amount Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I create a new Method Amount Policy
+    And I set the amount to "2"
+    And I set the outside Policy to the newly created Policy
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the outside Policy should be a MethodAmountPolicy
+
+  Scenario: Setting Fences on a Conditional Geofence Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I add the following GeoCircleFence items:
+    | latitude | longitude | radius | name        |
+    | 300.0    | 500.0     | 15200  | Large Fence |
+    | 325.0    | 555.0     | 100    | Small Fence |
+    And I add the following TerritoryFence items:
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the Organization Service Policy has "4" fences
+
+  Scenario Outline: Setting device integrity checks on inside nested conditions are invalid
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set <field> to <value>
+    And I create a new Conditional Geofence Policy with the inside policy set to the new policy
+    Then an InvalidPolicyAttributes error occurs
+  Examples:
+  | field                   | value |
+  | deny_rooted_jailbroken  | True  |
+  | deny_emulator_simulator | True  |
+
+  Scenario Outline: Setting device integrity checks on outside nested conditions are invalid
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set <field> to <value>
+    And I create a new Conditional Geofence Policy with the outside policy set to the new policy
+    Then an InvalidPolicyAttributes error occurs
+  Examples:
+  | field                   | value |
+  | deny_rooted_jailbroken  | True  |
+  | deny_emulator_simulator | True  |
+
+  Scenario: Stacked Conditional Geofences are not allowed
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I create a new Method Amount Policy
+    And I set the amount to "2"
+    And I set the outside Policy to the newly created Policy
+    And I create a new Method Amount Policy
+    And I set the amount to "1"
+    And I set the inside Policy to the newly created Policy
+    And I set the Policy for the Current Organization Service
+    Then an UnknownPolicyException error occurs

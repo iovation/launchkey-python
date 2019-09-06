@@ -252,11 +252,35 @@ Feature: Directory Client can set Directory Service Policy
     And I retrieve the Policy for the Current Directory Service
     Then the Directory Service Policy has "4" fences
 
-  Scenario: Setting device integrity checks on nested conditions is invalid
+  Scenario Outline: Setting device integrity checks on inside nested conditions are invalid
     When I create a new Factors Policy
     And I set the factors to "Knowledge"
-    And I set
-    And I set the inside Policy to the newly created Policy
+    And I set <field> to <value>
+    And I create a new Conditional Geofence Policy with the inside policy set to the new policy
+    Then an InvalidPolicyAttributes error occurs
+  Examples:
+  | field                   | value |
+  | deny_rooted_jailbroken  | True  |
+  | deny_emulator_simulator | True  |
 
-  # Inside and outside cannot put device integrity checks, stacking conditional geofences doesnt work
-  # Permutations on inside / outside
+  Scenario Outline: Setting device integrity checks on outside nested conditions are invalid
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set <field> to <value>
+    And I create a new Conditional Geofence Policy with the outside policy set to the new policy
+    Then an InvalidPolicyAttributes error occurs
+  Examples:
+  | field                   | value |
+  | deny_rooted_jailbroken  | True  |
+  | deny_emulator_simulator | True  |
+
+  Scenario: Stacked Conditional Geofences are not allowed
+    Given the Directory Service is set to any Conditional Geofence Policy
+    When I create a new Method Amount Policy
+    And I set the amount to "2"
+    And I set the outside Policy to the newly created Policy
+    And I create a new Method Amount Policy
+    And I set the amount to "1"
+    And I set the inside Policy to the newly created Policy
+    And I set the Policy for the Current Directory Service
+    Then an UnknownPolicyException error occurs

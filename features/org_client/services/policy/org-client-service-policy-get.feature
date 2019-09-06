@@ -63,3 +63,145 @@ Feature: Organization Client can retrieve Organization Service Policy
   Scenario: Getting the policy for invalid Service throws Forbidden
     When I attempt to retrieve the Policy for the Organization Service with the ID "eba60cb8-c649-11e7-abc4-cec278b6b50a"
     Then a ServiceNotFound error occurs
+
+  Scenario: Setting Fences on a Method Amount Policy works as expected
+    When I create a new Method Amount Policy
+    And I add the following geo_circle fences:
+    | latitude | longitude | radius | name        |
+    | 300.0    | 500.0     | 15200  | Large Fence |
+    | 325.0    | 555.0     | 100    | Small Fence |
+    And I add the following territory fences:
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the Organization Service Policy has "4" fences
+    And the Organization Service Policy contains the fence "Large Fence"
+    And that fence has a latitude of "300.0"
+    And that fence has a longitude of "500.0"
+    And that fence has a radius of "15200"
+    And the Organization Service Policy contains the fence "Small Fence"
+    And that fence has a latitude of "325.0"
+    And that fence has a longitude of "555.0"
+    And that fence has a radius of "100"
+    And the Organization Service Policy contains the fence "US-NV"
+    And that fence has a country of "US"
+    And that fence has an administrative_area of "US-NV"
+    And that fence has a postal_code of "89120"
+    And the Organization Service Policy contains the fence "US-CA"
+    And that fence has a country of "US"
+    And that fence has an administrative_area of "US-CA"
+    And that fence has a postal_code of "90001"
+
+  Scenario: Setting Fences on a Factors Policy works as expected
+    When I create a new Factors Policy
+    And I add the following geo_circle fences:
+    | latitude | longitude | radius | name        |
+    | 300.0    | 500.0     | 15200  | Large Fence |
+    | 325.0    | 555.0     | 100    | Small Fence |
+    And I add the following territory fences:
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the Organization Service Policy has "4" fences
+    And the Organization Service Policy contains the fence "Large Fence"
+    And that fence has a latitude of "300.0"
+    And that fence has a longitude of "500.0"
+    And that fence has a radius of "15200"
+    And the Organization Service Policy contains the fence "Small Fence"
+    And that fence has a latitude of "325.0"
+    And that fence has a longitude of "555.0"
+    And that fence has a radius of "100"
+    And the Organization Service Policy contains the fence "US-NV"
+    And that fence has a country of "US"
+    And that fence has an administrative_area of "US-NV"
+    And that fence has a postal_code of "89120"
+    And the Organization Service Policy contains the fence "US-CA"
+    And that fence has a country of "US"
+    And that fence has an administrative_area of "US-CA"
+    And that fence has a postal_code of "90001"
+
+  Scenario: Setting Inside Policy to Factors Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set the inside Policy to the newly created Policy
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the inside Policy should be a FactorsPolicy
+    And factors should be set to "Knowledge"
+    And deny_rooted_jailbroken should be set to "False"
+    And deny_emulator_simulator should be set to "False"
+    And fences should be empty
+
+  Scenario: Setting Inside Policy to Methods Amount Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I create a new Method Amount Policy
+    And I set the amount to "2"
+    And I set the inside Policy to the newly created Policy
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the inside Policy should be a MethodAmountPolicy
+    And amount should be set to "2"
+    And deny_rooted_jailbroken should be set to "False"
+    And deny_emulator_simulator should be set to "False"
+    And fences should be empty
+
+  Scenario: Setting Outside Policy to Factors Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set the outside Policy to the newly created Policy
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the outside Policy should be a FactorsPolicy
+    And factors should be set to "Knowledge"
+    And deny_rooted_jailbroken should be set to "False"
+    And deny_emulator_simulator should be set to "False"
+    And fences should be empty
+
+  Scenario: Setting Outside Policy to Methods Amount Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I create a new Method Amount Policy
+    And I set the amount to "2"
+    And I set the outside Policy to the newly created Policy
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the outside Policy should be a MethodAmountPolicy
+    And amount should be set to "2"
+    And deny_rooted_jailbroken should be set to "False"
+    And deny_emulator_simulator should be set to "False"
+    And fences should be empty
+
+  Scenario: Setting Fences on a Conditional Geofence Policy works as expected
+    Given the Organization Service is set to any Conditional Geofence Policy
+    When I add the following GeoCircleFence items:
+    | latitude | longitude | radius | name        |
+    | 300.0    | 500.0     | 15200  | Large Fence |
+    | 325.0    | 555.0     | 100    | Small Fence |
+    And I add the following TerritoryFence items:
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
+    And I set the Policy for the Current Organization Service
+    And I retrieve the Policy for the Current Organization Service
+    Then the Organization Service Policy has "4" fences
+    And the Organization Service Policy contains the fence "Large Fence"
+    And that fence has a latitude of "300.0"
+    And that fence has a longitude of "500.0"
+    And that fence has a radius of "15200"
+    And the Organization Service Policy contains the fence "Small Fence"
+    And that fence has a latitude of "325.0"
+    And that fence has a longitude of "555.0"
+    And that fence has a radius of "100"
+    And the Organization Service Policy contains the fence "US-NV"
+    And that fence has a country of "US"
+    And that fence has an administrative_area of "US-NV"
+    And that fence has a postal_code of "89120"
+    And the Organization Service Policy contains the fence "US-CA"
+    And that fence has a country of "US"
+    And that fence has an administrative_area of "US-CA"
+    And that fence has a postal_code of "90001"
