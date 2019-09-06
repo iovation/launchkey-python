@@ -22,6 +22,7 @@ setup(name='launchkey',
       version=SDK_VERSION,
       description='LaunchKey Python SDK',
       long_description=README + '\n\n' + CHANGES + '\n',
+      long_description_content_type="text/x-rst",
       classifiers=[
           "Programming Language :: Python",
           "License :: OSI Approved :: MIT License",

@@ -256,9 +256,10 @@ Contributing
 3. Conform to the following standards:
     * PEP-8
     * Relative imports for same level or submodules
-3. Verify your code passes unit tests (`python setup.py test`)
-4. Verify your code passes tests, linting, and PEP-8 on all supported python
+
+4. Verify your code passes unit tests (`python setup.py test`)
+5. Verify your code passes tests, linting, and PEP-8 on all supported python
     versions (`tox`)
-5. Commit your changes (`git commit -am 'Add some feature'`)
-6. Push to the branch (`git push origin my-new-feature`)
-7. Create new Pull Request
+6. Commit your changes (`git commit -am 'Add some feature'`)
+7. Push to the branch (`git push origin my-new-feature`)
+8. Create new Pull Request
