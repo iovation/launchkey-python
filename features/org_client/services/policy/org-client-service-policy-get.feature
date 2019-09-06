@@ -69,7 +69,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     And I add the following geo_circle fences:
     | latitude | longitude | radius | name        |
     | 300.0    | 500.0     | 15200  | Large Fence |
-    | 325.0    | 555.0     | 100    | Small Fence |
+    | -50      | -140      | 100    | Small Fence |
     And I add the following territory fences:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
@@ -82,8 +82,8 @@ Feature: Organization Client can retrieve Organization Service Policy
     And that fence has a longitude of "500.0"
     And that fence has a radius of "15200"
     And the Organization Service Policy contains the fence "Small Fence"
-    And that fence has a latitude of "325.0"
-    And that fence has a longitude of "555.0"
+    And that fence has a latitude of "-50"
+    And that fence has a longitude of "-140"
     And that fence has a radius of "100"
     And the Organization Service Policy contains the fence "US-NV"
     And that fence has a country of "US"
@@ -99,7 +99,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     And I add the following geo_circle fences:
     | latitude | longitude | radius | name        |
     | 300.0    | 500.0     | 15200  | Large Fence |
-    | 325.0    | 555.0     | 100    | Small Fence |
+    | -50      | -140      | 100    | Small Fence |
     And I add the following territory fences:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
@@ -112,8 +112,8 @@ Feature: Organization Client can retrieve Organization Service Policy
     And that fence has a longitude of "500.0"
     And that fence has a radius of "15200"
     And the Organization Service Policy contains the fence "Small Fence"
-    And that fence has a latitude of "325.0"
-    And that fence has a longitude of "555.0"
+    And that fence has a latitude of "-50"
+    And that fence has a longitude of "-140"
     And that fence has a radius of "100"
     And the Organization Service Policy contains the fence "US-NV"
     And that fence has a country of "US"
@@ -181,7 +181,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     When I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
     | 300.0    | 500.0     | 15200  | Large Fence |
-    | 325.0    | 555.0     | 100    | Small Fence |
+    | -50      | -140      | 100    | Small Fence |
     And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
@@ -194,8 +194,8 @@ Feature: Organization Client can retrieve Organization Service Policy
     And that fence has a longitude of "500.0"
     And that fence has a radius of "15200"
     And the Organization Service Policy contains the fence "Small Fence"
-    And that fence has a latitude of "325.0"
-    And that fence has a longitude of "555.0"
+    And that fence has a latitude of "-50"
+    And that fence has a longitude of "-140"
     And that fence has a radius of "100"
     And the Organization Service Policy contains the fence "US-NV"
     And that fence has a country of "US"

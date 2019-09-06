@@ -163,7 +163,7 @@ Feature: Directory Client can set Directory Service Policy
     And I add the following geo_circle fences:
     | latitude | longitude | radius | name        |
     | 300.0    | 500.0     | 15200  | Large Fence |
-    | 325.0    | 555.0     | 100    | Small Fence |
+    | -50      | -140      | 100    | Small Fence |
     And I add the following territory fences:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
@@ -193,7 +193,7 @@ Feature: Directory Client can set Directory Service Policy
     And I add the following geo_circle fences:
     | latitude | longitude | radius | name        |
     | 300.0    | 500.0     | 15200  | Large Fence |
-    | 325.0    | 555.0     | 100    | Small Fence |
+    | -50      | -140      | 100    | Small Fence |
     And I add the following territory fences:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
@@ -243,7 +243,7 @@ Feature: Directory Client can set Directory Service Policy
     When I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
     | 300.0    | 500.0     | 15200  | Large Fence |
-    | 325.0    | 555.0     | 100    | Small Fence |
+    | -50      | -140      | 100    | Small Fence |
     And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
