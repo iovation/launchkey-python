@@ -7,7 +7,7 @@ Feature: SDK Policy Object Creation Limitations
     When I create a new Factors Policy
     And I set the factors to "Knowledge"
     And I set the Policy <field> to <value>
-    And I create a new Conditional Geofence Policy with the inside policy set to the new policy
+    And I attempt to create a new Conditional Geofence Policy with the inside policy set to the new policy
     Then an InvalidPolicyAttributes error occurs
   Examples:
   | field                   | value |
@@ -18,7 +18,7 @@ Feature: SDK Policy Object Creation Limitations
     When I create a new Factors Policy
     And I set the factors to "Knowledge"
     And I set the Policy <field> to <value>
-    And I create a new Conditional Geofence Policy with the outside policy set to the new policy
+    And I attempt to create a new Conditional Geofence Policy with the outside policy set to the new policy
     Then an InvalidPolicyAttributes error occurs
   Examples:
   | field                   | value |
@@ -29,7 +29,7 @@ Feature: SDK Policy Object Creation Limitations
     When I create a new MethodAmountPolicy
     And I set the amount to "2"
     And I set the Policy <field> to <value>
-    And I create a new Conditional Geofence Policy with the inside policy set to the new policy
+    And I attempt to create a new Conditional Geofence Policy with the inside policy set to the new policy
     Then an InvalidPolicyAttributes error occurs
   Examples:
   | field                   | value |
@@ -40,7 +40,7 @@ Feature: SDK Policy Object Creation Limitations
     When I create a new MethodAmountPolicy
     And I set the amount to "2"
     And I set the Policy <field> to <value>
-    And I create a new Conditional Geofence Policy with the outside policy set to the new policy
+    And I attempt to create a new Conditional Geofence Policy with the outside policy set to the new policy
     Then an InvalidPolicyAttributes error occurs
   Examples:
   | field                   | value |
