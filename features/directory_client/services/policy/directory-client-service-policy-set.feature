@@ -172,6 +172,38 @@ Feature: Directory Client can set Directory Service Policy
     And I retrieve the Policy for the Current Directory Service
     Then the Directory Service Policy has "4" fences
 
+  Scenario: Setting deny_rooted_jailbroken works as expected on a Factors Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set deny_rooted_jailbroken to "True"
+    And I set the Policy for the Current Directory Service
+    And I retrieve the Policy for the Current Directory Service
+    Then deny_rooted_jailbroken should be set to "True"
+    
+  Scenario: Setting deny_rooted_jailbroken works as expected on a Method Amount Policy
+    When I create a new MethodAmountPolicy
+    And I set the amount to "2"
+    And I set deny_rooted_jailbroken to "True"
+    And I set the Policy for the Current Directory Service
+    And I retrieve the Policy for the Current Directory Service
+    Then deny_rooted_jailbroken should be set to "True"
+    
+  Scenario: Setting deny_emulator_simulator works as expected on a Factors Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set deny_emulator_simulator to "True"
+    And I set the Policy for the Current Directory Service
+    And I retrieve the Policy for the Current Directory Service
+    Then deny_emulator_simulator should be set to "True"
+
+  Scenario: Setting deny_emulator_simulator works as expected on a Method Amount Policy
+    When I create a new MethodAmountPolicy
+    And I set the amount to "2"
+    And I set deny_emulator_simulator to "True"
+    And I set the Policy for the Current Directory Service
+    And I retrieve the Policy for the Current Directory Service
+    Then deny_emulator_simulator should be set to "True"
+    
   Scenario Outline: Setting Factors on a Factors Policy works as expected
     When I create a new Factors Policy
     And I set the factors to <factors>
@@ -204,36 +236,32 @@ Feature: Directory Client can set Directory Service Policy
 
   Scenario: Setting Inside Policy to Factors Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I create a new Factors Policy
-    And I set the factors to "Knowledge"
-    And I set the inside Policy to the newly created Policy
+    When I set the inside Policy to a new Factors Policy
+    And I set the inside Policy factors to "Knowledge"
     And I set the Policy for the Current Directory Service
     And I retrieve the Policy for the Current Directory Service
     Then the inside Policy should be a FactorsPolicy
 
   Scenario: Setting Inside Policy to Methods Amount Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I create a new Method Amount Policy
-    And I set the amount to "2"
-    And I set the inside Policy to the newly created Policy
+    When I set the inside Policy to a new Method Amount Policy
+    And I set the inside Policy amount to "2"
     And I set the Policy for the Current Directory Service
     And I retrieve the Policy for the Current Directory Service
     Then the inside Policy should be a MethodAmountPolicy
 
   Scenario: Setting Outside Policy to Factors Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I create a new Factors Policy
-    And I set the factors to "Knowledge"
-    And I set the outside Policy to the newly created Policy
+    When I set the outside Policy to a new Factors Policy
+    And I set the outside Policy factors to "Knowledge"
     And I set the Policy for the Current Directory Service
     And I retrieve the Policy for the Current Directory Service
     Then the outside Policy should be a FactorsPolicy
 
   Scenario: Setting Outside Policy to Methods Amount Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I create a new Method Amount Policy
-    And I set the amount to "2"
-    And I set the outside Policy to the newly created Policy
+    When I set the outside Policy to a new Method Amount Policy
+    And I set the outside Policy amount to "2"
     And I set the Policy for the Current Directory Service
     And I retrieve the Policy for the Current Directory Service
     Then the outside Policy should be a MethodAmountPolicy
@@ -251,36 +279,3 @@ Feature: Directory Client can set Directory Service Policy
     And I set the Policy for the Current Directory Service
     And I retrieve the Policy for the Current Directory Service
     Then the Directory Service Policy has "4" fences
-
-  Scenario Outline: Setting device integrity checks on inside nested conditions are invalid
-    When I create a new Factors Policy
-    And I set the factors to "Knowledge"
-    And I set <field> to <value>
-    And I create a new Conditional Geofence Policy with the inside policy set to the new policy
-    Then an InvalidPolicyAttributes error occurs
-  Examples:
-  | field                   | value |
-  | deny_rooted_jailbroken  | True  |
-  | deny_emulator_simulator | True  |
-
-  Scenario Outline: Setting device integrity checks on outside nested conditions are invalid
-    When I create a new Factors Policy
-    And I set the factors to "Knowledge"
-    And I set <field> to <value>
-    And I create a new Conditional Geofence Policy with the outside policy set to the new policy
-    Then an InvalidPolicyAttributes error occurs
-  Examples:
-  | field                   | value |
-  | deny_rooted_jailbroken  | True  |
-  | deny_emulator_simulator | True  |
-
-  Scenario: Stacked Conditional Geofences are not allowed
-    Given the Directory Service is set to any Conditional Geofence Policy
-    When I create a new Method Amount Policy
-    And I set the amount to "2"
-    And I set the outside Policy to the newly created Policy
-    And I create a new Method Amount Policy
-    And I set the amount to "1"
-    And I set the inside Policy to the newly created Policy
-    And I set the Policy for the Current Directory Service
-    Then an UnknownPolicyException error occurs

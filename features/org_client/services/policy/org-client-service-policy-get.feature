@@ -66,11 +66,11 @@ Feature: Organization Client can retrieve Organization Service Policy
 
   Scenario: Setting Fences on a Method Amount Policy works as expected
     When I create a new Method Amount Policy
-    And I add the following geo_circle fences:
+    And I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
     | 300.0    | 500.0     | 15200  | Large Fence |
     | -50      | -140      | 100    | Small Fence |
-    And I add the following territory fences:
+    And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
@@ -96,11 +96,11 @@ Feature: Organization Client can retrieve Organization Service Policy
 
   Scenario: Setting Fences on a Factors Policy works as expected
     When I create a new Factors Policy
-    And I add the following geo_circle fences:
+    And I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
     | 300.0    | 500.0     | 15200  | Large Fence |
     | -50      | -140      | 100    | Small Fence |
-    And I add the following territory fences:
+    And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
@@ -126,9 +126,8 @@ Feature: Organization Client can retrieve Organization Service Policy
 
   Scenario: Setting Inside Policy to Factors Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I create a new Factors Policy
-    And I set the factors to "Knowledge"
-    And I set the inside Policy to the newly created Policy
+    When I set the inside Policy to a Factors Policy
+    And I set the inside Policy factors to "Knowledge"
     And I set the Policy for the Current Organization Service
     And I retrieve the Policy for the Current Organization Service
     Then the inside Policy should be a FactorsPolicy
@@ -139,9 +138,8 @@ Feature: Organization Client can retrieve Organization Service Policy
 
   Scenario: Setting Inside Policy to Methods Amount Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I create a new Method Amount Policy
-    And I set the amount to "2"
-    And I set the inside Policy to the newly created Policy
+    When I set the inside Policy to a Method Amount Policy
+    And I set the inside Policy amount to "2"
     And I set the Policy for the Current Organization Service
     And I retrieve the Policy for the Current Organization Service
     Then the inside Policy should be a MethodAmountPolicy
@@ -152,9 +150,8 @@ Feature: Organization Client can retrieve Organization Service Policy
 
   Scenario: Setting Outside Policy to Factors Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I create a new Factors Policy
-    And I set the factors to "Knowledge"
-    And I set the outside Policy to the newly created Policy
+    When I set the outside Policy to a Factors Policy
+    And I set the outside Policy factors to "Knowledge"
     And I set the Policy for the Current Organization Service
     And I retrieve the Policy for the Current Organization Service
     Then the outside Policy should be a FactorsPolicy
@@ -165,9 +162,8 @@ Feature: Organization Client can retrieve Organization Service Policy
 
   Scenario: Setting Outside Policy to Methods Amount Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I create a new Method Amount Policy
-    And I set the amount to "2"
-    And I set the outside Policy to the newly created Policy
+    When I set the outside Policy to a Method Amount Policy
+    And I set the outside Policy amount to "2"
     And I set the Policy for the Current Organization Service
     And I retrieve the Policy for the Current Organization Service
     Then the outside Policy should be a MethodAmountPolicy

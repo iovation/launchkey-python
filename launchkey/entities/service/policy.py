@@ -80,8 +80,8 @@ class ConditionalGeoFencePolicy(Policy):
                 "Outside Policy objects"
             )
 
-        self.inside = self.__create_inner_policies(inside)
-        self.outside = self.__create_inner_policies(outside)
+        self.inside = self.__create_nested_policies(inside)
+        self.outside = self.__create_nested_policies(outside)
 
     def to_dict(self):
         """
@@ -114,7 +114,7 @@ class ConditionalGeoFencePolicy(Policy):
 
     # noinspection PyTypeChecker
     @staticmethod
-    def __create_inner_policies(policy):
+    def __create_nested_policies(policy):
         if isinstance(policy, MethodAmountPolicy):
             policy = MethodAmountPolicy(
                 amount=policy.amount, fences=None,
@@ -128,7 +128,7 @@ class ConditionalGeoFencePolicy(Policy):
         else:
             raise InvalidPolicyAttributes(
                 "Inside and Outside policies must be one of the following: ["
-                "\"FACTORS\", \"METHOD_AMOUNT\"]"
+                "\"FactorsPolicy\", \"MethodAmountPolicy\"]"
             )
 
         return policy

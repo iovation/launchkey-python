@@ -468,21 +468,21 @@ class ServiceManagingBaseClient(BaseClient):
         if policy["type"] == "METHOD_AMOUNT":
             new_policy = MethodAmountPolicy(
                 amount=policy["amount"],
-                deny_rooted_jailbroken=None,
-                deny_emulator_simulator=None,
+                deny_rooted_jailbroken=policy["deny_rooted_jailbroken"],
+                deny_emulator_simulator=policy["deny_emulator_simulator"],
                 fences=policy["fences"]
             )
         elif policy["type"] == "FACTORS":
             new_policy = FactorsPolicy(
                 factors=policy["factors"],
-                deny_rooted_jailbroken=None,
-                deny_emulator_simulator=None,
+                deny_rooted_jailbroken=policy["deny_rooted_jailbroken"],
+                deny_emulator_simulator=policy["deny_emulator_simulator"],
                 fences=policy["fences"]
             )
         else:
             raise UnknownPolicyException(
                 "Valid nested Policy types for ConditionalGeofence Policies "
-                "are: [\"METHOD_AMOUNT\", \"FACTORS\"]"
+                "are: [\"MethodAmountPolicy\", \"FactorsPolicy\"]"
             )
         return new_policy
 
