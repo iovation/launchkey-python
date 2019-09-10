@@ -48,6 +48,6 @@ Feature: SDK Policy Object Creation Limitations
   | deny_emulator_simulator | True  |
 
   Scenario: Stacked Conditional Geofences are not allowed
-    Given the Organization Service is set to any Conditional Geofence Policy
+    Given I have any Conditional Geofence Policy
     When I attempt to set the inside policy to any Conditional Geofence Policy
     Then an InvalidPolicyAttributes error occurs
