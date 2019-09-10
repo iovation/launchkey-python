@@ -68,8 +68,8 @@ Feature: Organization Client can retrieve Organization Service Policy
     When I create a new Method Amount Policy
     And I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
-    | 300.0    | 500.0     | 15200  | Large Fence |
-    | -50      | -140      | 100    | Small Fence |
+    | 45.1250  | 150.51    | 15200  | Large Fence |
+    | -50.0111 | -140      | 100    | Small Fence |
     And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
@@ -98,8 +98,8 @@ Feature: Organization Client can retrieve Organization Service Policy
     When I create a new Factors Policy
     And I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
-    | 300.0    | 500.0     | 15200  | Large Fence |
-    | -50      | -140      | 100    | Small Fence |
+    | 45.1250  | 150.51    | 15200  | Large Fence |
+    | -50.0111 | -140      | 100    | Small Fence |
     And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
@@ -176,8 +176,8 @@ Feature: Organization Client can retrieve Organization Service Policy
     Given the Organization Service is set to any Conditional Geofence Policy
     When I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
-    | 300.0    | 500.0     | 15200  | Large Fence |
-    | -50      | -140      | 100    | Small Fence |
+    | 45.1250  | 150.51    | 15200  | Large Fence |
+    | -50.0111 | -140      | 100    | Small Fence |
     And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |

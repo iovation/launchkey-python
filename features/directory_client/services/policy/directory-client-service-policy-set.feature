@@ -160,11 +160,11 @@ Feature: Directory Client can set Directory Service Policy
 
   Scenario: Setting Fences on a Method Amount Policy works as expected
     When I create a new Method Amount Policy
-    And I add the following geo_circle fences:
+    And I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
-    | 300.0    | 500.0     | 15200  | Large Fence |
-    | -50      | -140      | 100    | Small Fence |
-    And I add the following territory fences:
+    | 45.1250  | 150.51    | 15200  | Large Fence |
+    | -50.0111 | -140      | 100    | Small Fence |
+    And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
@@ -222,11 +222,11 @@ Feature: Directory Client can set Directory Service Policy
 
   Scenario: Setting Fences on a Factors Policy works as expected
     When I create a new Factors Policy
-    And I add the following geo_circle fences:
+    And I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
-    | 300.0    | 500.0     | 15200  | Large Fence |
-    | -50      | -140      | 100    | Small Fence |
-    And I add the following territory fences:
+    | 45.1250  | 150.51    | 15200  | Large Fence |
+    | -50.0111 | -140      | 100    | Small Fence |
+    And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
@@ -270,8 +270,8 @@ Feature: Directory Client can set Directory Service Policy
     Given the Directory Service is set to any Conditional Geofence Policy
     When I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
-    | 300.0    | 500.0     | 15200  | Large Fence |
-    | -50      | -140      | 100    | Small Fence |
+    | 45.1250  | 150.51    | 15200  | Large Fence |
+    | -50.0111 | -140      | 100    | Small Fence |
     And I add the following TerritoryFence items:
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
