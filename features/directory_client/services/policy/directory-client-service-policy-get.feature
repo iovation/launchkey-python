@@ -65,7 +65,7 @@ Feature: Directory Client can retrieve Directory Service Policy
     Then a ServiceNotFound error occurs
 
   Scenario: Setting Fences on a Method Amount Policy works as expected
-    When I create a new Method Amount Policy
+    When I create a new MethodAmountPolicy
     And I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |

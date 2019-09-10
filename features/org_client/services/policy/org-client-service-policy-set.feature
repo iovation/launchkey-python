@@ -142,7 +142,7 @@ Feature: Organization Client can set Organization Service Policy
       | Location Beta  | 32.1     | 43.2      | 1000   |
 
   Scenario Outline: Setting Amount on a Method Amount policy works as expected
-    When I create a new Method Amount Policy
+    When I create a new MethodAmountPolicy
     And I set the amount to "<amount>"
     And I set the Policy for the Current Organization Service
     And I retrieve the Policy for the Current Organization Service
@@ -157,7 +157,7 @@ Feature: Organization Client can set Organization Service Policy
     | 5      |
 
   Scenario: Setting Fences on a Method Amount Policy works as expected
-    When I create a new Method Amount Policy
+    When I create a new MethodAmountPolicy
     And I add the following GeoCircleFence items:
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
@@ -242,7 +242,7 @@ Feature: Organization Client can set Organization Service Policy
 
   Scenario: Setting Inside Policy to Methods Amount Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I set the inside Policy to a new Method Amount Policy
+    When I set the inside Policy to a new MethodAmountPolicy
     And I set the inside Policy amount to "2"
     And I set the Policy for the Current Organization Service
     And I retrieve the Policy for the Current Organization Service
@@ -258,7 +258,7 @@ Feature: Organization Client can set Organization Service Policy
 
   Scenario: Setting Outside Policy to Methods Amount Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I set the outside Policy to a new Method Amount Policy
+    When I set the outside Policy to a new MethodAmountPolicy
     And I set the outside Policy amount to "2"
     And I set the Policy for the Current Organization Service
     And I retrieve the Policy for the Current Organization Service
