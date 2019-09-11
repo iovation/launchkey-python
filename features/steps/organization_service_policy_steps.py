@@ -352,3 +352,14 @@ def step_impl(context):
     context.entity_manager.set_current_organization_service_policy(
         default_cond_geo_policy)
     context.entity_manager.set_current_auth_policy(default_cond_geo_policy)
+
+
+@then(
+    'the Organization Service Policy contains the GeoCircleFence "{name}"')
+def step_impl(context, name):
+    policy = context.entity_manager.get_current_organization_service_policy()
+    for fence in policy.fences:
+        if fence.name == name:
+            context.current_fence = fence
+            return True
+    raise ValueError("Fence {0} was not found".format(name))

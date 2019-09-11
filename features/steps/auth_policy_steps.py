@@ -400,3 +400,27 @@ def step_impl(context):
     current_policy = context.entity_manager.get_current_auth_policy()
     current_policy.outside.factors = [Factor("KNOWLEDGE")]
     context.entity_manager.set_current_auth_policy(current_policy)
+
+
+@then('that fence has a latitude of "{value}"')
+def step_impl(context, value):
+    if context.current_fence.latitude != float(value):
+        raise ValueError("The fence latitude of {0} was not {1}".format(
+            context.current_fence.latitude, value
+        ))
+
+
+@step('that fence has a longitude of "{value}"')
+def step_impl(context, value):
+    if context.current_fence.longitude != float(value):
+        raise ValueError("The fence longitude of {0} was not {1}".format(
+            context.current_fence.longitude, value
+        ))
+
+
+@step('that fence has a radius of "{value}"')
+def step_impl(context, value):
+    if context.current_fence.radius != int(value):
+        raise ValueError("The fence radius of {0} was not {1}".format(
+            context.current_fence.radius, value
+        ))

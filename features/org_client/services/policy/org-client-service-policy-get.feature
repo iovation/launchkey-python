@@ -85,14 +85,14 @@ Feature: Organization Client can retrieve Organization Service Policy
     And that fence has a latitude of "-50.0111"
     And that fence has a longitude of "-140"
     And that fence has a radius of "100"
-#    And the Organization Service Policy contains the TerritoryFence "US-NV"
-#    And that fence has a country of "US"
-#    And that fence has an administrative_area of "US-NV"
-#    And that fence has a postal_code of "89120"
-#    And the Organization Service Policy contains the TerritoryFence "US-CA"
-#    And that fence has a country of "US"
-#    And that fence has an administrative_area of "US-CA"
-#    And that fence has a postal_code of "90001"
+    And the Organization Service Policy contains the TerritoryFence "US-NV"
+    And that fence has a country of "US"
+    And that fence has an administrative_area of "US-NV"
+    And that fence has a postal_code of "89120"
+    And the Organization Service Policy contains the TerritoryFence "US-CA"
+    And that fence has a country of "US"
+    And that fence has an administrative_area of "US-CA"
+    And that fence has a postal_code of "90001"
 
   Scenario: Setting Fences on a Factors Policy works as expected
     When I create a new Factors Policy
