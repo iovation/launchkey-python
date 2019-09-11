@@ -134,7 +134,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     And factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And the Directory Service Policy has "1" fence
+    And the Organization Service Policy has "1" fence
 
   Scenario: Setting Inside Policy to Methods Amount Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
@@ -146,7 +146,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     And amount should be set to "2"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And the Directory Service Policy has "1" fence
+    And the Organization Service Policy has "1" fence
 
   Scenario: Setting Outside Policy to Factors Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
@@ -158,7 +158,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     And factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And the Directory Service Policy has "1" fence
+    And the Organization Service Policy has "1" fence
 
   Scenario: Setting Outside Policy to Methods Amount Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
@@ -167,10 +167,10 @@ Feature: Organization Client can retrieve Organization Service Policy
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the outside Policy should be a MethodAmountPolicy
-    And amount should be set to "2"
+    And the outside Policy amount should be set to "2"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And the Directory Service Policy has "1" fence
+    And the Organization Service Policy has "1" fence
 
   Scenario: Setting Fences on a Conditional Geofence Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
