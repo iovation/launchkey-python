@@ -131,7 +131,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the inside Policy should be a FactorsPolicy
-    And factors should be set to "Knowledge"
+    And the inside Policy factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
     And the Organization Service Policy has "1" fence
@@ -143,7 +143,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the inside Policy should be a MethodAmountPolicy
-    And amount should be set to "2"
+    And the inside Policy amount should be set to "2"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
     And the Organization Service Policy has "1" fence
@@ -155,7 +155,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the outside Policy should be a FactorsPolicy
-    And factors should be set to "Knowledge"
+    And the outside Policy factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
     And the Organization Service Policy has "1" fence
