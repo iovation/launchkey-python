@@ -513,7 +513,9 @@ class SharedTests(object):
                     "type": "METHOD_AMOUNT",
                     "fences": [],
                     "amount": 1
-                }
+                },
+                "deny_rooted_jailbroken": False,
+                "deny_emulator_simulator": False
             }
 
             expected_service_id = 'expected-service-id'

@@ -26,7 +26,7 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
     WebhookAuthorizationError, AuthorizationRequestCanceled, \
     AuthorizationResponseExists, XiovJWTValidationFailure, \
-    XiovJWTDecryptionFailure, InvalidFenceType, InvalidPolicyAttributes, UnknownPolicyException
+    XiovJWTDecryptionFailure, InvalidFenceType, InvalidPolicyAttributes
 from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse
 
@@ -832,8 +832,10 @@ class TestLegacyPolicyObject(unittest.TestCase):
 
 
 class TestConditionalGeoFencePolicy(unittest.TestCase):
-    DEFAULT_INSIDE_POLICY = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, factors=["KNOWLEDGE"])
-    DEFAULT_OUTSIDE_POLICY = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, factors=["POSSESSION"])
+    DEFAULT_INSIDE_POLICY = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False,
+                                          factors=["KNOWLEDGE"])
+    DEFAULT_OUTSIDE_POLICY = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False,
+                                           factors=["POSSESSION"])
 
     def test_default_instantiation(self):
         geofence_policy = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY)
@@ -904,25 +906,25 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
                                                        deny_rooted_jailbroken=False, deny_emulator_simulator=False)
 
         # Test Inside Policy
-        with assertRaisesRegex(self, UnknownPolicyException, "Inside and Outside policies must be one of the "
-                                                           "following:"):
+        with assertRaisesRegex(self, InvalidPolicyAttributes, "Inside and Outside policies must be one of the "
+                                                             "following:"):
             ConditionalGeoFencePolicy(conditional_policy, self.DEFAULT_OUTSIDE_POLICY,
                                       deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
         # Test Outside Policy
-        with assertRaisesRegex(self, UnknownPolicyException, "Inside and Outside policies must be one of the "
+        with assertRaisesRegex(self, InvalidPolicyAttributes, "Inside and Outside policies must be one of the "
                                                              "following:"):
             ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, conditional_policy,
                                       deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
-    def test_to_json_is_serializable(self):
+    def test_to_dict_is_serializable(self):
         fences = [GeoCircleFence(100, 200, 300)]
         geofence_policy = ConditionalGeoFencePolicy(
             self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY, deny_rooted_jailbroken=False,
             deny_emulator_simulator=True, fences=fences
         )
 
-        json.loads(geofence_policy.to_json())
+        self.assertIsInstance(geofence_policy.to_dict(), dict)
 
     def test_deny_rooted_jailbroken_cannot_be_set_on_inner_policy(self):
         inside = FactorsPolicy(deny_rooted_jailbroken=True, deny_emulator_simulator=False, factors=["KNOWLEDGE"])
@@ -1000,11 +1002,11 @@ class TestMethodAmountPolicy(unittest.TestCase):
         with self.assertRaises(InvalidFenceType):
             MethodAmountPolicy(fences=fences)
 
-    def test_to_json_is_serializable(self):
+    def test_to_dict_is_serializable(self):
         fences = [TerritoryFence("US", "US-CA", 90245)]
         method_policy = MethodAmountPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, amount=2,
                                            fences=fences)
-        json.loads(method_policy.to_json())
+        self.assertIsInstance(method_policy.to_dict(), dict)
 
     def test_repr(self):
         fences = [TerritoryFence("US", "US-CA", 90245)]
@@ -1053,9 +1055,9 @@ class TestFactorsPolicy(unittest.TestCase):
         with self.assertRaises(InvalidFenceType):
             FactorsPolicy(fences=fences)
 
-    def test_to_json_is_serializable(self):
+    def test_to_dict_is_serializable(self):
         factor_policy = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, factors=["KNOWLEDGE"])
-        json.loads(factor_policy.to_json())
+        self.assertIsInstance(factor_policy.to_dict(), dict)
 
     def test_repr(self):
         fences = [GeoCircleFence(100, 200, 300, "TestFence")]
