@@ -158,11 +158,11 @@ Feature: Organization Client can set Organization Service Policy
 
   Scenario: Setting Fences on a Method Amount Policy works as expected
     When I create a new MethodAmountPolicy
-    And I add the following GeoCircleFence items:
+    And I add the following GeoCircleFence items
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
     | -50.0111 | -140      | 100    | Small Fence |
-    And I add the following TerritoryFence items:
+    And I add the following TerritoryFence items
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
@@ -188,11 +188,11 @@ Feature: Organization Client can set Organization Service Policy
 
   Scenario: Setting Fences on a Factors Policy works as expected
     When I create a new Factors Policy
-    And I add the following GeoCircleFence items:
+    And I add the following GeoCircleFence items
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
     | -50.0111 | -140      | 100    | Small Fence |
-    And I add the following TerritoryFence items:
+    And I add the following TerritoryFence items
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
@@ -266,14 +266,14 @@ Feature: Organization Client can set Organization Service Policy
 
   Scenario: Setting Fences on a Conditional Geofence Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I add the following GeoCircleFence items:
+    When I add the following GeoCircleFence items
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
     | -50.0111 | -140      | 100    | Small Fence |
-    And I add the following TerritoryFence items:
+    And I add the following TerritoryFence items
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
-    Then the Organization Service Policy has "4" fences
+    Then the Organization Service Policy has "5" fences

@@ -66,11 +66,11 @@ Feature: Organization Client can retrieve Organization Service Policy
 
   Scenario: Setting Fences on a Method Amount Policy works as expected
     When I create a new MethodAmountPolicy
-    And I add the following GeoCircleFence items:
+    And I add the following GeoCircleFence items
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
     | -50.0111 | -140      | 100    | Small Fence |
-    And I add the following TerritoryFence items:
+    And I add the following TerritoryFence items
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
@@ -96,11 +96,11 @@ Feature: Organization Client can retrieve Organization Service Policy
 
   Scenario: Setting Fences on a Factors Policy works as expected
     When I create a new Factors Policy
-    And I add the following GeoCircleFence items:
+    And I add the following GeoCircleFence items
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
     | -50.0111 | -140      | 100    | Small Fence |
-    And I add the following TerritoryFence items:
+    And I add the following TerritoryFence items
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
@@ -184,7 +184,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     | US      | US-CA      | 90001       | US-CA |
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
-    Then the Organization Service Policy has "4" fences
+    Then the Organization Service Policy has "5" fences
     And the Organization Service Policy contains the GeoCircleFence "Large Fence"
     And that fence has a latitude of "300.0"
     And that fence has a longitude of "500.0"
