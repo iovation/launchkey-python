@@ -126,7 +126,7 @@ Feature: Directory Client can retrieve Directory Service Policy
 
   Scenario: Setting Inside Policy to Factors Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I set the inside Policy to a Factors Policy
+    When I set the inside Policy to a new Factors Policy
     And I set the inside Policy factors to "Knowledge"
     And I set the Policy for the Current Directory Service to the new policy
     And I retrieve the Policy for the Current Directory Service
@@ -134,11 +134,11 @@ Feature: Directory Client can retrieve Directory Service Policy
     And factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And fences should be empty
+    And the Directory Service Policy has "1" fence
 
   Scenario: Setting Inside Policy to Methods Amount Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I set the inside Policy to a Method Amount Policy
+    When I set the inside Policy to a new MethodAmountPolicy
     And I set the inside Policy amount to "2"
     And I set the Policy for the Current Directory Service to the new policy
     And I retrieve the Policy for the Current Directory Service
@@ -146,11 +146,11 @@ Feature: Directory Client can retrieve Directory Service Policy
     And amount should be set to "2"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And fences should be empty
+    And the Directory Service Policy has "1" fence
 
   Scenario: Setting Outside Policy to Factors Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I set the outside Policy to a Factors Policy
+    When I set the outside Policy to a new Factors Policy
     And I set the outside Policy factors to "Knowledge"
     And I set the Policy for the Current Directory Service to the new policy
     And I retrieve the Policy for the Current Directory Service
@@ -158,11 +158,11 @@ Feature: Directory Client can retrieve Directory Service Policy
     And factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And fences should be empty
+    And the Directory Service Policy has "1" fence
 
   Scenario: Setting Outside Policy to Methods Amount Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I set the outside Policy to a Method Amount Policy
+    When I set the outside Policy to a new MethodAmount Policy
     And I set the outside Policy amount to "2"
     And I set the Policy for the Current Directory Service to the new policy
     And I retrieve the Policy for the Current Directory Service
@@ -170,7 +170,7 @@ Feature: Directory Client can retrieve Directory Service Policy
     And amount should be set to "2"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And fences should be empty
+    And the Directory Service Policy has "1" fence
 
   Scenario: Setting Fences on a Conditional Geofence Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy

@@ -126,7 +126,7 @@ Feature: Organization Client can retrieve Organization Service Policy
 
   Scenario: Setting Inside Policy to Factors Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I set the inside Policy to a Factors Policy
+    When I set the inside Policy to a new Factors Policy
     And I set the inside Policy factors to "Knowledge"
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
@@ -134,11 +134,11 @@ Feature: Organization Client can retrieve Organization Service Policy
     And factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And fences should be empty
+    And the Directory Service Policy has "1" fence
 
   Scenario: Setting Inside Policy to Methods Amount Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I set the inside Policy to a MethodAmountPolicy
+    When I set the inside Policy to a new MethodAmountPolicy
     And I set the inside Policy amount to "2"
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
@@ -146,11 +146,11 @@ Feature: Organization Client can retrieve Organization Service Policy
     And amount should be set to "2"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And fences should be empty
+    And the Directory Service Policy has "1" fence
 
   Scenario: Setting Outside Policy to Factors Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I set the outside Policy to a Factors Policy
+    When I set the outside Policy to a new Factors Policy
     And I set the outside Policy factors to "Knowledge"
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
@@ -158,11 +158,11 @@ Feature: Organization Client can retrieve Organization Service Policy
     And factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And fences should be empty
+    And the Directory Service Policy has "1" fence
 
   Scenario: Setting Outside Policy to Methods Amount Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I set the outside Policy to a MethodAmountPolicy
+    When I set the outside Policy to a new MethodAmountPolicy
     And I set the outside Policy amount to "2"
     And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
@@ -170,15 +170,15 @@ Feature: Organization Client can retrieve Organization Service Policy
     And amount should be set to "2"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
-    And fences should be empty
+    And the Directory Service Policy has "1" fence
 
   Scenario: Setting Fences on a Conditional Geofence Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I add the following GeoCircleFence items:
+    When I add the following GeoCircleFence items
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
     | -50.0111 | -140      | 100    | Small Fence |
-    And I add the following TerritoryFence items:
+    And I add the following TerritoryFence items
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
