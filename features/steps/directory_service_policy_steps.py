@@ -326,3 +326,12 @@ def attempt_to_remove_policy_from_given_directory_service_id(context,
         )
     except Exception as e:
         context.current_exception = e
+
+
+@step("I set the Policy for the Current Directory Service to the new policy")
+def step_impl(context):
+    """
+    :type context: behave.runner.Context
+    """
+    raise NotImplementedError(
+        u'STEP: And I set the Policy for the Current Directory Service to the new policy')
