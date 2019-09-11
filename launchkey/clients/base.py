@@ -468,15 +468,15 @@ class ServiceManagingBaseClient(BaseClient):
         if policy["type"] == "METHOD_AMOUNT":
             new_policy = MethodAmountPolicy(
                 amount=policy["amount"],
-                deny_rooted_jailbroken=policy["deny_rooted_jailbroken"],
-                deny_emulator_simulator=policy["deny_emulator_simulator"],
+                deny_rooted_jailbroken=None,
+                deny_emulator_simulator=None,
                 fences=policy["fences"]
             )
         elif policy["type"] == "FACTORS":
             new_policy = FactorsPolicy(
                 factors=policy["factors"],
-                deny_rooted_jailbroken=policy["deny_rooted_jailbroken"],
-                deny_emulator_simulator=policy["deny_emulator_simulator"],
+                deny_rooted_jailbroken=None,
+                deny_emulator_simulator=None,
                 fences=policy["fences"]
             )
         else:
