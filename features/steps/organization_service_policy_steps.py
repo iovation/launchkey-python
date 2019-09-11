@@ -373,3 +373,22 @@ def step_impl(context, name):
             if isinstance(fence, TerritoryFence):
                 return True
     raise ValueError("Fence {0} was not found".format(name))
+
+
+@then(u'the Organization Service Policy has "{amount}" fences')
+def organization_service_amount_fences(context, amount):
+    policy = context.entity_manager.get_current_organization_service_policy()
+    if len(policy.fences) != int(amount):
+        raise ValueError(
+            "{0} does not equal current policy amount of {1}".format(
+                amount,
+                len(policy.fences)
+            )
+        )
+
+
+@then(u'the Organization Service Policy has "{amount}" fence')
+def single_fence(context, amount):
+    # Handles the english phrasing for a single fence without
+    # changing the behave matcher
+    organization_service_amount_fences(context, amount)

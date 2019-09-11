@@ -172,10 +172,11 @@ def step_impl(context):
 
 @when(u"I attempt to set the inside policy to any Conditional Geofence Policy")
 def step_impl(context):
+    policy = context.entity_manager.get_current_auth_policy()
     try:
         ConditionalGeoFencePolicy(
             inside=DEFAULT_COND_GEO_POLICY,
-            outside=context.new_policy.outside
+            outside=policy.outside
         )
     except Exception as e:
         context.current_exception = e
@@ -183,8 +184,7 @@ def step_impl(context):
 
 @then(u'the amount should be set to "{amount}"')
 def step_impl(context, amount):
-    current_policy = context.entity_manager.\
-        get_current_organization_service_policy()
+    current_policy = context.entity_manager.get_current_auth_policy()
     if int(current_policy.amount) != int(amount):
         raise ValueError(
             "{0} does not equal current policy amount of {1}".format(
@@ -223,25 +223,6 @@ def step_impl(context):
     context.entity_manager.set_current_auth_policy(policy)
 
 
-@then(u'the Organization Service Policy has "{amount}" fences')
-def organization_service_amount_fences(context, amount):
-    policy = context.entity_manager.get_current_organization_service_policy()
-    if len(policy.fences) != int(amount):
-        raise ValueError(
-            "{0} does not equal current policy amount of {1}".format(
-                amount,
-                len(policy.fences)
-            )
-        )
-
-
-@then(u'the Organization Service Policy has "{amount}" fence')
-def single_fence(context, amount):
-    # Handles the english phrasing for a single fence without
-    # changing the behave matcher
-    organization_service_amount_fences(context, amount)
-
-
 @when(u'I set deny_rooted_jailbroken to "{bool_value}"')
 def step_impl(context, bool_value):
     policy = context.entity_manager.get_current_auth_policy()
@@ -258,7 +239,7 @@ def step_impl(context, bool_value):
 
 @then('deny_rooted_jailbroken should be set to "{bool_value}"')
 def step_impl(context, bool_value):
-    policy = context.entity_manager.get_current_organization_service_policy()
+    policy = context.entity_manager.get_current_auth_policy()
     if str(policy.deny_rooted_jailbroken) != bool_value:
         raise ValueError(
             "{0} does not equal current policy amount of {1}".format(
@@ -270,7 +251,7 @@ def step_impl(context, bool_value):
 
 @then('deny_emulator_simulator should be set to "{bool_value}"')
 def step_impl(context, bool_value):
-    policy = context.entity_manager.get_current_organization_service_policy()
+    policy = context.entity_manager.get_current_auth_policy()
     if str(policy.deny_emulator_simulator) != bool_value:
         raise ValueError(
             "{0} does not equal current policy amount of {1}".format(
@@ -287,8 +268,7 @@ def step_impl(context, factors):
 
 @then(u'factors should be set to {factors}')
 def step_impl(context, factors):
-    current_policy = context.entity_manager.\
-        get_current_organization_service_policy()
+    current_policy = context.entity_manager.get_current_auth_policy()
     factors = [Factor(x.upper().strip()) for x in factors.split(",")]
 
     # This alg could be better but for the amount of items it should be fine
