@@ -386,11 +386,11 @@ class AuthPolicy(object):
         """
         warnings.warn("This method has been deprecated and will be removed in "
                       "the next major version. Please use "
-                      "to_json",
+                      "to_dict",
                       category=DeprecationWarning)
-        return self.to_json()
+        return self.to_dict()
 
-    def to_json(self):
+    def to_dict(self):
         """
         returns the JSON representation of the policy object
         """

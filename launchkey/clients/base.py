@@ -501,7 +501,7 @@ class ServiceManagingBaseClient(BaseClient):
         self._transport.put(
             "{}/policy".format(self.__service_base_path[0:-1]),
             self._subject, service_id=str(service_id),
-            policy=policy.to_json())
+            policy=policy.to_dict())
 
     @api_call
     def remove_service_policy(self, service_id):

@@ -1,10 +1,8 @@
 """ Service Policy objects """
 
 from enum import Enum
-from json import dumps
 
-from launchkey.exceptions import InvalidFenceType, InvalidPolicyAttributes, \
-    UnknownPolicyException
+from launchkey.exceptions import InvalidFenceType, InvalidPolicyAttributes
 
 
 class Factor(Enum):
@@ -85,11 +83,11 @@ class ConditionalGeoFencePolicy(Policy):
         self.inside = self.__create_inner_policies(inside)
         self.outside = self.__create_inner_policies(outside)
 
-    def to_json(self):
+    def to_dict(self):
         """
         returns the JSON representation of the policy object
         """
-        return dumps(dict(self))
+        return dict(self)
 
     def __repr__(self):
         return "ConditionalGeoFencePolicy <" \
@@ -128,7 +126,7 @@ class ConditionalGeoFencePolicy(Policy):
                 deny_rooted_jailbroken=None, deny_emulator_simulator=None
             )
         else:
-            raise UnknownPolicyException(
+            raise InvalidPolicyAttributes(
                 "Inside and Outside policies must be one of the following: ["
                 "\"FACTORS\", \"METHOD_AMOUNT\"]"
             )
@@ -154,11 +152,11 @@ class MethodAmountPolicy(Policy):
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
 
-    def to_json(self):
+    def to_dict(self):
         """
         returns the JSON representation of the policy object
         """
-        return dumps(dict(self))
+        return dict(self)
 
     def __repr__(self):
         return "MethodAmountPolicy <" \
@@ -187,8 +185,9 @@ class FactorsPolicy(Policy):
     """
     Auth policy object that handles authentication based on type of factors
 
-    :param factors: List of factors that the device should use for the
-    Auth request
+    :param factors: List containing either Factor types or a list of strings
+    that are valid Factor objects.
+    Cannot be a mixed list of strings and Factor objects
     :param deny_rooted_jailbroken: Deny request if device reports that it is
     rooted/jailbroken
     :param deny_emulator_simulator: Deny request if device reports it is a
@@ -198,20 +197,24 @@ class FactorsPolicy(Policy):
     def __init__(self, factors=None, deny_rooted_jailbroken=False,
                  deny_emulator_simulator=False, fences=None):
         if not factors:
-            factors = []
+            self.factors = []
+        else:
+            if isinstance(factors[0], Factor):
+                self.factors = factors
+            else:
+                self.factors = [
+                    Factor(factor.upper()) for factor in factors
+                ]
 
         super(FactorsPolicy, self).__init__(fences)
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
-        self.factors = [
-            Factor(factor) for factor in factors
-        ]
 
-    def to_json(self):
+    def to_dict(self):
         """
         returns the JSON representation of the policy object
         """
-        return dumps(dict(self))
+        return dict(self)
 
     def __repr__(self):
         return "FactorsPolicy <" \
