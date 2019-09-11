@@ -78,11 +78,11 @@ Feature: Directory Client can retrieve Directory Service Policy
     And I retrieve the Policy for the Current Directory Service
     Then the Directory Service Policy has "4" fences
     And the Directory Service Policy contains the GeoCircleFence "Large Fence"
-    And that fence has a latitude of "300.0"
-    And that fence has a longitude of "500.0"
+    And that fence has a latitude of "45.1250"
+    And that fence has a longitude of "150.51"
     And that fence has a radius of "15200"
     And the Directory Service Policy contains the GeoCircleFence "Small Fence"
-    And that fence has a latitude of "-50"
+    And that fence has a latitude of "-50.0111"
     And that fence has a longitude of "-140"
     And that fence has a radius of "100"
     And the Directory Service Policy contains the TerritoryFence "US-NV"
@@ -108,11 +108,11 @@ Feature: Directory Client can retrieve Directory Service Policy
     And I retrieve the Policy for the Current Directory Service
     Then the Directory Service Policy has "4" fences
     And the Directory Service Policy contains the GeoCircleFence "Large Fence"
-    And that fence has a latitude of "300.0"
-    And that fence has a longitude of "500.0"
+    And that fence has a latitude of "45.1250"
+    And that fence has a longitude of "150.51"
     And that fence has a radius of "15200"
     And the Directory Service Policy contains the GeoCircleFence "Small Fence"
-    And that fence has a latitude of "-50"
+    And that fence has a latitude of "-50.0111"
     And that fence has a longitude of "-140"
     And that fence has a radius of "100"
     And the Directory Service Policy contains the TerritoryFence "US-NV"
@@ -186,11 +186,11 @@ Feature: Directory Client can retrieve Directory Service Policy
     And I retrieve the Policy for the Current Directory Service
     Then the Directory Service Policy has "5" fences
     And the Directory Service Policy contains the GeoCircleFence "Large Fence"
-    And that fence has a latitude of "300.0"
-    And that fence has a longitude of "500.0"
+    And that fence has a latitude of "45.1250"
+    And that fence has a longitude of "150.51"
     And that fence has a radius of "15200"
     And the Directory Service Policy contains the GeoCircleFence "Small Fence"
-    And that fence has a latitude of "-50"
+    And that fence has a latitude of "-50.0111"
     And that fence has a longitude of "-140"
     And that fence has a radius of "100"
     And the Directory Service Policy contains the TerritoryFence "US-NV"

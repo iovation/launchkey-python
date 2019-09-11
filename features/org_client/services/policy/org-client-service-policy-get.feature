@@ -78,21 +78,21 @@ Feature: Organization Client can retrieve Organization Service Policy
     And I retrieve the Policy for the Current Organization Service
     Then the Organization Service Policy has "4" fences
     And the Organization Service Policy contains the GeoCircleFence "Large Fence"
-    And that fence has a latitude of "300.0"
-    And that fence has a longitude of "500.0"
+    And that fence has a latitude of "45.1250"
+    And that fence has a longitude of "150.51"
     And that fence has a radius of "15200"
     And the Organization Service Policy contains the GeoCircleFence "Small Fence"
-    And that fence has a latitude of "-50"
+    And that fence has a latitude of "-50.0111"
     And that fence has a longitude of "-140"
     And that fence has a radius of "100"
-    And the Organization Service Policy contains the TerritoryFence "US-NV"
-    And that fence has a country of "US"
-    And that fence has an administrative_area of "US-NV"
-    And that fence has a postal_code of "89120"
-    And the Organization Service Policy contains the TerritoryFence "US-CA"
-    And that fence has a country of "US"
-    And that fence has an administrative_area of "US-CA"
-    And that fence has a postal_code of "90001"
+#    And the Organization Service Policy contains the TerritoryFence "US-NV"
+#    And that fence has a country of "US"
+#    And that fence has an administrative_area of "US-NV"
+#    And that fence has a postal_code of "89120"
+#    And the Organization Service Policy contains the TerritoryFence "US-CA"
+#    And that fence has a country of "US"
+#    And that fence has an administrative_area of "US-CA"
+#    And that fence has a postal_code of "90001"
 
   Scenario: Setting Fences on a Factors Policy works as expected
     When I create a new Factors Policy
@@ -108,11 +108,11 @@ Feature: Organization Client can retrieve Organization Service Policy
     And I retrieve the Policy for the Current Organization Service
     Then the Organization Service Policy has "4" fences
     And the Organization Service Policy contains the GeoCircleFence "Large Fence"
-    And that fence has a latitude of "300.0"
-    And that fence has a longitude of "500.0"
+    And that fence has a latitude of "45.1250"
+    And that fence has a longitude of "150.51"
     And that fence has a radius of "15200"
     And the Organization Service Policy contains the GeoCircleFence "Small Fence"
-    And that fence has a latitude of "-50"
+    And that fence has a latitude of "-50.0111"
     And that fence has a longitude of "-140"
     And that fence has a radius of "100"
     And the Organization Service Policy contains the TerritoryFence "US-NV"
@@ -186,11 +186,11 @@ Feature: Organization Client can retrieve Organization Service Policy
     And I retrieve the Policy for the Current Organization Service
     Then the Organization Service Policy has "5" fences
     And the Organization Service Policy contains the GeoCircleFence "Large Fence"
-    And that fence has a latitude of "300.0"
-    And that fence has a longitude of "500.0"
+    And that fence has a latitude of "45.1250"
+    And that fence has a longitude of "150.51"
     And that fence has a radius of "15200"
     And the Organization Service Policy contains the GeoCircleFence "Small Fence"
-    And that fence has a latitude of "-50"
+    And that fence has a latitude of "-50.0111"
     And that fence has a longitude of "-140"
     And that fence has a radius of "100"
     And the Organization Service Policy contains the TerritoryFence "US-NV"
