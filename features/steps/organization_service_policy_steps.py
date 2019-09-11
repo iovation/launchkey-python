@@ -8,7 +8,7 @@ from launchkey.entities.service import TimeFence, GeoFence, FactorsPolicy
 
 # Retrieve Organization Service Policy
 from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
-    TerritoryFence
+    TerritoryFence, GeoCircleFence
 
 
 @step("I retrieve the Policy for the Current Organization Service")
@@ -360,6 +360,16 @@ def step_impl(context, name):
     policy = context.entity_manager.get_current_organization_service_policy()
     for fence in policy.fences:
         if fence.name == name:
-            context.current_fence = fence
-            return True
+            if isinstance(fence, GeoCircleFence):
+                return True
+    raise ValueError("Fence {0} was not found".format(name))
+
+
+@step('the Organization Service Policy contains the TerritoryFence "{name}"')
+def step_impl(context, name):
+    policy = context.entity_manager.get_current_organization_service_policy()
+    for fence in policy.fences:
+        if fence.name == name:
+            if isinstance(fence, TerritoryFence):
+                return True
     raise ValueError("Fence {0} was not found".format(name))

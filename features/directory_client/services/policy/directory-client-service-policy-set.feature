@@ -172,38 +172,6 @@ Feature: Directory Client can set Directory Service Policy
     And I retrieve the Policy for the Current Directory Service
     Then the Directory Service Policy has "4" fences
 
-  Scenario: Setting deny_rooted_jailbroken works as expected on a Factors Policy
-    When I create a new Factors Policy
-    And I set the factors to "Knowledge"
-    And I set deny_rooted_jailbroken to "True"
-    And I set the Policy for the Current Directory Service to the new policy
-    And I retrieve the Policy for the Current Directory Service
-    Then deny_rooted_jailbroken should be set to "True"
-    
-  Scenario: Setting deny_rooted_jailbroken works as expected on a Method Amount Policy
-    When I create a new MethodAmountPolicy
-    And I set the amount to "2"
-    And I set deny_rooted_jailbroken to "True"
-    And I set the Policy for the Current Directory Service to the new policy
-    And I retrieve the Policy for the Current Directory Service
-    Then deny_rooted_jailbroken should be set to "True"
-    
-  Scenario: Setting deny_emulator_simulator works as expected on a Factors Policy
-    When I create a new Factors Policy
-    And I set the factors to "Knowledge"
-    And I set deny_emulator_simulator to "True"
-    And I set the Policy for the Current Directory Service to the new policy
-    And I retrieve the Policy for the Current Directory Service
-    Then deny_emulator_simulator should be set to "True"
-
-  Scenario: Setting deny_emulator_simulator works as expected on a Method Amount Policy
-    When I create a new MethodAmountPolicy
-    And I set the amount to "2"
-    And I set deny_emulator_simulator to "True"
-    And I set the Policy for the Current Directory Service to the new policy
-    And I retrieve the Policy for the Current Directory Service
-    Then deny_emulator_simulator should be set to "True"
-    
   Scenario Outline: Setting Factors on a Factors Policy works as expected
     When I create a new Factors Policy
     And I set the factors to <factors>
@@ -233,6 +201,38 @@ Feature: Directory Client can set Directory Service Policy
     And I set the Policy for the Current Directory Service to the new policy
     And I retrieve the Policy for the Current Directory Service
     Then the Directory Service Policy has "4" fences
+
+  Scenario: Setting deny_rooted_jailbroken works as expected on a Factors Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set deny_rooted_jailbroken to "True"
+    And I set the Policy for the Current Directory Service to the new policy
+    And I retrieve the Policy for the Current Directory Service
+    Then deny_rooted_jailbroken should be set to "True"
+
+  Scenario: Setting deny_rooted_jailbroken works as expected on a Method Amount Policy
+    When I create a new MethodAmountPolicy
+    And I set the amount to "2"
+    And I set deny_rooted_jailbroken to "True"
+    And I set the Policy for the Current Directory Service to the new policy
+    And I retrieve the Policy for the Current Directory Service
+    Then deny_rooted_jailbroken should be set to "True"
+
+  Scenario: Setting deny_emulator_simulator works as expected on a Factors Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set deny_emulator_simulator to "True"
+    And I set the Policy for the Current Directory Service to the new policy
+    And I retrieve the Policy for the Current Directory Service
+    Then deny_emulator_simulator should be set to "True"
+
+  Scenario: Setting deny_emulator_simulator works as expected on a Method Amount Policy
+    When I create a new MethodAmountPolicy
+    And I set the amount to "2"
+    And I set deny_emulator_simulator to "True"
+    And I set the Policy for the Current Directory Service to the new policy
+    And I retrieve the Policy for the Current Directory Service
+    Then deny_emulator_simulator should be set to "True"
 
   Scenario: Setting Inside Policy to Factors Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy

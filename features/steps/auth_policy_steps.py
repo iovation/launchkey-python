@@ -224,7 +224,7 @@ def step_impl(context):
 
 
 @then(u'the Organization Service Policy has "{amount}" fences')
-def step_impl(context, amount):
+def organization_service_amount_fences(context, amount):
     policy = context.entity_manager.get_current_organization_service_policy()
     if len(policy.fences) != int(amount):
         raise ValueError(
@@ -233,6 +233,13 @@ def step_impl(context, amount):
                 len(policy.fences)
             )
         )
+
+
+@then(u'the Organization Service Policy has "{amount}" fence')
+def single_fence(context, amount):
+    # Handles the english phrasing for a single fence without
+    # changing the behave matcher
+    organization_service_amount_fences(context, amount)
 
 
 @when(u'I set deny_rooted_jailbroken to "{bool_value}"')
@@ -249,11 +256,10 @@ def step_impl(context, bool_value):
     context.entity_manager.set_current_auth_policy(policy)
 
 
-
 @then('deny_rooted_jailbroken should be set to "{bool_value}"')
 def step_impl(context, bool_value):
     policy = context.entity_manager.get_current_organization_service_policy()
-    if policy.deny_rooted_jailbroken != bool(bool_value):
+    if str(policy.deny_rooted_jailbroken) != bool_value:
         raise ValueError(
             "{0} does not equal current policy amount of {1}".format(
                 bool_value,
@@ -265,7 +271,7 @@ def step_impl(context, bool_value):
 @then('deny_emulator_simulator should be set to "{bool_value}"')
 def step_impl(context, bool_value):
     policy = context.entity_manager.get_current_organization_service_policy()
-    if policy.deny_emulator_simulator != bool(bool_value):
+    if str(policy.deny_emulator_simulator) != bool_value:
         raise ValueError(
             "{0} does not equal current policy amount of {1}".format(
                 bool_value,
@@ -402,25 +408,165 @@ def step_impl(context):
     context.entity_manager.set_current_auth_policy(current_policy)
 
 
-@then('that fence has a latitude of "{value}"')
-def step_impl(context, value):
-    if context.current_fence.latitude != float(value):
-        raise ValueError("The fence latitude of {0} was not {1}".format(
-            context.current_fence.latitude, value
-        ))
+@then('the "{fence_name}" fence has a latitude of "{value}"')
+def step_impl(context, fence_name, value):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    for fence in current_policy.fences:
+        if fence.name == fence_name:
+            if fence.latitude != float(value):
+                raise ValueError("The fence latitude of {0} was not {1}".format(
+                    fence.latitude, value
+                ))
+            return True
+    raise ValueError("A Fence with the name {0} was not found".format(
+        fence_name, value
+    ))
 
 
-@step('that fence has a longitude of "{value}"')
-def step_impl(context, value):
-    if context.current_fence.longitude != float(value):
-        raise ValueError("The fence longitude of {0} was not {1}".format(
-            context.current_fence.longitude, value
-        ))
+@then('the "{fence_name}" fence has a longitude of "{value}"')
+def step_impl(context, fence_name, value):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    for fence in current_policy.fences:
+        if fence.name == fence_name:
+            if fence.longitude != float(value):
+                raise ValueError("A Fence with the name {0} was not found "
+                                 "with the value {1}".format(fence.longitude,
+                                                             value))
+            return True
+    raise ValueError("A Fence with the name {0} was not found".format(
+        fence_name, value
+    ))
 
 
-@step('that fence has a radius of "{value}"')
-def step_impl(context, value):
-    if context.current_fence.radius != int(value):
-        raise ValueError("The fence radius of {0} was not {1}".format(
-            context.current_fence.radius, value
-        ))
+@then('the "{fence_name}" fence has a radius of "{value}"')
+def step_impl(context, fence_name, value):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    for fence in current_policy.fences:
+        if fence.name == fence_name:
+            if fence.radius != float(value):
+                raise ValueError(
+                    "A Fence with the name {0} was not found with the "
+                    "value {1}".format(fence.radius, value)
+                )
+            return True
+    raise ValueError(
+        "A Fence with the name {0} was not found with the value {1}".format(
+            fence_name, value
+        )
+    )
+
+
+@then('the "{fence_name}" fence has a country of "{country}"')
+def step_impl(context, fence_name, country):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    for fence in current_policy.fences:
+        if fence.name == fence_name:
+            if fence.country != country:
+                raise ValueError(
+                    "A Fence with the name {0} was not found with the "
+                    "value {1}".format(fence.country, country)
+                )
+            return True
+    raise ValueError(
+        "A Fence with the name {0} was not found with the value {1}".format(
+            fence_name, country
+        )
+    )
+
+
+@then('the "{fence_name}" fence has an administrative_area of "{admin_area}"')
+def step_impl(context, fence_name, admin_area):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    for fence in current_policy.fences:
+        if fence.name == fence_name:
+            if fence.administrative_area != admin_area:
+                raise ValueError(
+                    "A Fence with the name {0} was not found with the "
+                    "value {1}".format(fence.administrative_area, admin_area)
+                )
+            return True
+    raise ValueError(
+        "A Fence with the name {0} was not found with the value {1}".format(
+            fence_name, admin_area
+        )
+    )
+
+
+@then('the "{fence_name}" fence has a postal_code of "{zip_code}"')
+def step_impl(context, fence_name, zip_code):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    for fence in current_policy.fences:
+        if fence.name == fence_name:
+            if fence.postal_code != zip_code:
+                raise ValueError(
+                    "A Fence with the name {0} was not found with the "
+                    "value {1}".format(fence.postal_code, zip_code)
+                )
+            return True
+    raise ValueError(
+        "A Fence with the name {0} was not found with the value {1}".format(
+            fence_name, zip_code
+        )
+    )
+
+
+@then('amount should be set to "{amount}"')
+def calculate_amount(context, amount):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    if current_policy.amount != int(amount):
+        raise ValueError(
+            "Amount was set to {0} in the current Policy when it should have "
+            "been {1}".format(current_policy.amount,amount)
+        )
+
+
+@then('the inside Policy amount should be set to "{amount}"')
+def step_impl(context, amount):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    if current_policy.inside.amount != int(amount):
+        raise ValueError(
+            "Amount was set to {0} in the current Policy when it should have "
+            "been {1}".format(current_policy.inside.amount, amount)
+        )
+
+
+@then('the outside Policy amount should be set to "{amount}"')
+def step_impl(context, amount):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    if current_policy.outside.amount != int(amount):
+        raise ValueError(
+            "Amount was set to {0} in the current Policy when it should have "
+            "been {1}".format(current_policy.outside.amount, amount)
+        )
+
+
+@then('the inside Policy factors should be set to "{factors}"')
+def step_impl(context, factors):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    factors = [Factor(x.upper().strip()) for x in factors.split(",")]
+
+    # This alg could be better but for the amount of items it should be fine
+    for expected_factor in factors:
+        if expected_factor not in current_policy.inside.factors:
+            raise ValueError(
+                "{0} does not equal current policy amount of {1}".format(
+                    factors,
+                    current_policy.inside.factors
+                )
+            )
+
+
+@then('the outside Policy factors should be set to "{factors}"')
+def step_impl(context, factors):
+    current_policy = context.entity_manager.get_current_auth_policy()
+    factors = [Factor(x.upper().strip()) for x in factors.split(",")]
+
+    # This alg could be better but for the amount of items it should be fine
+    for expected_factor in factors:
+        if expected_factor not in current_policy.outside.factors:
+            raise ValueError(
+                "{0} does not equal current policy amount of {1}".format(
+                    factors,
+                    current_policy.outside.factors
+                )
+            )

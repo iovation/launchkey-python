@@ -81,15 +81,15 @@ Feature: Directory Client can retrieve Directory Service Policy
     And the "Large Fence" fence has a latitude of "45.1250"
     And the "Large Fence" fence has a longitude of "150.51"
     And the "Large Fence" fence has a radius of "15200"
-    And the Organization Service Policy contains the GeoCircleFence "Small Fence"
+    And the Directory Service Policy contains the GeoCircleFence "Small Fence"
     And the "Small Fence" fence has a latitude of "-50.0111"
     And the "Small Fence" fence has a longitude of "-140"
     And the "Small Fence" fence has a radius of "100"
-    And the Organization Service Policy contains the TerritoryFence "US-NV"
+    And the Directory Service Policy contains the TerritoryFence "US-NV"
     And the "US-NV" fence has a country of "US"
     And the "US-NV" fence has an administrative_area of "US-NV"
     And the "US-NV" fence has a postal_code of "89120"
-    And the Organization Service Policy contains the TerritoryFence "US-CA"
+    And the Directory Service Policy contains the TerritoryFence "US-CA"
     And the "US-CA" fence has a country of "US"
     And the "US-CA" fence has an administrative_area of "US-CA"
     And the "US-CA" fence has a postal_code of "90001"
@@ -111,15 +111,15 @@ Feature: Directory Client can retrieve Directory Service Policy
     And the "Large Fence" fence has a latitude of "45.1250"
     And the "Large Fence" fence has a longitude of "150.51"
     And the "Large Fence" fence has a radius of "15200"
-    And the Organization Service Policy contains the GeoCircleFence "Small Fence"
+    And the Directory Service Policy contains the GeoCircleFence "Small Fence"
     And the "Small Fence" fence has a latitude of "-50.0111"
     And the "Small Fence" fence has a longitude of "-140"
     And the "Small Fence" fence has a radius of "100"
-    And the Organization Service Policy contains the TerritoryFence "US-NV"
+    And the Directory Service Policy contains the TerritoryFence "US-NV"
     And the "US-NV" fence has a country of "US"
     And the "US-NV" fence has an administrative_area of "US-NV"
     And the "US-NV" fence has a postal_code of "89120"
-    And the Organization Service Policy contains the TerritoryFence "US-CA"
+    And the Directory Service Policy contains the TerritoryFence "US-CA"
     And the "US-CA" fence has a country of "US"
     And the "US-CA" fence has an administrative_area of "US-CA"
     And the "US-CA" fence has a postal_code of "90001"
@@ -131,7 +131,7 @@ Feature: Directory Client can retrieve Directory Service Policy
     And I set the Policy for the Current Directory Service to the new policy
     And I retrieve the Policy for the Current Directory Service
     Then the inside Policy should be a FactorsPolicy
-    And factors should be set to "Knowledge"
+    And the inside Policy factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
     And the Directory Service Policy has "1" fence
@@ -143,7 +143,7 @@ Feature: Directory Client can retrieve Directory Service Policy
     And I set the Policy for the Current Directory Service to the new policy
     And I retrieve the Policy for the Current Directory Service
     Then the inside Policy should be a MethodAmountPolicy
-    And amount should be set to "2"
+    And the inside Policy amount should be set to "2"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
     And the Directory Service Policy has "1" fence
@@ -155,19 +155,19 @@ Feature: Directory Client can retrieve Directory Service Policy
     And I set the Policy for the Current Directory Service to the new policy
     And I retrieve the Policy for the Current Directory Service
     Then the outside Policy should be a FactorsPolicy
-    And factors should be set to "Knowledge"
+    And the outside Policy factors should be set to "Knowledge"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
     And the Directory Service Policy has "1" fence
 
   Scenario: Setting Outside Policy to Methods Amount Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I set the outside Policy to a new MethodAmount Policy
+    When I set the outside Policy to a new MethodAmountPolicy
     And I set the outside Policy amount to "2"
     And I set the Policy for the Current Directory Service to the new policy
     And I retrieve the Policy for the Current Directory Service
     Then the outside Policy should be a MethodAmountPolicy
-    And amount should be set to "2"
+    And the outside Policy amount should be set to "2"
     And deny_rooted_jailbroken should be set to "False"
     And deny_emulator_simulator should be set to "False"
     And the Directory Service Policy has "1" fence
@@ -189,15 +189,15 @@ Feature: Directory Client can retrieve Directory Service Policy
     And the "Large Fence" fence has a latitude of "45.1250"
     And the "Large Fence" fence has a longitude of "150.51"
     And the "Large Fence" fence has a radius of "15200"
-    And the Organization Service Policy contains the GeoCircleFence "Small Fence"
+    And the Directory Service Policy contains the GeoCircleFence "Small Fence"
     And the "Small Fence" fence has a latitude of "-50.0111"
     And the "Small Fence" fence has a longitude of "-140"
     And the "Small Fence" fence has a radius of "100"
-    And the Organization Service Policy contains the TerritoryFence "US-NV"
+    And the Directory Service Policy contains the TerritoryFence "US-NV"
     And the "US-NV" fence has a country of "US"
     And the "US-NV" fence has an administrative_area of "US-NV"
     And the "US-NV" fence has a postal_code of "89120"
-    And the Organization Service Policy contains the TerritoryFence "US-CA"
+    And the Directory Service Policy contains the TerritoryFence "US-CA"
     And the "US-CA" fence has a country of "US"
     And the "US-CA" fence has an administrative_area of "US-CA"
     And the "US-CA" fence has a postal_code of "90001"
