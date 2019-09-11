@@ -74,7 +74,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the Organization Service Policy has "4" fences
     And the Organization Service Policy contains the GeoCircleFence "Large Fence"
@@ -104,7 +104,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the Organization Service Policy has "4" fences
     And the Organization Service Policy contains the GeoCircleFence "Large Fence"
@@ -128,7 +128,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     Given the Organization Service is set to any Conditional Geofence Policy
     When I set the inside Policy to a Factors Policy
     And I set the inside Policy factors to "Knowledge"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the inside Policy should be a FactorsPolicy
     And factors should be set to "Knowledge"
@@ -140,7 +140,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     Given the Organization Service is set to any Conditional Geofence Policy
     When I set the inside Policy to a MethodAmountPolicy
     And I set the inside Policy amount to "2"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the inside Policy should be a MethodAmountPolicy
     And amount should be set to "2"
@@ -152,7 +152,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     Given the Organization Service is set to any Conditional Geofence Policy
     When I set the outside Policy to a Factors Policy
     And I set the outside Policy factors to "Knowledge"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the outside Policy should be a FactorsPolicy
     And factors should be set to "Knowledge"
@@ -164,7 +164,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     Given the Organization Service is set to any Conditional Geofence Policy
     When I set the outside Policy to a MethodAmountPolicy
     And I set the outside Policy amount to "2"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the outside Policy should be a MethodAmountPolicy
     And amount should be set to "2"
@@ -182,7 +182,7 @@ Feature: Organization Client can retrieve Organization Service Policy
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the Organization Service Policy has "4" fences
     And the Organization Service Policy contains the GeoCircleFence "Large Fence"

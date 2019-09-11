@@ -144,7 +144,7 @@ Feature: Organization Client can set Organization Service Policy
   Scenario Outline: Setting Amount on a Method Amount policy works as expected
     When I create a new MethodAmountPolicy
     And I set the amount to "<amount>"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the amount should be set to "<amount>"
     Examples:
@@ -166,14 +166,14 @@ Feature: Organization Client can set Organization Service Policy
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the Organization Service Policy has "4" fences
 
   Scenario Outline: Setting Factors on a Factors Policy works as expected
     When I create a new Factors Policy
     And I set the factors to <factors>
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     When I retrieve the Policy for the Current Organization Service
     Then factors should be set to <factors>
   Examples:
@@ -196,7 +196,7 @@ Feature: Organization Client can set Organization Service Policy
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the Organization Service Policy has "4" fences
 
@@ -204,7 +204,7 @@ Feature: Organization Client can set Organization Service Policy
     When I create a new Factors Policy
     And I set the factors to "Knowledge"
     And I set deny_rooted_jailbroken to "True"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then deny_rooted_jailbroken should be set to "True"
 
@@ -212,7 +212,7 @@ Feature: Organization Client can set Organization Service Policy
     When I create a new MethodAmountPolicy
     And I set the amount to "2"
     And I set deny_rooted_jailbroken to "True"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then deny_rooted_jailbroken should be set to "True"
 
@@ -220,7 +220,7 @@ Feature: Organization Client can set Organization Service Policy
     When I create a new Factors Policy
     And I set the factors to "Knowledge"
     And I set deny_emulator_simulator to "True"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then deny_emulator_simulator should be set to "True"
 
@@ -228,7 +228,7 @@ Feature: Organization Client can set Organization Service Policy
     When I create a new MethodAmountPolicy
     And I set the amount to "2"
     And I set deny_emulator_simulator to "True"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then deny_emulator_simulator should be set to "True"
 
@@ -236,7 +236,7 @@ Feature: Organization Client can set Organization Service Policy
     Given the Organization Service is set to any Conditional Geofence Policy
     When I set the inside Policy to a new Factors Policy
     And I set the inside Policy factors to "Knowledge"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the inside Policy should be a FactorsPolicy
 
@@ -244,7 +244,7 @@ Feature: Organization Client can set Organization Service Policy
     Given the Organization Service is set to any Conditional Geofence Policy
     When I set the inside Policy to a new MethodAmountPolicy
     And I set the inside Policy amount to "2"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the inside Policy should be a MethodAmountPolicy
 
@@ -252,7 +252,7 @@ Feature: Organization Client can set Organization Service Policy
     Given the Organization Service is set to any Conditional Geofence Policy
     When I set the outside Policy to a new Factors Policy
     And I set the outside Policy factors to "Knowledge"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the outside Policy should be a FactorsPolicy
 
@@ -260,7 +260,7 @@ Feature: Organization Client can set Organization Service Policy
     Given the Organization Service is set to any Conditional Geofence Policy
     When I set the outside Policy to a new MethodAmountPolicy
     And I set the outside Policy amount to "2"
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the outside Policy should be a MethodAmountPolicy
 
@@ -274,6 +274,6 @@ Feature: Organization Client can set Organization Service Policy
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
-    And I set the Policy for the Current Organization Service
+    And I set the Policy for the Current Organization Service to the new policy
     And I retrieve the Policy for the Current Organization Service
     Then the Organization Service Policy has "4" fences
