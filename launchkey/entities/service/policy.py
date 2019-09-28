@@ -134,6 +134,72 @@ class ConditionalGeoFencePolicy(Policy):
         return policy
 
 
+class LegacyPolicy(Policy):
+    """
+    Auth policy that loosely models the soon-to-be-deprecated
+    `ServiceSecurityPolicy`
+
+    :param amount: Integer amount of auth methods to require
+    :param inherence: Boolean, whether to use "inherence" auth factor
+    :param knowledge: Boolean, whether to use "knowledge" auth factor
+    :param possession: Boolean, whether to use "possession" auth factor
+    :param deny_rooted_jailbroken: Boolean, deny request if device reports
+    that it is rooted/jailbroken
+    :param fences: List of GeoCircleFences
+    :param time_restrictions: List of TimeFences
+    """
+    def __init__(self, amount=0, inherence=False, knowledge=False,
+                 possession=False, deny_rooted_jailbroken=False,
+                 fences=None, time_restrictions=None):
+        sanitized_fences = filter(
+            lambda f: isinstance(f, GeoCircleFence), fences)
+
+        super(LegacyPolicy, self).__init__(sanitized_fences)
+        self.amount = amount
+        self.inherence = inherence
+        self.knowledge = knowledge
+        self.possession = possession
+        self.deny_rooted_jailbroken = deny_rooted_jailbroken
+        self.fences = [] if not fences else fences
+        self.time_restrictions = [] if not time_restrictions else \
+            time_restrictions
+
+    def to_dict(self):
+        """
+        returns the JSON representation of the legacy policy object
+        """
+        return dict(self)
+
+    def __repr__(self):
+        return "LegacyPolicy <" \
+               "amount={amount}, " \
+               "inherence={inherence}, " \
+               "knowledge={knowledge}, "\
+               "possession={possession}, " \
+               "deny_rooted_jailbroken={deny_rooted_jailbroken}, " \
+               "fences={fences}>" \
+               "time_restrictions={time_restrictions}>". \
+            format(
+                amount=self.amount,
+                inherence=self.inherence,
+                knowledge=self.knowledge,
+                possession=self.possession,
+                deny_rooted_jailbroken=self.deny_rooted_jailbroken,
+                fences=repr(self.fences),
+                time_restrictions=repr(self.time_restrictions)
+            )
+
+    def __iter__(self):
+        yield "type", "LEGACY"
+        yield "amount", self.amount
+        yield "inherence", self.inherence
+        yield "knowledge", self.knowledge
+        yield "possession", self.possession
+        yield "deny_rooted_jailbroken", self.deny_rooted_jailbroken
+        yield "fences", [dict(f) for f in self.fences]
+        yield "time_restrictions", [dict(f) for f in self.time_restrictions]
+
+
 class MethodAmountPolicy(Policy):
     """
     Auth policy object that handles authentication by the amount of factors

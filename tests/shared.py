@@ -1,12 +1,12 @@
 import unittest
-from datetime import datetime
+from datetime import datetime, time
 
 import pytz
 from ddt import ddt, data
-from mock import ANY
+from mock import ANY, patch
 from six import assertRaisesRegex
 
-from launchkey.entities.service import Service, ServiceSecurityPolicy
+from launchkey.entities.service import Service, ServiceSecurityPolicy, TimeFence, GeoFence
 from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
     FactorsPolicy, MethodAmountPolicy, Factor
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, ServiceNameTaken, LastRemainingKey, \
@@ -419,7 +419,7 @@ class SharedTests(object):
                     {
                         'possession': 1,
                         'requirement': 'authenticated',
-                        'all': 1,
+                        'any': 0,
                         'inherence': 1,
                         'knowledge': 1
                     }
@@ -434,7 +434,7 @@ class SharedTests(object):
                 service_id=expected_service_id
             )
             self.assertIsInstance(policy, ServiceSecurityPolicy)
-            self.assertEqual(policy.minimum_amount, 1)
+            self.assertEqual(policy.minimum_amount, 0)
             self.assertIn('possession', policy.minimum_requirements)
             self.assertIn('inherence', policy.minimum_requirements)
             self.assertIn('knowledge', policy.minimum_requirements)
@@ -451,19 +451,22 @@ class SharedTests(object):
 
         def test_set_service_policy_success(self):
             expected_service_id = 'expected-service-id'
+            policy_called_with = {
+                "type": "LEGACY",
+                "amount": False,
+                "inherence": False,
+                "knowledge": False,
+                "possession": False,
+                "deny_rooted_jailbroken": False,
+                "fences": [],
+                "time_restrictions": []
+            }
             self._client.set_service_policy(expected_service_id[:],
                                             ServiceSecurityPolicy())
             self._transport.put.assert_called_once_with(
                 self._expected_base_endpoint[0:-1] + '/policy',
                 self._expected_subject, service_id=expected_service_id,
-                policy={'minimum_requirements': [],
-                        'factors': [
-                            {'quickfail': False,
-                             'priority': 1,
-                             'requirement': 'forced requirement',
-                             'attributes': {'factor enabled': 0},
-                             'factor': 'device integrity'}
-                        ]}
+                policy=policy_called_with
             )
 
         def test_set_service_policy_invalid_params(self):
@@ -495,7 +498,82 @@ class SharedTests(object):
             with self.assertRaises(ServiceNotFound):
                 self._client.remove_service_policy(ANY)
 
-        def test_get_service_policy_conditional_geofence(self):
+        def test_get_service_policy_parses_timefences(self):
+            self._response.data = {
+                "factors": [{
+                    "attributes": {
+                        "time fences": [{
+                            "days": ["Monday", "Sunday"],
+                            "end hour": 23,
+                            "end minute": 45,
+                            "name": "sup",
+                            "start hour": 12,
+                            "start minute": 30,
+                            "timezone": "UTC"
+                        }]
+                    },
+                    "factor": "timefence",
+                    "priority": 1,
+                    "quickfail": False,
+                    "requirement": "forced requirement"
+                }],
+                "minimum_requirements": []
+            }
+
+            expected_service_id = 'expected-service-id'
+            policy = self._client.get_service_policy(expected_service_id)
+            self.assertIsInstance(policy, ServiceSecurityPolicy)
+            self.assertIsInstance(policy.timefences[0], TimeFence)
+
+        def test_get_service_policy_parses_geofences(self):
+            self._response.data = {
+                "factors": [{
+                    "attributes": {
+                        "locations": [{
+                            "latitude": 30.0,
+                            "longitude": 30.0,
+                            "name": "AWESOME geofence",
+                            "radius": 3000.0
+                        }]
+                    },
+                    "factor": "geofence",
+                    "priority": 1,
+                    "quickfail": False,
+                    "requirement": "forced requirement"
+                }],
+                "minimum_requirements": []
+            }
+
+            expected_service_id = 'expected-service-id'
+            policy = self._client.get_service_policy(expected_service_id)
+            self.assertIsInstance(policy, ServiceSecurityPolicy)
+            self.assertIsInstance(policy.geofences[0], GeoFence)
+
+        def test_get_service_policy_throws_when_geofence_has_no_name(self):
+            self._response.data = {
+                "factors": [{
+                    "attributes": {
+                        "locations": [{
+                            "latitude": 30.0,
+                            "longitude": 30.0,
+                            "radius": 3000.0
+                        }]
+                    },
+                    "factor": "geofence",
+                    "priority": 1,
+                    "quickfail": False,
+                    "requirement": "forced requirement"
+                }],
+                "minimum_requirements": []
+            }
+
+            expected_service_id = 'expected-service-id'
+
+            with self.assertRaises(ValueError):
+                self._client.get_service_policy(expected_service_id)
+
+        @patch('launchkey.clients.base.warnings.warn')
+        def test_get_service_policy_warns_when_not_a_legacy_policy(self, warn):
             self._response.data = {
                 "type": "COND_GEO",
                 "fences": [{
@@ -519,7 +597,37 @@ class SharedTests(object):
             }
 
             expected_service_id = 'expected-service-id'
-            policy = self._client.get_service_policy(expected_service_id[:])
+            policy = self._client.get_service_policy(expected_service_id)
+            self.assertIsNone(policy)
+            warn.assert_called_once_with("Policy received was not a legacy policy and cannot "
+                                             "be converted into a ServiceSecurityPolicy.",
+                                             category=DeprecationWarning)
+
+        def test_get_advanced_service_policy_conditional_geofence(self):
+            self._response.data = {
+                "type": "COND_GEO",
+                "fences": [{
+                               "name": "Ontario",
+                               "type": "TERRITORY",
+                               "country": "CA",
+                               "administrative_area": "CA-ON"}
+                ],
+                "inside": {
+                    "type": "FACTORS",
+                    "fences": [],
+                    "factors": ["POSSESSION"]
+                },
+                "outside": {
+                    "type": "METHOD_AMOUNT",
+                    "fences": [],
+                    "amount": 1
+                },
+                "deny_rooted_jailbroken": False,
+                "deny_emulator_simulator": False
+            }
+
+            expected_service_id = 'expected-service-id'
+            policy = self._client.get_advanced_service_policy(expected_service_id[:])
             self._transport.post.assert_called_once_with(
                 self._expected_base_endpoint[0:-1] + '/policy/item',
                 self._expected_subject,
@@ -543,7 +651,7 @@ class SharedTests(object):
                     {
                         'possession': 1,
                         'requirement': 'authenticated',
-                        'all': 1,
+                        'any': 0,
                         'inherence': 1,
                         'knowledge': 1
                     }
@@ -562,9 +670,9 @@ class SharedTests(object):
             self.assertEqual(0, len(policy.geofences))
             self.assertEqual(0, len(policy.timefences))
             self.assertEqual(3, len(policy.minimum_requirements))
-            self.assertEqual(1, policy.minimum_amount)
+            self.assertEqual(0, policy.minimum_amount)
 
-        def test_get_service_policy_method_amount(self):
+        def test_get_advanced_service_policy_method_amount(self):
             self._response.data = {
                 "type": "METHOD_AMOUNT",
                 "amount": 1,
@@ -592,7 +700,7 @@ class SharedTests(object):
             }
 
             expected_service_id = 'expected-service-id'
-            policy = self._client.get_service_policy(expected_service_id[:])
+            policy = self._client.get_advanced_service_policy(expected_service_id[:])
             self._transport.post.assert_called_once_with(
                 self._expected_base_endpoint[0:-1] + '/policy/item',
                 self._expected_subject,
@@ -602,7 +710,7 @@ class SharedTests(object):
             self.assertEqual(policy.amount, 1)
             self.assertEqual(len(policy.fences), 3)
 
-        def test_get_service_policy_factors(self):
+        def test_get_advanced_service_policy_factors(self):
             self._response.data = {
                 "type": "FACTORS",
                 "factors": ["POSSESSION"],
@@ -624,7 +732,7 @@ class SharedTests(object):
             }
 
             expected_service_id = 'expected-service-id'
-            policy = self._client.get_service_policy(expected_service_id[:])
+            policy = self._client.get_advanced_service_policy(expected_service_id[:])
             self._transport.post.assert_called_once_with(
                 self._expected_base_endpoint[0:-1] + '/policy/item',
                 self._expected_subject,

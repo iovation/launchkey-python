@@ -16,7 +16,7 @@ from launchkey.entities.service import AuthorizationRequest, DenialReason, \
     GeoFence, TimeFence
 from launchkey.entities.service.policy import FactorsPolicy, \
     ConditionalGeoFencePolicy, GeoCircleFence, TerritoryFence, \
-    MethodAmountPolicy, Factor
+    MethodAmountPolicy, Factor, LegacyPolicy
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     InvalidPolicyInput, PolicyFailure, \
     EntityNotFound, RateLimited, RequestTimedOut, UnexpectedAPIResponse, \
@@ -1116,3 +1116,36 @@ class TestTerritoryFence(unittest.TestCase):
         expected = "TerritoryFence <country=\"US\", administrative_area=" \
                    "\"US-CA\", postal_code=\"90145\", name=\"TestTerritory\">"
         self.assertEqual(repr(territory_fence), expected)
+
+
+class TestLegacyPolicy(unittest.TestCase):
+    def setUp(self):
+        self.legacy_policy = LegacyPolicy(amount=0, inherence=False, knowledge=True,
+                                          possession=False, deny_rooted_jailbroken=True,
+                                          fences=[], time_restrictions=[])
+
+    def test_default_instantiation(self):
+        self.assertIsInstance(self.legacy_policy, LegacyPolicy)
+        self.assertEqual(self.legacy_policy.amount, 0)
+        self.assertFalse(self.legacy_policy.inherence)
+        self.assertFalse(self.legacy_policy.possession)
+        self.assertTrue(self.legacy_policy.knowledge)
+        self.assertTrue(self.legacy_policy.deny_rooted_jailbroken)
+        self.assertEqual(self.legacy_policy.fences, [])
+        self.assertEqual(self.legacy_policy.time_restrictions, [])
+
+    def test_is_serializable(self):
+        json.dumps(dict(self.legacy_policy))
+        json.dumps(self.legacy_policy.to_dict())
+
+    def test_repr(self):
+        expected = "LegacyPolicy <" \
+            "amount=0, " \
+            "inherence=False, " \
+            "knowledge=True, "\
+            "possession=False, " \
+            "deny_rooted_jailbroken=True, " \
+            "fences=[]>" \
+            "time_restrictions=[]>"
+
+        self.assertEqual(repr(self.legacy_policy), expected)

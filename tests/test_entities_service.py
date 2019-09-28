@@ -1,5 +1,6 @@
 import unittest
 
+import json
 from mock import MagicMock, patch
 from ddt import data, unpack, ddt
 from formencode import Invalid
@@ -1318,6 +1319,21 @@ class TestTimeFence(unittest.TestCase):
             'end_time="03:04:00", monday=True, tuesday=True, wednesday=True, '
             'thursday=True, friday=True, saturday=True, sunday=True>'
         )
+
+    def test_is_serializable(self):
+        fence = TimeFence(
+            "AWESOME timefence",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        json.dumps(dict(fence))
 
 
 class TestAuthorizationRequest(unittest.TestCase):

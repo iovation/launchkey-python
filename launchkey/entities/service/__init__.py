@@ -183,6 +183,15 @@ class TimeFence(object):
                 sunday=self.sunday
             )
 
+    def __iter__(self):
+        yield "days", self.days
+        yield "start hour", self.start_time.hour
+        yield "end hour", self.end_time.hour
+        yield "name", self.name
+        yield "start minute", self.start_time.minute
+        yield "end minute", self.end_time.minute
+        yield "timezone", self.timezone
+
 
 class DenialReason(object):
     """
@@ -234,7 +243,7 @@ class AuthPolicy(object):
                                     "]input must be a boolean.")
         if any != 0 and (knowledge or inherence or possession):
             raise InvalidParameters("Cannot use \"any\" with other specific "
-                                    "]factor requirements")
+                                    "factor requirements")
 
         self.geofences = []
         self.minimum_requirements = []
