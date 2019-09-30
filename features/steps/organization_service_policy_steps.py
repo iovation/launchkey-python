@@ -3,10 +3,13 @@ from pytz import utc
 
 from behave import given, when, then, step
 
-from launchkey.entities.service import TimeFence, GeoFence
+from launchkey.entities.service import TimeFence, GeoFence, FactorsPolicy
 
 
 # Retrieve Organization Service Policy
+from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
+    TerritoryFence, GeoCircleFence
+
 
 @step("I retrieve the Policy for the Current Organization Service")
 def retrieve_policy_for_current_organization_service(context):
@@ -183,8 +186,8 @@ def verify_organization_service_policy_does_not_require_jailbreak_protection(
         raise Exception("Policy ailbreak protection when it should not have")
 
 
-@given("I set the Policy for the Organization Service")
-@step("I set the Policy for the Current Organization Service")
+@given(u"I set the Policy for the Organization Service")
+@step(u"I set the Policy for the Current Organization Service")
 def set_organization_service_policy_require_to_current_policy(context):
     current_service = context.entity_manager.get_current_organization_service()
     policy = context.entity_manager.get_current_organization_service_policy()
@@ -317,3 +320,75 @@ def attempt_to_remove_policy_from_given_organization_service_id(context,
         )
     except Exception as e:
         context.current_exception = e
+
+
+@step("I set the Policy for the Current Organization Service "
+      "to the new policy")
+def step_impl(context):
+    current_service = context.entity_manager.get_current_organization_service()
+    policy = context.entity_manager.get_current_auth_policy()
+    context.organization_service_policy_manager.set_service_policy(
+        current_service.id,
+        policy
+    )
+
+
+@given("the Organization Service is set to any Conditional Geofence Policy")
+def step_impl(context):
+
+    default_nested_policy = FactorsPolicy(
+        factors=["knowledge"],
+        deny_emulator_simulator=None,
+        deny_rooted_jailbroken=None,
+        fences=None
+    )
+
+    default_cond_geo_policy = ConditionalGeoFencePolicy(
+        inside=default_nested_policy,
+        outside=default_nested_policy,
+        fences=[TerritoryFence("US", name="test1")]
+    )
+
+    context.entity_manager.set_current_organization_service_policy(
+        default_cond_geo_policy)
+    context.entity_manager.set_current_auth_policy(default_cond_geo_policy)
+
+
+@then(
+    'the Organization Service Policy contains the GeoCircleFence "{name}"')
+def step_impl(context, name):
+    policy = context.entity_manager.get_current_organization_service_policy()
+    for fence in policy.fences:
+        if fence.name == name:
+            if isinstance(fence, GeoCircleFence):
+                return True
+    raise ValueError("Fence {0} was not found".format(name))
+
+
+@step('the Organization Service Policy contains the TerritoryFence "{name}"')
+def step_impl(context, name):
+    policy = context.entity_manager.get_current_organization_service_policy()
+    for fence in policy.fences:
+        if fence.name == name:
+            if isinstance(fence, TerritoryFence):
+                return True
+    raise ValueError("Fence {0} was not found".format(name))
+
+
+@then(u'the Organization Service Policy has "{amount}" fences')
+def organization_service_amount_fences(context, amount):
+    policy = context.entity_manager.get_current_organization_service_policy()
+    if len(policy.fences) != int(amount):
+        raise ValueError(
+            "{0} does not equal current policy amount of {1}".format(
+                amount,
+                len(policy.fences)
+            )
+        )
+
+
+@then(u'the Organization Service Policy has "{amount}" fence')
+def single_fence(context, amount):
+    # Handles the english phrasing for a single fence without
+    # changing the behave matcher
+    organization_service_amount_fences(context, amount)
