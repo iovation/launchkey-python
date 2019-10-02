@@ -1116,3 +1116,16 @@ class TestTerritoryFence(unittest.TestCase):
         expected = "TerritoryFence <country=\"US\", administrative_area=" \
                    "\"US-CA\", postal_code=\"90145\", name=\"TestTerritory\">"
         self.assertEqual(repr(territory_fence), expected)
+
+    def test_postal_code_integer_is_converted_to_string(self):
+        expected = "90145"
+        territory_fence = TerritoryFence("US", "US-CA", 90145, "TestTerritory")
+        fence_dict = dict(territory_fence)
+        self.assertEqual(territory_fence, expected)
+        self.assertEqual(fence_dict["postal_code"], expected)
+
+    def test_postal_code_of_none_is_not_converted_to_string(self):
+        territory_fence = TerritoryFence("US", "US-CA", None, "TestTerritory")
+        fence_dict = dict(territory_fence)
+        self.assertIsNone(territory_fence.postal_code)
+        self.assertIsNone(fence_dict["postal_code"])
