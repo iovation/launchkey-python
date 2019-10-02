@@ -96,6 +96,7 @@ Feature: Directory Client can retrieve Directory Service Policy
 
   Scenario: Setting Fences on a Factors Policy works as expected
     When I create a new Factors Policy
+    And I set the factors to "Knowledge"
     And I add the following GeoCircleFence items
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
@@ -182,8 +183,8 @@ Feature: Directory Client can retrieve Directory Service Policy
     | country | admin_area | postal_code | name  |
     | US      | US-NV      | 89120       | US-NV |
     | US      | US-CA      | 90001       | US-CA |
-    And I set the Policy for the Current Directory Service to the new policy
-    And I retrieve the Policy for the Current Directory Service
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
     Then the Directory Service Policy has "5" fences
     And the Directory Service Policy contains the GeoCircleFence "Large Fence"
     And the "Large Fence" fence has a latitude of "45.1250"

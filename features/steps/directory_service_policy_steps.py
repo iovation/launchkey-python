@@ -3,7 +3,8 @@ from pytz import utc
 
 from behave import given, when, then, step
 
-from launchkey.entities.service import TimeFence, GeoFence, GeoCircleFence, \
+from launchkey.entities.service import TimeFence, GeoFence
+from launchkey.entities.service.policy import GeoCircleFence, \
     TerritoryFence, FactorsPolicy
 
 # Retrieve Directory Service Policy
@@ -14,6 +15,16 @@ def retrieve_policy_for_current_directory_service(context):
     current_service = context.entity_manager.get_current_directory_service()
     current_directory = context.entity_manager.get_current_directory()
     context.directory_service_policy_manager.retrieve_service_policy(
+        current_service.id,
+        current_directory.id
+    )
+
+
+@step("I retrieve the Advanced Policy for the Current Directory Service")
+def retrieve_policy_for_current_directory_service(context):
+    current_service = context.entity_manager.get_current_directory_service()
+    current_directory = context.entity_manager.get_current_directory()
+    context.directory_service_policy_manager.retrieve_advanced_service_policy(
         current_service.id,
         current_directory.id
     )
@@ -340,6 +351,20 @@ def step_impl(context):
         current_directory.id,
         policy
     )
+
+
+@step("I set the Advanced Policy for the Current Directory Service "
+      "to the new policy")
+def step_impl(context):
+    current_service = context.entity_manager.get_current_directory_service()
+    current_directory = context.entity_manager.get_current_directory()
+    policy = context.entity_manager.get_current_auth_policy()
+    context.directory_service_policy_manager.set_advanced_service_policy(
+        current_service.id,
+        current_directory.id,
+        policy
+    )
+
 
 @given("the Directory Service is set to any Conditional Geofence Policy")
 def step_impl(context):

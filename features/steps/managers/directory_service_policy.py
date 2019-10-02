@@ -32,6 +32,12 @@ class DirectoryServicePolicyManager(BaseManager):
             directory_client.get_service_policy(service_id)
         return self.current_service_policy
 
+    def retrieve_advanced_service_policy(self, service_id, directory_id):
+        directory_client = self._get_directory_client(directory_id)
+        self.current_service_policy = \
+            directory_client.get_advanced_service_policy(service_id)
+        return self.current_service_policy
+
     def remove_service_policy(self, service_id, directory_id):
         directory_client = self._get_directory_client(directory_id)
         directory_client.remove_service_policy(service_id)
@@ -39,3 +45,7 @@ class DirectoryServicePolicyManager(BaseManager):
     def set_service_policy(self, service_id, directory_id, policy):
         directory_client = self._get_directory_client(directory_id)
         directory_client.set_service_policy(service_id, policy)
+
+    def set_advanced_service_policy(self, service_id, directory_id, policy):
+        directory_client = self._get_directory_client(directory_id)
+        directory_client.set_advanced_service_policy(service_id, policy)

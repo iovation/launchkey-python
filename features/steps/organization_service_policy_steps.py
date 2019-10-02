@@ -3,7 +3,8 @@ from pytz import utc
 
 from behave import given, when, then, step
 
-from launchkey.entities.service import TimeFence, GeoFence, FactorsPolicy
+from launchkey.entities.service import TimeFence, GeoFence
+from launchkey.entities.service.policy import FactorsPolicy
 
 
 # Retrieve Organization Service Policy

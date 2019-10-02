@@ -551,7 +551,7 @@ class AuthMethod(object):
         return eq
 
 
-class AuthorizationResponse(object):
+class AdvancedAuthorizationResponse(object):
     """
     Authorization Response object containing decrypted auth response and
     other related information
@@ -626,29 +626,35 @@ class AuthorizationResponse(object):
 
         auth_policy = decrypted_jwe.get("auth_policy")
         if auth_policy:
-            kwargs = {}
-            if auth_policy['requirement'] == "amount":
-                kwargs['any'] = auth_policy['amount']
-            elif auth_policy['requirement'] == "types":
-                for item in auth_policy['types']:
-                    type = item.lower()
-                    if type in ['knowledge', 'inherence', 'possession']:
-                        kwargs[type] = True
-                    else:
-                        warnings.warn(
-                            "Invalid policy type given: %s. "
-                            "It will be ignored, but this could "
-                            "signify the need for an update." % type)
+            auth_res_policy_kwargs = {}
+            valid_
 
-            if auth_policy.get('geofences') or kwargs:
-                self.auth_policy = AuthPolicy(**kwargs)
-                for fence in auth_policy.get('geofences', []):
-                    self.auth_policy.add_geofence(
-                        fence['latitude'],
-                        fence['longitude'],
-                        fence['radius'],
-                        name=fence['name']
-                    )
+
+        # TODO: TURN THIS INTO A AUTHORIZATION RESPONSE POLICY
+        # if auth_policy:
+        #     kwargs = {}
+        #     if auth_policy['requirement'] == "amount":
+        #         kwargs['any'] = auth_policy['amount']
+        #     elif auth_policy['requirement'] == "types":
+        #         for item in auth_policy['types']:
+        #             type = item.lower()
+        #             if type in ['knowledge', 'inherence', 'possession']:
+        #                 kwargs[type] = True
+        #             else:
+        #                 warnings.warn(
+        #                     "Invalid policy type given: %s. "
+        #                     "It will be ignored, but this could "
+        #                     "signify the need for an update." % type)
+        #
+        #     if auth_policy.get('geofences') or kwargs:
+        #         self.auth_policy = AuthPolicy(**kwargs)
+        #         for fence in auth_policy.get('geofences', []):
+        #             self.auth_policy.add_geofence(
+        #                 fence['latitude'],
+        #                 fence['longitude'],
+        #                 fence['radius'],
+        #                 name=fence['name']
+        #             )
 
     def _parse_device_response_from_auth_package(self, auth_package, key_id,
                                                  transport):
@@ -716,6 +722,42 @@ class AuthorizationResponse(object):
         self.auth_policy = None
         self.auth_methods = None
         self._parse_device_response(data, transport)
+
+
+class AuthorizationResponse(AdvancedAuthorizationResponse):
+    def __init__(self, data, transport):
+        super(AdvancedAuthorizationResponse, self).__init__(data, transport)
+
+        # YOU LEFT OFF HERE!
+        # It's probably best to decrypt the jwe here as opposed to storing it
+        # as a property of the class... storing decrypted data seems like it
+        # could pose a pretty big issue.
+        auth_policy = self.decrypted_jwe.get("auth_policy")
+        # TODO: TURN THIS INTO A AUTHORIZATION RESPONSE POLICY
+        if auth_policy:
+            kwargs = {}
+            if auth_policy['requirement'] == "amount":
+                kwargs['any'] = auth_policy['amount']
+            elif auth_policy['requirement'] == "types":
+                for item in auth_policy['types']:
+                    type = item.lower()
+                    if type in ['knowledge', 'inherence', 'possession']:
+                        kwargs[type] = True
+                    else:
+                        warnings.warn(
+                            "Invalid policy type given: %s. "
+                            "It will be ignored, but this could "
+                            "signify the need for an update." % type)
+
+            if auth_policy.get('geofences') or kwargs:
+                self.auth_policy = AuthPolicy(**kwargs)
+                for fence in auth_policy.get('geofences', []):
+                    self.auth_policy.add_geofence(
+                        fence['latitude'],
+                        fence['longitude'],
+                        fence['radius'],
+                        name=fence['name']
+                    )
 
 
 class SessionEndRequest(object):

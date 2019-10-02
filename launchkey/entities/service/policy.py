@@ -38,6 +38,45 @@ class Policy(object):
         self.fences = fences
 
 
+class Requirement(Enum):
+    """ Requirement Enum """
+    AMOUNT = "AMOUNT"
+    TYPES = "TYPES"
+    COND_GEO = "COND_GEO"
+    OTHER = "OTHER"
+
+
+class AuthorizationResponsePolicy(Policy):
+    """
+    Represents the AMI Authorization Policy
+
+    :param requirement: Requirement Enum representing the policy requirement
+    :param amount: Integer representing amount of factors to enforce
+    :param fences: List of fence objects
+    :param inherence: Boolean whether or not to enforce inherence factor
+    :param knowledge: Boolean whether or not to enforce knowledge factor
+    :param possession: Boolean whether or not to enforce possession factor
+    """
+    def __init__(self, requirement=None, amount=0, fences=None,
+                 inherence=False, knowledge=False, possession=False):
+        super(AuthorizationResponsePolicy, self).__init__(fences)
+
+        if requirement and not isinstance(requirement, Requirement):
+            raise InvalidPolicyAttributes("Requirement must be an enumeration "
+                                          "of \"Requirement\"")
+
+        elif requirement and isinstance(requirement, Requirement):
+            self.requirement = requirement
+
+        else:
+            self.requirement = Requirement.OTHER
+
+        self.amount = amount
+        self.inherence = inherence
+        self.knowledge = knowledge
+        self.possession = possession
+
+
 class ConditionalGeoFencePolicy(Policy):
     """
     Provides an Auth Request the ability to have the device based on user

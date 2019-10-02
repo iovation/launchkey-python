@@ -1,8 +1,7 @@
 from behave import given, when, then
 
-from launchkey.entities.service import FactorsPolicy
 from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
-    MethodAmountPolicy, GeoCircleFence, TerritoryFence, Factor
+    MethodAmountPolicy, GeoCircleFence, TerritoryFence, Factor, FactorsPolicy
 
 DEFAULT_FACTORS_POLICY = FactorsPolicy(
     factors=["knowledge"],
