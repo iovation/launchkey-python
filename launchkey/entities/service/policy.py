@@ -1,15 +1,7 @@
 """ Service Policy objects """
-
 from enum import Enum
 
 from launchkey.exceptions import InvalidFenceType, InvalidPolicyAttributes
-
-
-class Factor(Enum):
-    """ Factors Enum"""
-    KNOWLEDGE = "KNOWLEDGE"
-    INHERENCE = "INHERENCE"
-    POSSESSION = "POSSESSION"
 
 
 # pylint: disable=too-few-public-methods
@@ -186,14 +178,15 @@ class ConditionalGeoFencePolicy(Policy):
     @staticmethod
     def __create_inner_policies(policy):
         if isinstance(policy, MethodAmountPolicy):
-            policy = MethodAmountPolicy(
+            new_policy = MethodAmountPolicy(
                 amount=policy.amount, fences=None,
                 deny_emulator_simulator=None, deny_rooted_jailbroken=None
             )
         elif isinstance(policy, FactorsPolicy):
-            policy = FactorsPolicy(
-                factors=policy.factors, fences=None,
-                deny_rooted_jailbroken=None, deny_emulator_simulator=None
+            new_policy = FactorsPolicy(
+                deny_rooted_jailbroken=None, deny_emulator_simulator=None,
+                inherence=policy.inherence, knowledge=policy.knowledge,
+                possession=policy.possession, fences=None
             )
         else:
             raise InvalidPolicyAttributes(
@@ -201,7 +194,7 @@ class ConditionalGeoFencePolicy(Policy):
                 "\"FACTORS\", \"METHOD_AMOUNT\"]"
             )
 
-        return policy
+        return new_policy
 
 
 class LegacyPolicy(Policy):
@@ -321,30 +314,38 @@ class FactorsPolicy(Policy):
     """
     Auth policy object that handles authentication based on type of factors
 
-    :param factors: List containing either Factor types or a list of strings
-    that are valid Factor objects.
     Cannot be a mixed list of strings and Factor objects
     :param deny_rooted_jailbroken: Deny request if device reports that it is
     rooted/jailbroken
     :param deny_emulator_simulator: Deny request if device reports it is a
     simulator or an emulator
-    :param fences: List of fences that the device should check
+    :param inherence: Boolean. Whether to require inherence factor
+    :param knowledge: Boolean. Whether to require knowledge factor
+    :param possession: Boolean. Whether to require possession factor
+    :param fences: List of fences to apply to the policy
     """
-    def __init__(self, factors=None, deny_rooted_jailbroken=False,
-                 deny_emulator_simulator=False, fences=None):
-        if not factors:
-            self.factors = []
-        else:
-            if isinstance(factors[0], Factor):
-                self.factors = factors
-            else:
-                self.factors = [
-                    Factor(factor.upper()) for factor in factors
-                ]
-
+    def __init__(self, deny_rooted_jailbroken=False,
+                 deny_emulator_simulator=False, inherence=False,
+                 knowledge=False, possession=False, fences=None):
         super(FactorsPolicy, self).__init__(fences)
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
+        self.inherence = inherence
+        self.knowledge = knowledge
+        self.possession = possession
+
+    def __factors_list(self):
+        factors = []
+        if self.inherence:
+            factors.append("INHERENCE")
+
+        if self.knowledge:
+            factors.append("KNOWLEDGE")
+
+        if self.possession:
+            factors.append("POSSESSION")
+
+        return factors
 
     def to_dict(self):
         """
@@ -354,21 +355,25 @@ class FactorsPolicy(Policy):
 
     def __repr__(self):
         return "FactorsPolicy <" \
-               "factors={factors}, " \
                "deny_rooted_jailbroken={deny_rooted_jailbroken}, " \
                "deny_emulator_simulator={deny_emulator_simulator}, " \
+               "inherence={inherence}, " \
+               "knowledge={knowledge}, " \
+               "possession={possession}, " \
                "fences={fences}>". \
             format(
-                factors=repr(self.factors),
                 deny_rooted_jailbroken=self.deny_rooted_jailbroken,
                 deny_emulator_simulator=self.deny_emulator_simulator,
+                inherence=self.inherence,
+                knowledge=self.knowledge,
+                possession=self.possession,
                 fences=repr(self.fences)
             )
 
     def __iter__(self):
         yield "type", "FACTORS"
         yield "fences", [dict(fence) for fence in self.fences]
-        yield "factors", [factor.name for factor in self.factors]
+        yield "factors", self.__factors_list()
         if self.deny_rooted_jailbroken is not None:
             yield "deny_rooted_jailbroken", self.deny_rooted_jailbroken
         if self.deny_emulator_simulator is not None:

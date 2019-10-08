@@ -8,7 +8,7 @@ from six import assertRaisesRegex
 
 from launchkey.entities.service import Service, ServiceSecurityPolicy, TimeFence, GeoFence
 from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
-    FactorsPolicy, MethodAmountPolicy, Factor
+    FactorsPolicy, MethodAmountPolicy
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, ServiceNameTaken, LastRemainingKey, \
     PublicKeyDoesNotExist, ServiceNotFound, InvalidPublicKey, PublicKeyAlreadyInUse, Forbidden, UnknownPolicyException, \
     InvalidFenceType
@@ -607,10 +607,10 @@ class SharedTests(object):
             self._response.data = {
                 "type": "COND_GEO",
                 "fences": [{
-                               "name": "Ontario",
-                               "type": "TERRITORY",
-                               "country": "CA",
-                               "administrative_area": "CA-ON"}
+                    "name": "Ontario",
+                    "type": "TERRITORY",
+                    "country": "CA",
+                    "administrative_area": "CA-ON"}
                 ],
                 "inside": {
                     "type": "FACTORS",
@@ -637,8 +637,7 @@ class SharedTests(object):
             self.assertIsInstance(policy, ConditionalGeoFencePolicy)
             self.assertIsInstance(policy.inside, FactorsPolicy)
             self.assertIsInstance(policy.inside, FactorsPolicy)
-            self.assertEqual(1, len(policy.inside.factors))
-            self.assertEqual(policy.inside.factors[0], Factor.POSSESSION)
+            self.assertTrue(policy.inside.possession)
             self.assertEqual(0, len(policy.inside.fences))
             self.assertIsInstance(policy.outside, MethodAmountPolicy)
             self.assertIsInstance(policy.outside, MethodAmountPolicy)
@@ -739,8 +738,7 @@ class SharedTests(object):
                 service_id=expected_service_id
             )
             self.assertIsInstance(policy, FactorsPolicy)
-            self.assertEqual(len(policy.factors), 1)
-            self.assertEqual(policy.factors[0], Factor.POSSESSION)
+            self.assertTrue(policy.possession)
             self.assertEqual(len(policy.fences), 2)
 
         def test_nested_conditional_throws_exception(self):

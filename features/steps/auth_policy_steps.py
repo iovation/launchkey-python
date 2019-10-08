@@ -100,7 +100,7 @@ def update_current_auth_policy_to_require_given_geofence(context, radius,
 
 @when(u"I create a new Factors Policy")
 def step_impl(context):
-    new_policy = FactorsPolicy(factors=["POSSESSION"])
+    new_policy = FactorsPolicy()
     context.entity_manager.set_current_auth_policy(new_policy)
 
 

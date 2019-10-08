@@ -9,7 +9,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy - New 
     And I have added an SDK Key to the Directory
     And I created a Directory Service
     And I have a linked device
-​
+
   Scenario: Verify that a Factors Policy can be parsed
     When I create a new Factors Policy
     And I set the factors to "INHERENCE"
@@ -20,8 +20,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy - New 
     Then the Advanced Authorization response should be approved
     And the Advanced Authorization response should require Inherence
     And the Advanced Authorization response should have the requirement "types"
-​
-​
+
   Scenario: Verify that a Method Amount Policy can be parsed
     When I create a new MethodAmountPolicy
     And I set the amount to "2"
@@ -32,8 +31,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy - New 
     Then the Advanced Authorization response should be approved
     And the Advanced Authorization response should have amount set to 2
     And the Advanced Authorization response should have the requirement "amount"
-​
-​
+
   Scenario: Verify that a Conditional Geofence Policy can be parsed
     Given the Directory Service is set to any Conditional Geofence Policy
     When I add the following GeoCircleFence items
@@ -46,7 +44,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy - New 
     Then the Advanced Authorization response should be denied
     And the Advanced Authorization response should contain a GeoCircleFence with a radius of 234400, a latitude of 41, a longitude of -141, and a name of "Large Fence"
     And the Advanced Authorization response should have the requirement "cond_geo"
-​
+
   Scenario: Verify that GeoCircleFence fences can be parsed from Fences on a Factors Policy
     When I create a new Factors Policy
     And I add the following GeoCircleFence items
@@ -61,7 +59,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy - New 
     And the Advanced Authorization response should contain a GeoCircleFence with a radius of 15200, a latitude of 45.1250, a longitude of 150.51, and a name of "Large Fence"
     And the Advanced Authorization response should contain a GeoCircleFence with a radius of 100, a latitude of -50.01, a longitude of -140, and a name of "Small Fence"
     And the Advanced Authorization response should have the requirement "types"
-​
+
   Scenario: Verify that GeoCircleFence fences can be parsed from Fences on a Methods Amount Policy
     When I create a new MethodAmountPolicy
     And I set the amount to "4"
@@ -77,7 +75,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy - New 
     And the Advanced Authorization response should contain a GeoCircleFence with a radius of 15200, a latitude of 45.1250, a longitude of 150.51, and a name of "Large Fence"
     And the Advanced Authorization response should contain a GeoCircleFence with a radius of 100, a latitude of -50.01, a longitude of -140, and a name of "Small Fence"
     And the Advanced Authorization response should have the requirement "amount"
-​
+
   Scenario: Verify that TerritoryFence fences can be parsed from Fences on a Factors Policy
     When I create a new Factors Policy
     And I add the following TerritoryFence items
@@ -90,7 +88,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy - New 
     Then the Advanced Authorization response should be denied
     And the Advanced Authorization response should contain a TerritoryFence with a country of "US", a administrative area of "US-NV", a postal code of "89120", and a name of "US-NV"
     And the Advanced Authorization response should have the requirement "types"
-​
+
   Scenario: Verify that TerritoryFence fences can be parsed from Fences on a Methods Amount Policy
     When I create a new MethodAmountPolicy
     And I add the following TerritoryFence items
@@ -103,7 +101,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy - New 
     Then the Advanced Authorization response should be denied
     And the Advanced Authorization response should contain a TerritoryFence with a country of "US", a administrative area of "US-NV", a postal code of "89120", and a name of "US-NV"
     And the Advanced Authorization response should have the requirement "amount"
-​
+
   Scenario: Verify that TerritoryFence fences can be parsed from Fences on a Conditional Geofence Policy
     Given the Directory Service is set to any Conditional Geofence Policy
     When I add the following TerritoryFence items

@@ -225,9 +225,9 @@ class AuthPolicy(object):
         If all values are left at 0, service defaults will be used.
 
         :param any: Int. Whether to require any x number of factors
-        :param knowledge: Boolean. Whether to require knowledge factors
-        :param inherence: Boolean. Whether to require inherence factors
-        :param possession: Boolean. Whether to require possesion factors
+        :param knowledge: Boolean. Whether to require knowledge factor
+        :param inherence: Boolean. Whether to require inherence factor
+        :param possession: Boolean. Whether to require possesion factor
         :param jailbreak_protection: Boolean. Whether to allow jailbroken /
                rooted devices to authenticate
         """

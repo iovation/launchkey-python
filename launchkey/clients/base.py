@@ -469,8 +469,10 @@ class ServiceManagingBaseClient(BaseClient):
                     "deny_rooted_jailbroken"],
                 deny_emulator_simulator=policy_data[
                     "deny_emulator_simulator"],
-                fences=self.__generate_fence_objects_from_policy(policy_data),
-                factors=policy_data["factors"]
+                inherence="INHERENCE" in policy_data["factors"],
+                knowledge="KNOWLEDGE" in policy_data["factors"],
+                possession="POSSESSION" in policy_data["factors"],
+                fences=self.__generate_fence_objects_from_policy(policy_data)
             )
         else:
             raise UnknownPolicyException(
@@ -542,9 +544,11 @@ class ServiceManagingBaseClient(BaseClient):
             )
         elif policy["type"] == "FACTORS":
             new_policy = FactorsPolicy(
-                factors=policy["factors"],
                 deny_rooted_jailbroken=None,
                 deny_emulator_simulator=None,
+                inherence="INHERENCE" in policy["factors"],
+                knowledge="KNOWLEDGE" in policy["factors"],
+                possession="POSSESSION" in policy["factors"],
                 fences=policy["fences"]
             )
         else:
