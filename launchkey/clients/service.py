@@ -13,7 +13,8 @@ from launchkey.utils.shared import XiovJWTService
 from launchkey.entities.validation import AuthorizationResponseValidator, \
     AuthorizeSSEValidator, AuthorizeValidator
 from launchkey.entities.service import AuthPolicy, AuthorizationResponse, \
-    SessionEndRequest, AuthorizationRequest, DenialReason
+    SessionEndRequest, AuthorizationRequest, AdvancedAuthorizationResponse, \
+    DenialReason
 from .base import BaseClient, api_call
 
 
@@ -173,6 +174,41 @@ class ServiceClient(BaseClient):
                                     data.get('push_package'))
 
     @api_call
+    def get_advanced_authorization_response(self, authorization_request_id):
+        """
+        Request the response for a previous authorization call.
+        :param authorization_request_id: Unique identifier returned by
+        authorization_request()
+        :raise: launchkey.exceptions.InvalidParameters - Input parameters were
+        not correct
+        :raise: launchkey.exceptions.RequestTimedOut - The authorization
+        request has not been responded to before the
+        timeout period (5 minutes)
+        :raise: launchkey.exceptions.AuthorizationRequestCanceled - The
+        authorization request has been canceled so a response cannot be
+        retrieved.
+        :return: None if the user has not responded otherwise a
+        launchkey.entities.service.AdvancedAuthorizationResponse object
+                 with the user's response
+        in it
+        """
+        response = self._transport.get(
+            "/service/v3/auths/%s" % authorization_request_id,
+            self._subject)
+
+        if response.status_code == 204:
+            authorization_response = None
+        else:
+            data = self._validate_response(
+                response,
+                AuthorizationResponseValidator)
+            authorization_response = AdvancedAuthorizationResponse(
+                data,
+                self._transport
+            )
+
+        return authorization_response
+
     def get_authorization_response(self, authorization_request_id):
         """
         Request the response for a previous authorization call.
@@ -191,22 +227,15 @@ class ServiceClient(BaseClient):
                  with the user's response
         in it
         """
-        response = self._transport.get(
-            "/service/v3/auths/%s" % authorization_request_id,
-            self._subject)
+        advanced_authorization_response = \
+            self.get_advanced_authorization_response(authorization_request_id)
 
-        if response.status_code == 204:
-            authorization_response = None
-        else:
-            data = self._validate_response(
-                response,
-                AuthorizationResponseValidator)
-            authorization_response = AuthorizationResponse(
-                data,
-                self._transport
-            )
+        if not advanced_authorization_response:
+            return None
 
-        return authorization_response
+        return AuthorizationResponse(
+            advanced_authorization_response.data,
+            advanced_authorization_response.transport)
 
     @api_call
     def cancel_authorization_request(self, authorization_request_id):
@@ -262,9 +291,9 @@ class ServiceClient(BaseClient):
                                self._subject,
                                username=user)
 
-    def handle_webhook(self, body, headers, method=None, path=None):
+    def handle_advanced_webhook(self, body, headers, method=None, path=None):
         """
-        Handle a webhook callback
+        Handle an advanced webhook callback
         In the event of a Logout webhook, be sure to call session_end() when
         you complete the process of ending the user's session in your
         implementation.  This will remove the corresponding Application from
@@ -275,7 +304,7 @@ class ServiceClient(BaseClient):
         :param path:  The path of the request
         :param method: The HTTP method of the request
         :return: launchkey.entities.service.SessionEndRequest or
-        launchkey.entities.service.AuthorizationResponse
+        launchkey.entities.service.AdvancedAuthorizationResponse
         :raises launchkey.exceptions.UnexpectedWebhookRequest: when the
         request or its cannot be parsed or fails
         validation.
@@ -323,7 +352,7 @@ class ServiceClient(BaseClient):
                         body, headers, method, path
                     )
                     auth_response = loads(decrypted_body)
-                    result = AuthorizationResponse(
+                    result = AdvancedAuthorizationResponse(
                         auth_response,
                         self._transport
                     )
@@ -335,3 +364,46 @@ class ServiceClient(BaseClient):
             raise UnexpectedWebhookRequest(reason)
 
         return result
+
+    def handle_webhook(self, body, headers, method=None, path=None):
+        """
+        Handle a webhook callback
+        In the event of a Logout webhook, be sure to call session_end() when
+        you complete the process of ending the user's session in your
+        implementation.  This will remove the corresponding Application from
+        the authorization list on all of the the user's mobile devices.
+        :param body: The raw body that was send in the POST content
+        :param headers: A generic map of response headers. These will be used
+        to access and validate authorization
+        :param path:  The path of the request
+        :param method: The HTTP method of the request
+        :return: launchkey.entities.service.SessionEndRequest or
+        launchkey.entities.service.AuthorizationResponse
+        :raises launchkey.exceptions.UnexpectedWebhookRequest: when the
+        request or its cannot be parsed or fails
+        validation.
+        :raises launchkey.exceptions.UnableToDecryptWebhookRequest: when the
+        request is an authorization response webhook and the request body
+        cannot be decrypted
+        :raises launchkey.exceptions.UnexpectedAuthorizationResponse: when the
+        decrypted auth package is missing required data. This error is
+        indicative of a non webhook request being sent to the method.
+        :raises launchkey.exceptions.UnexpectedKeyID: when the auth package in
+        an authorization response webhook request body is decrypted using a
+        public key whose private key is not known by the client. This can be
+        a configuration issue.
+        :raises launchkey.exceptions.UnexpectedDeviceResponse: when the auth
+        package received from the device is invalid. This error is
+        indicative of a man in the middle (MITM) attack.
+        :raises launchkey.exceptions.WebhookAuthorizationError: when the
+        "Authorization" header in the headers.
+        """
+        advanced_authorization_response = self.handle_advanced_webhook(
+            body, headers, method, path)
+
+        if isinstance(advanced_authorization_response, SessionEndRequest):
+            return advanced_authorization_response
+
+        return AuthorizationResponse(
+            advanced_authorization_response.data,
+            advanced_authorization_response.transport)

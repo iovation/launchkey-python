@@ -16,7 +16,8 @@ from launchkey.entities.service import AuthorizationRequest, DenialReason, \
     GeoFence, TimeFence
 from launchkey.entities.service.policy import FactorsPolicy, \
     ConditionalGeoFencePolicy, GeoCircleFence, TerritoryFence, \
-    MethodAmountPolicy, Factor, LegacyPolicy
+    MethodAmountPolicy, Factor, LegacyPolicy, AuthorizationResponsePolicy, \
+    Requirement
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     InvalidPolicyInput, PolicyFailure, \
     EntityNotFound, RateLimited, RequestTimedOut, UnexpectedAPIResponse, \
@@ -1142,10 +1143,55 @@ class TestLegacyPolicy(unittest.TestCase):
         expected = "LegacyPolicy <" \
             "amount=0, " \
             "inherence=False, " \
-            "knowledge=True, "\
+            "knowledge=True, " \
             "possession=False, " \
             "deny_rooted_jailbroken=True, " \
-            "fences=[]>" \
+            "fences=[], " \
             "time_restrictions=[]>"
 
         self.assertEqual(repr(self.legacy_policy), expected)
+
+@ddt
+class TestAuthorizationResponsePolicy(unittest.TestCase):
+    def setUp(self):
+        self.auth_res_policy = AuthorizationResponsePolicy(
+            requirement=Requirement.COND_GEO, amount=1, fences=[],
+            inherence=False, knowledge=False, possession=False)
+
+    def test_default_instantiation(self):
+        self.assertIsInstance(self.auth_res_policy, AuthorizationResponsePolicy)
+        self.assertEqual(self.auth_res_policy.requirement, Requirement.COND_GEO)
+        self.assertEqual(self.auth_res_policy.amount, 1)
+        self.assertEqual(self.auth_res_policy.fences, [])
+        self.assertFalse(self.auth_res_policy.inherence)
+        self.assertFalse(self.auth_res_policy.knowledge)
+        self.assertFalse(self.auth_res_policy.possession)
+
+    @data("OTHER", "COND_GEO", 1, [Requirement.COND_GEO])
+    def test_raises_when_requirement_is_not_valid_enum(self, req_value):
+        with self.assertRaises(InvalidPolicyAttributes):
+            AuthorizationResponsePolicy(requirement=req_value, amount=1,
+                                        fences=[], inherence=False,
+                                        knowledge=False, possession=False)
+
+    def test_null_requirement_becomes_other(self):
+        auth_res_policy = AuthorizationResponsePolicy(
+            requirement=None, amount=1, fences=[],
+            inherence=False, knowledge=False, possession=False)
+
+        self.assertEqual(auth_res_policy.requirement, Requirement.OTHER)
+
+    def test_is_serializable(self):
+        json.dumps(dict(self.auth_res_policy))
+        json.dumps(self.auth_res_policy.to_dict())
+
+    def test_repr(self):
+        expected = "AuthorizationResponsePolicy <" \
+               "requirement=<Requirement.COND_GEO: 'COND_GEO'>, " \
+               "fences=[]" \
+               "amount=1, " \
+               "inherence=False, " \
+               "knowledge=False, " \
+               "possession=False>"
+
+        self.assertEqual(repr(self.auth_res_policy), expected)

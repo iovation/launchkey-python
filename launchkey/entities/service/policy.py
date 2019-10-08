@@ -34,7 +34,7 @@ class Policy(object):
                 raise InvalidFenceType("Invalid Fence object. Fence must be "
                                        "one of the following: "
                                        "[\"GeoCircleFence\", \"Territory"
-                                       "Fence\", \"GeoFence\"]")
+                                       "Fence\"]")
         self.fences = fences
 
 
@@ -75,6 +75,37 @@ class AuthorizationResponsePolicy(Policy):
         self.inherence = inherence
         self.knowledge = knowledge
         self.possession = possession
+
+    def to_dict(self):
+        """
+        returns the JSON representation of the auth response policy
+        """
+        return dict(self)
+
+    def __repr__(self):
+        return "AuthorizationResponsePolicy <" \
+               "requirement={requirement}, " \
+               "fences={fences}" \
+               "amount={amount}, " \
+               "inherence={inherence}, " \
+               "knowledge={knowledge}, " \
+               "possession={possession}>". \
+            format(
+                requirement=repr(self.requirement),
+                fences=repr(self.fences),
+                amount=self.amount,
+                inherence=self.inherence,
+                knowledge=self.knowledge,
+                possession=self.possession
+            )
+
+    def __iter__(self):
+        yield "requirement", self.requirement.name
+        yield "fences", [dict(fence) for fence in self.fences]
+        yield "amount", self.amount
+        yield "inherence", self.inherence
+        yield "knowledge", self.knowledge
+        yield "possession", self.possession
 
 
 class ConditionalGeoFencePolicy(Policy):
@@ -213,10 +244,10 @@ class LegacyPolicy(Policy):
         return "LegacyPolicy <" \
                "amount={amount}, " \
                "inherence={inherence}, " \
-               "knowledge={knowledge}, "\
+               "knowledge={knowledge}, " \
                "possession={possession}, " \
                "deny_rooted_jailbroken={deny_rooted_jailbroken}, " \
-               "fences={fences}>" \
+               "fences={fences}, " \
                "time_restrictions={time_restrictions}>". \
             format(
                 amount=self.amount,
