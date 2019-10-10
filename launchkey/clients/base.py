@@ -428,6 +428,16 @@ class ServiceManagingBaseClient(BaseClient):
 
     @api_call
     def get_advanced_service_policy(self, service_id):
+        """
+        Retrieves a Service's Security Policy
+        :param service_id: Unique Service ID
+        :raise: launchkey.exceptions.ServiceNotFound - No Service could be
+        found matching the input ID
+        :return: ConditionalGeoFencePolicy, FactorsPolicy, MethodAmountPolicy
+        or LegacyPolicy
+        :return: None if policy returned from `get_advanced_service_policy` is
+        not a legacy policy
+        """
         response = self._transport.post(
             "{}/policy/item".format(self.__service_base_path[0:-1]),
             self._subject, service_id=str(service_id))

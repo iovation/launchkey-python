@@ -101,6 +101,7 @@ class AuthMethodsValidator(Schema):
 
 
 class GeoFenceValidator(Schema):
+    """ GeoFence Validator"""
     name = validators.String(if_missing=None)
     type = validators.OneOf(["GEO_CIRCLE"], if_missing=None)
     latitude = validators.Number()
@@ -114,6 +115,7 @@ class GeoFenceValidator(Schema):
 
 
 class TerritoryFenceValidator(Schema):
+    """ TerritoryFence Validator"""
     name = validators.String(if_missing=None)
     type = validators.OneOf(["TERRITORY"], if_missing=None)
     country = validators.Regex(r"^[A-Z]{2}$", not_empty=True)

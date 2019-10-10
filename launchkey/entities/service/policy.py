@@ -1,4 +1,5 @@
 """ Service Policy objects """
+# pylint: disable=too-many-arguments
 from enum import Enum
 
 from launchkey.exceptions import InvalidFenceType, InvalidPolicyAttributes

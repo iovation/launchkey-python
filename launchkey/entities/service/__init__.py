@@ -21,7 +21,7 @@ from launchkey.exceptions import UnexpectedDeviceResponse, \
     InvalidGeoFenceName, InvalidTimeFenceEndTime, InvalidTimeFenceName, \
     InvalidTimeFenceStartTime, MismatchedTimeFenceTimezones, \
     DuplicateTimeFenceName, DuplicateGeoFenceName, InvalidPolicyFormat, \
-    InvalidParameters, InvalidFenceType
+    InvalidParameters
 
 
 class AuthResponseReason(Enum):
@@ -599,6 +599,8 @@ class AdvancedAuthorizationResponse(object):
                 name=fence.get("name")
             )
 
+        raise ValueError("Invalid fence type received in Auth Response")
+
     def _parse_device_response_from_jwe(self, jwe_payload, transport):
         """
         Parses a Device auth response using a JWE input.
@@ -752,6 +754,10 @@ class AdvancedAuthorizationResponse(object):
 
 
 class AuthorizationResponse(AdvancedAuthorizationResponse):
+    """
+    Authorization Response object containing decrypted auth response and
+    other related information
+    """
     def __init__(self, data, transport):
         super(AuthorizationResponse, self).__init__(data, transport)
         self.auth_policy = None

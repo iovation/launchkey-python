@@ -315,6 +315,30 @@ class TestAdvancedAuthorizationResponse(unittest.TestCase):
         with self.assertRaises(UnexpectedDeviceResponse):
             AdvancedAuthorizationResponse(self.data, self.transport)
 
+    @patch('launchkey.entities.service.JWEAuthorizationResponsePackageValidator')
+    def test_raises_value_error_when_non_geo_circle_or_territory_fence_received(self, validator_patch):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": None,
+                "geofences": [
+                    {"type": "NOT_A_FENCE", "latitude": 30, "longitude": 30,
+                     "radius": 3000, "name": "awesome"},
+                ]
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        validator_patch.return_value.to_python.return_value = json_data
+
+        with self.assertRaises(ValueError):
+            AdvancedAuthorizationResponse(self.data, self.transport)
+
 
 @ddt
 class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
