@@ -134,6 +134,37 @@ def step_impl(context, field, value):
         raise NotImplementedError(u'{0} is not supported'.format(value))
 
 
+@when(u"I set {field} on the Factors Policy to {value}")
+def step_impl(context, field, value):
+    policy = context.entity_manager.get_current_auth_policy()
+
+    if not isinstance(policy, FactorsPolicy):
+        raise ValueError("Expected FactorsPolicy but value received was not.")
+
+    if field == "deny_rooted_jailbroken":
+        policy.deny_rooted_jailbroken = value
+    elif field == "deny_emulator_simulator":
+        policy.deny_emulator_simulator = value
+    else:
+        raise NotImplementedError(u'{0} is not supported'.format(value))
+
+
+@when(u"I set {field} on the Method Amount Policy to {value}")
+def step_impl(context, field, value):
+    policy = context.entity_manager.get_current_auth_policy()
+
+    if not isinstance(policy, MethodAmountPolicy):
+        raise ValueError("Expected MethodAmountPolicy but value received was "
+                         "not.")
+
+    if field == "deny_rooted_jailbroken":
+        policy.deny_rooted_jailbroken = value
+    elif field == "deny_emulator_simulator":
+        policy.deny_emulator_simulator = value
+    else:
+        raise NotImplementedError(u'{0} is not supported'.format(value))
+
+
 @when(u"I attempt to create a new Conditional Geofence Policy with the "
       u"{nested_policy} policy set to the new policy")
 def step_impl(context, nested_policy):
