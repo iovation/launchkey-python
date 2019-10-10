@@ -20,7 +20,7 @@ def before_all(context):
     desired_caps = dict()
     # Increase the default idle time in order to prevent the session from
     # closing while non device tests are being ran.
-    desired_caps['newCommandTimeout'] = 300
+    desired_caps['newCommandTimeout'] = 600
     desired_caps['appPackage'] = sample_app_package
     desired_caps[
         'appWaitActivity'] = 'com.launchkey.android.authenticator.demo.' \

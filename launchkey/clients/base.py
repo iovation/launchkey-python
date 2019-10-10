@@ -396,9 +396,9 @@ class ServiceManagingBaseClient(BaseClient):
 
         policy = ServiceSecurityPolicy(
             any=current_policy.amount,
-            knowledge=current_policy.knowledge,
-            inherence=current_policy.inherence,
-            possession=current_policy.possession,
+            knowledge=current_policy.knowledge_required,
+            inherence=current_policy.inherence_required,
+            possession=current_policy.possession_required,
             jailbreak_protection=current_policy.deny_rooted_jailbroken
         )
 
@@ -469,9 +469,9 @@ class ServiceManagingBaseClient(BaseClient):
                     "deny_rooted_jailbroken"],
                 deny_emulator_simulator=policy_data[
                     "deny_emulator_simulator"],
-                inherence="INHERENCE" in policy_data["factors"],
-                knowledge="KNOWLEDGE" in policy_data["factors"],
-                possession="POSSESSION" in policy_data["factors"],
+                inherence_required="INHERENCE" in policy_data["factors"],
+                knowledge_required="KNOWLEDGE" in policy_data["factors"],
+                possession_required="POSSESSION" in policy_data["factors"],
                 fences=self.__generate_fence_objects_from_policy(policy_data)
             )
         else:
@@ -485,9 +485,9 @@ class ServiceManagingBaseClient(BaseClient):
     def __service_security_policy_to_legacy_policy(self, policy):
         return LegacyPolicy(
             amount=policy.minimum_amount,
-            inherence="inherence" in policy.minimum_requirements,
-            knowledge="knowledge" in policy.minimum_requirements,
-            possession="possession" in policy.minimum_requirements,
+            inherence_required="inherence" in policy.minimum_requirements,
+            knowledge_required="knowledge" in policy.minimum_requirements,
+            possession_required="possession" in policy.minimum_requirements,
             deny_rooted_jailbroken=policy.jailbreak_protection,
             fences=list(map(self.__geofence_to_geo_circle, policy.geofences)),
             time_restrictions=policy.timefences
@@ -546,9 +546,9 @@ class ServiceManagingBaseClient(BaseClient):
             new_policy = FactorsPolicy(
                 deny_rooted_jailbroken=None,
                 deny_emulator_simulator=None,
-                inherence="INHERENCE" in policy["factors"],
-                knowledge="KNOWLEDGE" in policy["factors"],
-                possession="POSSESSION" in policy["factors"],
+                inherence_required="INHERENCE" in policy["factors"],
+                knowledge_required="KNOWLEDGE" in policy["factors"],
+                possession_required="POSSESSION" in policy["factors"],
                 fences=policy["fences"]
             )
         else:

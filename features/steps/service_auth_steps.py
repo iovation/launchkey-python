@@ -203,7 +203,7 @@ def verify_auth_response_policy_requires_type_inherence(context):
 @then("the Advanced Authorization response should require inherence")
 def verify_advanced_auth_response_policy_requires_type_inherence(context):
     policy = context.entity_manager.get_current_auth_response().auth_policy
-    if not policy.inherence:
+    if not policy.inherence_required:
         raise Exception("Inherence is not in the requested Authorization "
                         "Response Policy")
 

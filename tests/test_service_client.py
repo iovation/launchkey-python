@@ -834,9 +834,9 @@ class TestLegacyPolicyObject(unittest.TestCase):
 
 class TestConditionalGeoFencePolicy(unittest.TestCase):
     DEFAULT_INSIDE_POLICY = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False,
-                                          knowledge=True)
+                                          knowledge_required=True)
     DEFAULT_OUTSIDE_POLICY = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False,
-                                           possession=True)
+                                           possession_required=True)
 
     def test_default_instantiation(self):
         geofence_policy = ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY)
@@ -846,11 +846,11 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
         self.assertEqual(None, geofence_policy.inside.deny_emulator_simulator)
         self.assertEqual(None, geofence_policy.inside.deny_rooted_jailbroken)
         self.assertEqual(list(), geofence_policy.inside.fences)
-        self.assertTrue(geofence_policy.inside.knowledge)
+        self.assertTrue(geofence_policy.inside.knowledge_required)
         self.assertEqual(None, geofence_policy.outside.deny_emulator_simulator)
         self.assertEqual(None, geofence_policy.outside.deny_rooted_jailbroken)
         self.assertEqual(list(), geofence_policy.outside.fences)
-        self.assertTrue(geofence_policy.outside.possession)
+        self.assertTrue(geofence_policy.outside.possession_required)
         self.assertEqual(False, geofence_policy.deny_rooted_jailbroken)
         self.assertEqual(False, geofence_policy.deny_emulator_simulator)
 
@@ -928,31 +928,31 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
         self.assertIsInstance(geofence_policy.to_dict(), dict)
 
     def test_deny_rooted_jailbroken_cannot_be_set_on_inner_policy(self):
-        inside = FactorsPolicy(deny_rooted_jailbroken=True, deny_emulator_simulator=False, knowledge=True)
-        outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, possession=True)
+        inside = FactorsPolicy(deny_rooted_jailbroken=True, deny_emulator_simulator=False, knowledge_required=True)
+        outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, possession_required=True)
         # TEST INSIDE
         with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_rooted_jailbroken is not allowed"):
             ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
         # TEST OUTSIDE
-        outside = FactorsPolicy(deny_rooted_jailbroken=True, deny_emulator_simulator=False, knowledge=True)
+        outside = FactorsPolicy(deny_rooted_jailbroken=True, deny_emulator_simulator=False, knowledge_required=True)
         with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_rooted_jailbroken is not allowed"):
             ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
     def test_deny_emulator_simulator_cannot_be_set_on_inner_policy(self):
-        inside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, knowledge=True)
-        outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, possession=True)
+        inside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, knowledge_required=True)
+        outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, possession_required=True)
         # TEST INSIDE
         with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_emulator_simulator is not allowed"):
             ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
         # TEST OUTSIDE
-        outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, knowledge=True)
+        outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, knowledge_required=True)
         with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_emulator_simulator is not allowed"):
             ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
     def test_inside_policy_fences_throws_exception(self):
         fences = [GeoCircleFence(100,200,300,"TestGeoCircleFence")]
         inside = FactorsPolicy(
-            deny_rooted_jailbroken=False, deny_emulator_simulator=False,  knowledge=True, fences=fences
+            deny_rooted_jailbroken=False, deny_emulator_simulator=False,  knowledge_required=True, fences=fences
         )
         with assertRaisesRegex(self, InvalidPolicyAttributes,
                                     "Fences are not allowed on Inside or Outside Policy objects"):
@@ -964,10 +964,10 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
                                                           fences=fences)
         expected = "ConditionalGeoFencePolicy <inside=FactorsPolicy " \
                    "<deny_rooted_jailbroken=None, deny_emulator_simulator=None, " \
-                   "inherence=False, knowledge=True, possession=False, fences=[]>, " \
+                   "inherence_required=False, knowledge_required=True, possession_required=False, fences=[]>, " \
                    "outside=FactorsPolicy <deny_rooted_jailbroken=None, " \
-                   "deny_emulator_simulator=None, inherence=False, knowledge=False, " \
-                   "possession=True, fences=[]>, deny_rooted_jailbroken=False, " \
+                   "deny_emulator_simulator=None, inherence_required=False, knowledge_required=False, " \
+                   "possession_required=True, fences=[]>, deny_rooted_jailbroken=False, " \
                    "deny_emulator_simulator=False, fences=[GeoCircleFence " \
                    "<latitude=200.0, longitude=320.0, radius=350.0, name=\"None\">]>"
         self.assertEqual(repr(conditional_geo_fence), expected)
@@ -1026,9 +1026,9 @@ class TestFactorsPolicy(unittest.TestCase):
         self.assertEqual(0, len(factor_policy.fences))
         self.assertEqual(False, factor_policy.deny_emulator_simulator)
         self.assertEqual(False, factor_policy.deny_rooted_jailbroken)
-        self.assertFalse(factor_policy.inherence)
-        self.assertFalse(factor_policy.knowledge)
-        self.assertFalse(factor_policy.possession)
+        self.assertFalse(factor_policy.inherence_required)
+        self.assertFalse(factor_policy.knowledge_required)
+        self.assertFalse(factor_policy.possession_required)
         self.assertIsInstance(factor_policy, FactorsPolicy)
 
     def test_setting_deny_rooted_jailbroken(self):
@@ -1040,13 +1040,17 @@ class TestFactorsPolicy(unittest.TestCase):
         self.assertEqual(True, factor_policy.deny_emulator_simulator)
 
     def test_setting_factors(self):
-        factor_policy = FactorsPolicy(inherence=True, knowledge=True, possession=True)
-        self.assertTrue(factor_policy.inherence)
-        self.assertTrue(factor_policy.knowledge)
-        self.assertTrue(factor_policy.possession)
+        factor_policy = FactorsPolicy(inherence_required=True, knowledge_required=True,
+                                      possession_required=True)
+
+        self.assertTrue(factor_policy.inherence_required)
+        self.assertTrue(factor_policy.knowledge_required)
+        self.assertTrue(factor_policy.possession_required)
 
     def test_factors_list(self):
-        factors_dict = dict(FactorsPolicy(inherence=True, knowledge=True, possession=True))
+        factors_dict = dict(FactorsPolicy(inherence_required=True, knowledge_required=True,
+                                          possession_required=True))
+
         self.assertIn("INHERENCE", factors_dict["factors"])
         self.assertIn("KNOWLEDGE", factors_dict["factors"])
         self.assertIn("POSSESSION", factors_dict["factors"])
@@ -1062,19 +1066,22 @@ class TestFactorsPolicy(unittest.TestCase):
             FactorsPolicy(fences=fences)
 
     def test_to_dict_is_serializable(self):
-        factor_policy = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, knowledge=True)
+        factor_policy = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True,
+                                      knowledge_required=True)
+
         self.assertIsInstance(factor_policy.to_dict(), dict)
 
     def test_repr(self):
         fences = [GeoCircleFence(100, 200, 300, "TestFence")]
-        factor_policy = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, knowledge=True,
-                                      fences=fences)
+        factor_policy = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True,
+                                      knowledge_required=True, fences=fences)
+
         expected = "FactorsPolicy <" \
                    "deny_rooted_jailbroken=False, " \
                    "deny_emulator_simulator=True, " \
-                   "inherence=False, " \
-                   "knowledge=True, " \
-                   "possession=False, " \
+                   "inherence_required=False, " \
+                   "knowledge_required=True, " \
+                   "possession_required=False, " \
                    "fences=[GeoCircleFence <latitude=100.0, longitude=200.0, radius=300.0, name=\"TestFence\">]>"
         self.assertEqual(repr(factor_policy), expected)
 
@@ -1129,16 +1136,16 @@ class TestTerritoryFence(unittest.TestCase):
 
 class TestLegacyPolicy(unittest.TestCase):
     def setUp(self):
-        self.legacy_policy = LegacyPolicy(amount=0, inherence=False, knowledge=True,
-                                          possession=False, deny_rooted_jailbroken=True,
+        self.legacy_policy = LegacyPolicy(amount=0, inherence_required=False, knowledge_required=True,
+                                          possession_required=False, deny_rooted_jailbroken=True,
                                           fences=[], time_restrictions=[])
 
     def test_default_instantiation(self):
         self.assertIsInstance(self.legacy_policy, LegacyPolicy)
         self.assertEqual(self.legacy_policy.amount, 0)
-        self.assertFalse(self.legacy_policy.inherence)
-        self.assertFalse(self.legacy_policy.possession)
-        self.assertTrue(self.legacy_policy.knowledge)
+        self.assertFalse(self.legacy_policy.inherence_required)
+        self.assertFalse(self.legacy_policy.possession_required)
+        self.assertTrue(self.legacy_policy.knowledge_required)
         self.assertTrue(self.legacy_policy.deny_rooted_jailbroken)
         self.assertEqual(self.legacy_policy.fences, [])
         self.assertEqual(self.legacy_policy.time_restrictions, [])
@@ -1150,9 +1157,9 @@ class TestLegacyPolicy(unittest.TestCase):
     def test_repr(self):
         expected = "LegacyPolicy <" \
             "amount=0, " \
-            "inherence=False, " \
-            "knowledge=True, " \
-            "possession=False, " \
+            "inherence_required=False, " \
+            "knowledge_required=True, " \
+            "possession_required=False, " \
             "deny_rooted_jailbroken=True, " \
             "fences=[], " \
             "time_restrictions=[]>"
@@ -1164,28 +1171,31 @@ class TestAuthorizationResponsePolicy(unittest.TestCase):
     def setUp(self):
         self.auth_res_policy = AuthorizationResponsePolicy(
             requirement=Requirement.COND_GEO, amount=1, fences=[],
-            inherence=False, knowledge=False, possession=False)
+            inherence_required=False, knowledge_required=False,
+            possession_required=False)
 
     def test_default_instantiation(self):
         self.assertIsInstance(self.auth_res_policy, AuthorizationResponsePolicy)
         self.assertEqual(self.auth_res_policy.requirement, Requirement.COND_GEO)
         self.assertEqual(self.auth_res_policy.amount, 1)
         self.assertEqual(self.auth_res_policy.fences, [])
-        self.assertFalse(self.auth_res_policy.inherence)
-        self.assertFalse(self.auth_res_policy.knowledge)
-        self.assertFalse(self.auth_res_policy.possession)
+        self.assertFalse(self.auth_res_policy.inherence_required)
+        self.assertFalse(self.auth_res_policy.knowledge_required)
+        self.assertFalse(self.auth_res_policy.possession_required)
 
     @data("OTHER", "COND_GEO", 1, [Requirement.COND_GEO])
     def test_raises_when_requirement_is_not_valid_enum(self, req_value):
         with self.assertRaises(InvalidPolicyAttributes):
             AuthorizationResponsePolicy(requirement=req_value, amount=1,
-                                        fences=[], inherence=False,
-                                        knowledge=False, possession=False)
+                                        fences=[], inherence_required=False,
+                                        knowledge_required=False,
+                                        possession_required=False)
 
     def test_null_requirement_becomes_other(self):
         auth_res_policy = AuthorizationResponsePolicy(
             requirement=None, amount=1, fences=[],
-            inherence=False, knowledge=False, possession=False)
+            inherence_required=False, knowledge_required=False,
+            possession_required=False)
 
         self.assertEqual(auth_res_policy.requirement, Requirement.OTHER)
 
@@ -1198,8 +1208,8 @@ class TestAuthorizationResponsePolicy(unittest.TestCase):
                "requirement=<Requirement.COND_GEO: 'COND_GEO'>, " \
                "fences=[], " \
                "amount=1, " \
-               "inherence=False, " \
-               "knowledge=False, " \
-               "possession=False>"
+               "inherence_required=False, " \
+               "knowledge_required=False, " \
+               "possession_required=False>"
 
         self.assertEqual(repr(self.auth_res_policy), expected)

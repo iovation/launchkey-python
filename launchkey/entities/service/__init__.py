@@ -670,9 +670,9 @@ class AdvancedAuthorizationResponse(object):
 
             if requirement == "types":
                 policy_types = map(lambda t: t.lower(), auth_policy["types"])
-                kwargs["inherence"] = "inherence" in policy_types
-                kwargs["knowledge"] = "knowledge" in policy_types
-                kwargs["possession"] = "possession" in policy_types
+                kwargs["inherence_required"] = "inherence" in policy_types
+                kwargs["knowledge_required"] = "knowledge" in policy_types
+                kwargs["possession_required"] = "possession" in policy_types
 
             if auth_policy.get('geofences'):
                 kwargs["fences"] = list(map(

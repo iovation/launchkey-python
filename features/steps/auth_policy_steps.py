@@ -4,7 +4,7 @@ from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
     MethodAmountPolicy, GeoCircleFence, TerritoryFence, FactorsPolicy
 
 DEFAULT_FACTORS_POLICY = FactorsPolicy(
-    knowledge=True,
+    knowledge_required=True,
     deny_emulator_simulator=False,
     deny_rooted_jailbroken=False
 )
@@ -65,8 +65,8 @@ def attempt_to_make_policy_auth_with_directory_service(context):
 
 @when("I attempt to make an Policy based Authorization request for the User "
       "identified by \"{user_identifier}\"")
-def attempt_to_make_policy_auth_with_directory_service\
-                (context, user_identifier):
+def attempt_to_make_policy_auth_with_directory_service(context,
+                                                       user_identifier):
     current_service = context.entity_manager.get_current_directory_service()
     policy = context.entity_manager.get_current_auth_policy()
     try:
@@ -111,13 +111,13 @@ def policy_set_factors(context, raw_factors):
     if isinstance(policy, FactorsPolicy):
         for factor in factors:
             if factor == "INHERENCE":
-                policy.inherence = True
+                policy.inherence_required = True
 
             if factor == "POSSESSION":
-                policy.possession = True
+                policy.possession_required = True
 
             if factor == "KNOWLEDGE":
-                policy.knowledge = True
+                policy.knowledge_required = True
     else:
         raise Exception("Policy is not a FactorsPolicy")
     context.entity_manager.set_current_auth_policy(policy)
@@ -304,13 +304,13 @@ def step_impl(context, raw_factors):
     factors = map(lambda f: f.strip(), raw_factors.split(","))
 
     for factor in factors:
-        if factor == "INHERENCE" and not current_policy.inherence:
+        if factor == "INHERENCE" and not current_policy.inherence_required:
             raise ValueError("Inherence was not set in the policy provided")
 
-        if factor == "KNOWLEDGE" and not current_policy.knowledge:
+        if factor == "KNOWLEDGE" and not current_policy.knowledge_required:
             raise ValueError("Knowledge was not set in the policy provided")
 
-        if factor == "POSSESSION" and not current_policy.possession:
+        if factor == "POSSESSION" and not current_policy.possession_required:
             raise ValueError("Possession was not set in the policy provided")
 
 
@@ -323,7 +323,7 @@ def step_impl(context, attribute, policy_type):
     if attribute == "inside":
         if policy_type == "Factors":
             current_policy.inside = FactorsPolicy(
-                inherence=True,
+                inherence_required=True,
                 fences=None,
                 deny_rooted_jailbroken=None,
                 deny_emulator_simulator=None
@@ -338,7 +338,7 @@ def step_impl(context, attribute, policy_type):
     elif attribute == "outside":
         if policy_type == "Factors":
             current_policy.outside = FactorsPolicy(
-                inherence=True,
+                inherence_required=True,
                 fences=None,
                 deny_rooted_jailbroken=None,
                 deny_emulator_simulator=None
@@ -359,7 +359,7 @@ def step_impl(context, attribute, policy_type):
 @when('I set the inside Policy factors to "Knowledge"')
 def step_impl(context):
     current_policy = context.entity_manager.get_current_auth_policy()
-    current_policy.inside.knowledge = True
+    current_policy.inside.knowledge_required = True
     context.entity_manager.set_current_auth_policy(current_policy)
 
 
@@ -416,7 +416,7 @@ def step_impl(context):
 @when('I set the outside Policy factors to "Knowledge"')
 def step_impl(context):
     current_policy = context.entity_manager.get_current_auth_policy()
-    current_policy.outside.knowledge = True
+    current_policy.outside.knowledge_required = True
     context.entity_manager.set_current_auth_policy(current_policy)
 
 
@@ -564,13 +564,13 @@ def step_impl(context, subpolicy, raw_factors):
         raise Exception("Policy is not a ConditionalGeoFencePolicy")
 
     for factor in factors:
-        if factor == "INHERENCE" and not current_subpolicy.inherence:
+        if factor == "INHERENCE" and not current_subpolicy.inherence_required:
             raise ValueError("Inherence was not set in %s policy" % subpolicy)
 
-        if factor == "KNOWLEDGE" and not current_subpolicy.knowledge:
+        if factor == "KNOWLEDGE" and not current_subpolicy.knowledge_required:
             raise ValueError("Knowledge was not set in %s policy" % subpolicy)
 
-        if factor == "POSSESSION" and not current_subpolicy.possession:
+        if factor == "POSSESSION" and not current_subpolicy.possession_required:
             raise ValueError("Possession was not set in %s policy" % subpolicy)
 
 
@@ -604,7 +604,8 @@ def step_impl(context, country, admin_area, postal_code, name):
                         "but no fences exist.")
 
     for fence in policy.fences:
-        if fence.country == country and \
+        if isinstance(fence, TerritoryFence) and \
+           fence.country == country and \
            fence.administrative_area == admin_area and \
            fence.postal_code == postal_code and fence.name == name:
             return  # Found a matching fence, can safely exit

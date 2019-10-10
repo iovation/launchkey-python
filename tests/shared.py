@@ -638,7 +638,7 @@ class SharedTests(object):
             self.assertIsInstance(policy, ConditionalGeoFencePolicy)
             self.assertIsInstance(policy.inside, FactorsPolicy)
             self.assertIsInstance(policy.inside, FactorsPolicy)
-            self.assertTrue(policy.inside.possession)
+            self.assertTrue(policy.inside.possession_required)
             self.assertEqual(0, len(policy.inside.fences))
             self.assertIsInstance(policy.outside, MethodAmountPolicy)
             self.assertIsInstance(policy.outside, MethodAmountPolicy)
@@ -739,7 +739,7 @@ class SharedTests(object):
                 service_id=expected_service_id
             )
             self.assertIsInstance(policy, FactorsPolicy)
-            self.assertTrue(policy.possession)
+            self.assertTrue(policy.possession_required)
             self.assertEqual(len(policy.fences), 2)
 
         def test_nested_conditional_throws_exception(self):

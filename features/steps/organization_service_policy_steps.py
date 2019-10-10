@@ -356,7 +356,7 @@ def step_impl(context):
 def step_impl(context):
 
     default_nested_policy = FactorsPolicy(
-        knowledge=True,
+        knowledge_required=True,
         deny_emulator_simulator=None,
         deny_rooted_jailbroken=None,
         fences=None
