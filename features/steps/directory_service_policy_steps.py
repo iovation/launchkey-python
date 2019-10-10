@@ -370,7 +370,7 @@ def step_impl(context):
 def step_impl(context):
 
     default_nested_policy = FactorsPolicy(
-        factors=["knowledge"],
+        knowledge=True,
         deny_emulator_simulator=None,
         deny_rooted_jailbroken=None,
         fences=None
@@ -379,7 +379,7 @@ def step_impl(context):
     default_cond_geo_policy = ConditionalGeoFencePolicy(
         inside=default_nested_policy,
         outside=default_nested_policy,
-        fences=[TerritoryFence("US", name="test1")]
+        fences=[]
     )
 
     context.entity_manager.set_current_directory_service_policy(

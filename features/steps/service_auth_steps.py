@@ -1,6 +1,8 @@
 from behave import given, when, then
 
-from launchkey.entities.service import GeoFence, AuthMethod, AuthMethodType
+from launchkey.entities.service import GeoFence, AuthMethod, AuthMethodType, \
+    Requirement, AuthResponseReason
+
 
 # Auth Creation
 
@@ -69,6 +71,15 @@ def retrieve_current_auth_request(context):
     )
 
 
+@when("I get the response for the Advanced Authorization request")
+def retrieve_current_auth_request(context):
+    auth_request_id = context.entity_manager.get_current_auth_request_id()
+    current_service = context.entity_manager.get_current_directory_service()
+    context.directory_service_auths_manager.get_advanced_auth_response(
+        current_service.id, auth_request_id
+    )
+
+
 @when("I get the response for Authorization request \"{auth_id}\"")
 def retrieve_auth_request_by_id(context, auth_id):
     current_service = context.entity_manager.get_current_directory_service()
@@ -85,10 +96,11 @@ def verify_current_auth_response_is_none(context):
 
 
 @then("the Authorization response should be approved")
+@then("the Advanced Authorization response should be approved")
 def verify_current_auth_response_is_none(context):
     current_auth = context.entity_manager.get_current_auth_response()
     if not current_auth:
-        raise Exception("Auth response was found when it was expected")
+        raise Exception("Auth response was not found when it was expected")
     if current_auth.authorized is not True:
         raise Exception("Auth was not approved when it should have been: %s" %
                         current_auth)
@@ -98,7 +110,7 @@ def verify_current_auth_response_is_none(context):
 def verify_current_auth_response_is_none(context):
     current_auth = context.entity_manager.get_current_auth_response()
     if not current_auth:
-        raise Exception("Auth response was found when it was expected")
+        raise Exception("Auth response was not found when it was expected")
     if current_auth.authorized is not False:
         raise Exception("Auth was approved when it should not have been: %s" %
                         current_auth)
@@ -108,6 +120,15 @@ def verify_current_auth_response_is_none(context):
 def verify_current_auth_response_requires_count_factors(context, count):
     current_auth = context.entity_manager.get_current_auth_response()
     if current_auth.auth_policy.minimum_amount is not count:
+        raise Exception("Device response policy did not require %s factors: "
+                        "%s" % (count, current_auth.auth_policy))
+
+
+@then("the Advanced Authorization response should have amount set to "
+      "{count:d}")
+def verify_current_auth_response_requires_count_factors(context, count):
+    current_auth = context.entity_manager.get_current_auth_response()
+    if current_auth.auth_policy.amount is not count:
         raise Exception("Device response policy did not require %s factors: "
                         "%s" % (count, current_auth.auth_policy))
 
@@ -177,6 +198,22 @@ def verify_auth_response_policy_does_not_require_type_knowledge(context):
 @then("the Authorization response should require inherence")
 def verify_auth_response_policy_requires_type_inherence(context):
     verify_auth_response_policy_requires_type(context, "inherence")
+
+
+@then("the Advanced Authorization response should require inherence")
+def verify_advanced_auth_response_policy_requires_type_inherence(context):
+    policy = context.entity_manager.get_current_auth_response().auth_policy
+    if not policy.inherence:
+        raise Exception("Inherence is not in the requested Authorization "
+                        "Response Policy")
+
+
+@then("the Advanced Authorization response should have the requirement "
+      "\"{requirement}\"")
+def verify_advanced_auth_response_has_types_requirement(context, requirement):
+    policy = context.entity_manager.get_current_auth_response().auth_policy
+    if policy.requirement != Requirement(requirement.upper()):
+        raise Exception("Requirement for auth policy was not %s", requirement)
 
 
 @then("the Authorization response should not require inherence")

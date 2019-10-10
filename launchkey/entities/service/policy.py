@@ -77,7 +77,7 @@ class AuthorizationResponsePolicy(Policy):
     def __repr__(self):
         return "AuthorizationResponsePolicy <" \
                "requirement={requirement}, " \
-               "fences={fences}" \
+               "fences={fences}, " \
                "amount={amount}, " \
                "inherence={inherence}, " \
                "knowledge={knowledge}, " \

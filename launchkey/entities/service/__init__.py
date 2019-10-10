@@ -13,7 +13,7 @@ import pytz
 from formencode import Invalid
 
 from launchkey.entities.service.policy import AuthorizationResponsePolicy, \
-    GeoCircleFence, TerritoryFence
+    GeoCircleFence, TerritoryFence, Requirement
 from launchkey.entities.validation import \
     AuthorizationResponsePackageValidator, \
     JWEAuthorizationResponsePackageValidator
@@ -658,6 +658,13 @@ class AdvancedAuthorizationResponse(object):
             kwargs = {}
             requirement = auth_policy["requirement"]
 
+            try:
+                if requirement:
+                    kwargs["requirement"] = Requirement(requirement.upper())
+
+            except ValueError:
+                kwargs["requirement"] = Requirement.OTHER
+
             if requirement == "amount":
                 kwargs["amount"] = auth_policy["amount"]
 
@@ -668,8 +675,9 @@ class AdvancedAuthorizationResponse(object):
                 kwargs["possession"] = "possession" in policy_types
 
             if auth_policy.get('geofences'):
-                kwargs["fences"] = map(self.__generate_fence_from_policy_dict,
-                                       auth_policy["geofences"])
+                kwargs["fences"] = list(map(
+                    self.__generate_fence_from_policy_dict,
+                    auth_policy["geofences"]))
 
             self.auth_policy = AuthorizationResponsePolicy(**kwargs)
 

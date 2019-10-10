@@ -1196,7 +1196,7 @@ class TestAuthorizationResponsePolicy(unittest.TestCase):
     def test_repr(self):
         expected = "AuthorizationResponsePolicy <" \
                "requirement=<Requirement.COND_GEO: 'COND_GEO'>, " \
-               "fences=[]" \
+               "fences=[], " \
                "amount=1, " \
                "inherence=False, " \
                "knowledge=False, " \

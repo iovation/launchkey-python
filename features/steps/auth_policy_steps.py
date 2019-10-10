@@ -1,10 +1,10 @@
 from behave import given, when, then
 
 from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
-    MethodAmountPolicy, GeoCircleFence, TerritoryFence, Factor, FactorsPolicy
+    MethodAmountPolicy, GeoCircleFence, TerritoryFence, FactorsPolicy
 
 DEFAULT_FACTORS_POLICY = FactorsPolicy(
-    factors=["knowledge"],
+    knowledge=True,
     deny_emulator_simulator=False,
     deny_rooted_jailbroken=False
 )
@@ -104,13 +104,20 @@ def step_impl(context):
     context.entity_manager.set_current_auth_policy(new_policy)
 
 
-@when(u'I set the factors to "{factors}"')
-def policy_set_factors(context, factors):
+@when(u'I set the factors to "{raw_factors}"')
+def policy_set_factors(context, raw_factors):
+    factors = map(lambda f: f.strip(), raw_factors.split(","))
     policy = context.entity_manager.get_current_auth_policy()
     if isinstance(policy, FactorsPolicy):
-        policy.factors = [
-            Factor(factor.upper().strip()) for factor in factors.split(",")
-        ]
+        for factor in factors:
+            if factor == "INHERENCE":
+                policy.inherence = True
+
+            if factor == "POSSESSION":
+                policy.possession = True
+
+            if factor == "KNOWLEDGE":
+                policy.knowledge = True
     else:
         raise Exception("Policy is not a FactorsPolicy")
     context.entity_manager.set_current_auth_policy(policy)
@@ -260,19 +267,13 @@ def step_impl(context, bool_value):
         )
 
 
-@when("I set the factors to {factors}")
-def step_impl(context, factors):
-    policy_set_factors(context, factors=factors)
-
-
 @then(u'factors should be set to {factors}')
 def step_impl(context, factors):
     current_policy = context.entity_manager.get_current_auth_policy()
-    factors = [Factor(x.upper().strip()) for x in factors.split(",")]
 
     # This alg could be better but for the amount of items it should be fine
     for expected_factor in factors:
-        if expected_factor not in current_policy.factors:
+        if expected_factor not in dict(current_policy)["factors"]:
             raise ValueError(
                 "{0} does not equal current policy amount of {1}".format(
                     factors,
@@ -290,7 +291,7 @@ def step_impl(context, attribute, policy_type):
     if attribute == "inside":
         if policy_type == "Factors":
             current_policy.inside = FactorsPolicy(
-                factors=["INHERENCE"],
+                inherence=True,
                 fences=None,
                 deny_rooted_jailbroken=None,
                 deny_emulator_simulator=None
@@ -305,7 +306,7 @@ def step_impl(context, attribute, policy_type):
     elif attribute == "outside":
         if policy_type == "Factors":
             current_policy.outside = FactorsPolicy(
-                factors=["INHERENCE"],
+                inherence=True,
                 fences=None,
                 deny_rooted_jailbroken=None,
                 deny_emulator_simulator=None
@@ -326,7 +327,7 @@ def step_impl(context, attribute, policy_type):
 @when('I set the inside Policy factors to "Knowledge"')
 def step_impl(context):
     current_policy = context.entity_manager.get_current_auth_policy()
-    current_policy.inside.factors = [Factor("KNOWLEDGE")]
+    current_policy.inside.knowledge = True
     context.entity_manager.set_current_auth_policy(current_policy)
 
 
@@ -383,7 +384,7 @@ def step_impl(context):
 @when('I set the outside Policy factors to "Knowledge"')
 def step_impl(context):
     current_policy = context.entity_manager.get_current_auth_policy()
-    current_policy.outside.factors = [Factor("KNOWLEDGE")]
+    current_policy.outside.knowledge = True
     context.entity_manager.set_current_auth_policy(current_policy)
 
 
@@ -522,11 +523,10 @@ def step_impl(context, amount):
 @then('the inside Policy factors should be set to "{factors}"')
 def step_impl(context, factors):
     current_policy = context.entity_manager.get_current_auth_policy()
-    factors = [Factor(x.upper().strip()) for x in factors.split(",")]
 
     # This alg could be better but for the amount of items it should be fine
     for expected_factor in factors:
-        if expected_factor not in current_policy.inside.factors:
+        if expected_factor not in dict(current_policy.inside)["factors"]:
             raise ValueError(
                 "{0} does not equal current policy amount of {1}".format(
                     factors,
@@ -538,14 +538,54 @@ def step_impl(context, factors):
 @then('the outside Policy factors should be set to "{factors}"')
 def step_impl(context, factors):
     current_policy = context.entity_manager.get_current_auth_policy()
-    factors = [Factor(x.upper().strip()) for x in factors.split(",")]
 
     # This alg could be better but for the amount of items it should be fine
     for expected_factor in factors:
-        if expected_factor not in current_policy.outside.factors:
+        if expected_factor not in dict(current_policy.outside)["factors"]:
             raise ValueError(
                 "{0} does not equal current policy amount of {1}".format(
                     factors,
                     current_policy.outside.factors
                 )
             )
+
+
+@then("the Advanced Authorization response should contain a GeoCircleFence "
+      "with a radius of {rad}, a latitude of {lat}, a longitude of {lon}, "
+      "and a name of \"{name}\"")
+def step_impl(context, rad, lat, lon, name):
+    policy = context.entity_manager.get_current_auth_response().auth_policy
+    if not policy.fences:
+        raise Exception("Expected a GeoCircleFence within the auth response "
+                        "but no fences exist.")
+
+    for fence in policy.fences:
+        if fence.radius == float(rad) and fence.latitude == float(lat) and \
+           fence.longitude == float(lon) and fence.name == name:
+            return  # Found a matching fence, can safely exit
+
+    raise ValueError("Expected a policy containing a Geocircle fence with "
+                     "a radius of %s, latitude of %s, longitude of %s, and "
+                     "name of %s, but found none" % (rad, lat, lon, name))
+
+
+@then("the Advanced Authorization response should contain a TerritoryFence "
+      "with a country of \"{country}\", a administrative area of "
+      "\"{admin_area}\", a postal code of \"{postal_code}\", and a name of "
+      "\"{name}\"")
+def step_impl(context, country, admin_area, postal_code, name):
+    policy = context.entity_manager.get_current_auth_response().auth_policy
+    if not policy.fences:
+        raise Exception("Expected a TerritoryFence within the auth response "
+                        "but no fences exist.")
+
+    for fence in policy.fences:
+        if fence.country == country and \
+           fence.administrative_area == admin_area and \
+           fence.postal_code == postal_code and fence.name == name:
+            return  # Found a matching fence, can safely exit
+
+    raise ValueError("Expected a policy containing a TerritoryFence fence "
+                     "with a country of %s, administrative area of %s, postal "
+                     "code of %s, and name of %s,  but found none" %
+                     (country, admin_area, postal_code, name))
