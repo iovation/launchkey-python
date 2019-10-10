@@ -379,7 +379,8 @@ def step_impl(context):
     default_cond_geo_policy = ConditionalGeoFencePolicy(
         inside=default_nested_policy,
         outside=default_nested_policy,
-        fences=[]
+        fences=[GeoCircleFence(latitude=30, longitude=30, radius=3000,
+                               name="cool geofence")]
     )
 
     context.entity_manager.set_current_directory_service_policy(

@@ -569,8 +569,7 @@ class ServiceManagingBaseClient(BaseClient):
         found matching the input ID
         :return:
         """
-        legacy_policy = self.__service_security_policy_to_legacy_policy(policy)
-        self.set_advanced_service_policy(service_id, legacy_policy)
+        self.set_advanced_service_policy(service_id, policy)
 
     @api_call
     def set_advanced_service_policy(self, service_id, policy):
@@ -578,7 +577,7 @@ class ServiceManagingBaseClient(BaseClient):
         Sets a Service's Security Policy
         :param service_id: Unique Service ID
         :param policy: LegacyPolicy, ConditionalGeoFencePolicy,
-        MethodAmountPolicy, or FactorsPolicy
+        MethodAmountPolicy, FactorsPolicy, or ServiceSecurityPolicy
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.ServiceNotFound - No Service could be

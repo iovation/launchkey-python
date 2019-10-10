@@ -520,34 +520,26 @@ def step_impl(context, amount):
         )
 
 
-@then('the inside Policy factors should be set to "{factors}"')
-def step_impl(context, factors):
+@then('the {subpolicy} Policy factors should be set to "{raw_factors}"')
+def step_impl(context, subpolicy, raw_factors):
     current_policy = context.entity_manager.get_current_auth_policy()
+    policy = context.entity_manager.get_current_auth_policy()
+    current_subpolicy = current_policy.inside if subpolicy == "inside" else \
+        "outside"
+    factors = map(lambda f: f.strip(), raw_factors.split(","))
 
-    # This alg could be better but for the amount of items it should be fine
-    for expected_factor in factors:
-        if expected_factor not in dict(current_policy.inside)["factors"]:
-            raise ValueError(
-                "{0} does not equal current policy amount of {1}".format(
-                    factors,
-                    current_policy.inside.factors
-                )
-            )
+    if not isinstance(policy, ConditionalGeoFencePolicy):
+        raise Exception("Policy is not a ConditionalGeoFencePolicy")
 
+    for factor in factors:
+        if factor == "INHERENCE" and not current_subpolicy.inherence:
+            raise ValueError("Inherence was not set in %s policy" % subpolicy)
 
-@then('the outside Policy factors should be set to "{factors}"')
-def step_impl(context, factors):
-    current_policy = context.entity_manager.get_current_auth_policy()
+        if factor == "KNOWLEDGE" and not current_subpolicy.knowledge:
+            raise ValueError("Knowledge was not set in %s policy" % subpolicy)
 
-    # This alg could be better but for the amount of items it should be fine
-    for expected_factor in factors:
-        if expected_factor not in dict(current_policy.outside)["factors"]:
-            raise ValueError(
-                "{0} does not equal current policy amount of {1}".format(
-                    factors,
-                    current_policy.outside.factors
-                )
-            )
+        if factor == "POSSESSION" and not current_subpolicy.possession:
+            raise ValueError("Possession was not set in %s policy" % subpolicy)
 
 
 @then("the Advanced Authorization response should contain a GeoCircleFence "

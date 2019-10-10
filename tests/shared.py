@@ -452,15 +452,16 @@ class SharedTests(object):
         def test_set_service_policy_success(self):
             expected_service_id = 'expected-service-id'
             policy_called_with = {
-                "type": "LEGACY",
-                "amount": False,
-                "inherence": False,
-                "knowledge": False,
-                "possession": False,
-                "deny_rooted_jailbroken": False,
-                "fences": [],
-                "time_restrictions": []
+                'factors': [{
+                    'factor': 'device integrity',
+                              'requirement': 'forced requirement',
+                              'quickfail': False,
+                              'priority': 1,
+                              'attributes': {'factor enabled': 0}
+                    }],
+                'minimum_requirements': []
             }
+
             self._client.set_service_policy(expected_service_id[:],
                                             ServiceSecurityPolicy())
             self._transport.put.assert_called_once_with(
