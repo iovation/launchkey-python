@@ -20,6 +20,13 @@ def retrieve_policy_for_current_organization_service(context):
     )
 
 
+@step("I retrieve the Advanced Policy for the Current Organization Service")
+def retrieve_policy_for_current_organization_service(context):
+    current_service = context.entity_manager.get_current_organization_service()
+    context.organization_service_policy_manager \
+        .retrieve_advanced_service_policy(current_service.id)
+
+
 @then("the Organization Service Policy has no requirement for inherence")
 def verify_current_organization_service_policy_has_no_inherence_requirement(
         context):
@@ -334,11 +341,22 @@ def step_impl(context):
     )
 
 
+@step("I set the Advanced Policy for the Current Organization Service "
+      "to the new policy")
+def step_impl(context):
+    current_service = context.entity_manager.get_current_organization_service()
+    policy = context.entity_manager.get_current_auth_policy()
+    context.organization_service_policy_manager.set_advanced_service_policy(
+        current_service.id,
+        policy
+    )
+
+
 @given("the Organization Service is set to any Conditional Geofence Policy")
 def step_impl(context):
 
     default_nested_policy = FactorsPolicy(
-        factors=["knowledge"],
+        knowledge=True,
         deny_emulator_simulator=None,
         deny_rooted_jailbroken=None,
         fences=None

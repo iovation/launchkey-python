@@ -267,19 +267,20 @@ def step_impl(context, bool_value):
         )
 
 
-@then(u'factors should be set to {factors}')
-def step_impl(context, factors):
+@then(u'factors should be set to {raw_factors}')
+def step_impl(context, raw_factors):
     current_policy = context.entity_manager.get_current_auth_policy()
+    factors = map(lambda f: f.strip(), raw_factors.split(","))
 
-    # This alg could be better but for the amount of items it should be fine
-    for expected_factor in factors:
-        if expected_factor not in dict(current_policy)["factors"]:
-            raise ValueError(
-                "{0} does not equal current policy amount of {1}".format(
-                    factors,
-                    current_policy.factors
-                )
-            )
+    for factor in factors:
+        if factor == "INHERENCE" and not current_policy.inherence:
+            raise ValueError("Inherence was not set in the policy provided")
+
+        if factor == "KNOWLEDGE" and not current_policy.knowledge:
+            raise ValueError("Knowledge was not set in the policy provided")
+
+        if factor == "POSSESSION" and not current_policy.possession:
+            raise ValueError("Possession was not set in the policy provided")
 
 
 @when("I set the {attribute} Policy to a new {policy_type}Policy")
@@ -525,7 +526,7 @@ def step_impl(context, subpolicy, raw_factors):
     current_policy = context.entity_manager.get_current_auth_policy()
     policy = context.entity_manager.get_current_auth_policy()
     current_subpolicy = current_policy.inside if subpolicy == "inside" else \
-        "outside"
+        current_policy.outside
     factors = map(lambda f: f.strip(), raw_factors.split(","))
 
     if not isinstance(policy, ConditionalGeoFencePolicy):

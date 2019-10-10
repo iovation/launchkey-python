@@ -139,7 +139,7 @@ Feature: Directory Client can retrieve Directory Service Policy
 
   Scenario: Setting Inside Policy to Methods Amount Policy works as expected
     Given the Directory Service is set to any Conditional Geofence Policy
-    When I set the inside Policy to a new MethodAmount Policy
+    When I set the inside Policy to a new MethodAmountPolicy
     And I set the inside Policy amount to "2"
     And I set the Advanced Policy for the Current Directory Service to the new policy
     And I retrieve the Advanced Policy for the Current Directory Service

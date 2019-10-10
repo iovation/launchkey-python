@@ -5,7 +5,7 @@ Feature: SDK Policy Object Creation Limitations
   # SDK Tests
   Scenario Outline: Setting device integrity checks on FactorsPolicy inside nested conditions are invalid
     When I create a new Factors Policy
-    And I set the factors to "Knowledge"
+    And I set the factors to "KNOWLEDGE"
     And I set <field> on the Policy to <value>
     And I attempt to create a new Conditional Geofence Policy with the inside policy set to the new policy
     Then an InvalidPolicyAttributes error occurs
@@ -16,7 +16,7 @@ Feature: SDK Policy Object Creation Limitations
 
   Scenario Outline: Setting device integrity checks on FactorsPolicy outside nested conditions are invalid
     When I create a new Factors Policy
-    And I set the factors to "Knowledge"
+    And I set the factors to "KNOWLEDGE"
     And I set <field> on the Policy to <value>
     And I attempt to create a new Conditional Geofence Policy with the outside policy set to the new policy
     Then an InvalidPolicyAttributes error occurs
