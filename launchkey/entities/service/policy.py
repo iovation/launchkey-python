@@ -436,7 +436,7 @@ class TerritoryFence(Fence):
         super(TerritoryFence, self).__init__(name)
         self.country = country
         self.administrative_area = administrative_area
-        self.postal_code = str(postal_code)
+        self.postal_code = str(postal_code) if postal_code else None
 
     def __repr__(self):
         return "TerritoryFence <" \
