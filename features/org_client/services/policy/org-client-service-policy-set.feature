@@ -272,9 +272,10 @@ Feature: Organization Client can set Organization Service Policy
     | 45.1250  | 150.51    | 15200  | Large Fence |
     | -50.0111 | -140      | 100    | Small Fence |
     And I add the following TerritoryFence items
-    | country | admin_area | postal_code | name  |
-    | US      | US-NV      | 89120       | US-NV |
-    | US      | US-CA      | 90001       | US-CA |
+    | country | admin_area | postal_code | name    |
+    | US      | US-NV      | 89120       | US-NV   |
+    | US      | US-CA      | 90001       | US-CA   |
+    | CA      | CA-ON      | K1Y         | Ontario |
     And I set the Advanced Policy for the Current Organization Service to the new policy
     And I retrieve the Advanced Policy for the Current Organization Service
-    Then the Organization Service Policy has "5" fences
+    Then the Organization Service Policy has "6" fences
