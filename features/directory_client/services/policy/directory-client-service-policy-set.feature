@@ -274,10 +274,9 @@ Feature: Directory Client can set Directory Service Policy
     | 45.1250  | 150.51    | 15200  | Large Fence |
     | -50.0111 | -140      | 100    | Small Fence |
     And I add the following TerritoryFence items
-    | country | admin_area | postal_code | name    |
-    | US      | US-NV      | 89120       | US-NV   |
-    | US      | US-CA      | 90001       | US-CA   |
-    | CA      | CA-ON      | K1Y         | Ontario |
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
     And I set the Advanced Policy for the Current Directory Service to the new policy
     And I retrieve the Advanced Policy for the Current Directory Service
-    Then the Directory Service Policy has "6" fences
+    Then the Directory Service Policy has "5" fences
