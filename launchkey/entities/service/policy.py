@@ -1,5 +1,4 @@
 """ Service Policy objects """
-# pylint: disable=too-many-arguments
 from enum import Enum
 
 from launchkey.exceptions import InvalidFenceType, InvalidPolicyAttributes
@@ -50,6 +49,8 @@ class AuthorizationResponsePolicy(Policy):
     :param knowledge_required: Boolean. Whether to require knowledge factor
     :param possession_required: Boolean. Whether to require possession factor
     """
+
+    # pylint: disable=too-many-arguments
     def __init__(self, requirement=None, amount=0, fences=None,
                  inherence_required=False, knowledge_required=False,
                  possession_required=False):
@@ -216,6 +217,8 @@ class LegacyPolicy(Policy):
     :param fences: List of GeoCircleFences
     :param time_restrictions: List of TimeFences
     """
+
+    # pylint: disable=too-many-arguments
     def __init__(self, amount=0, inherence_required=False,
                  knowledge_required=False, possession_required=False,
                  deny_rooted_jailbroken=False, fences=None,
@@ -330,6 +333,8 @@ class FactorsPolicy(Policy):
     :param possession_required: Boolean. Whether to require possession factor
     :param fences: List of fences to apply to the policy
     """
+
+    # pylint: disable=too-many-arguments
     def __init__(self, deny_rooted_jailbroken=False,
                  deny_emulator_simulator=False, inherence_required=False,
                  knowledge_required=False, possession_required=False,

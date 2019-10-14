@@ -101,7 +101,7 @@ class AuthMethodsValidator(Schema):
 
 
 class GeoFenceValidator(Schema):
-    """ GeoFence Validator"""
+    """ GeoFence Validator, can represent both GeoFence and GeoCircleFence """
     name = validators.String(if_missing=None)
     type = validators.OneOf(["GEO_CIRCLE"], if_missing=None)
     latitude = validators.Number()
