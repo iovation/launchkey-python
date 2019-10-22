@@ -1109,6 +1109,15 @@ class TestGeoCircleFence(unittest.TestCase):
                    "radius=300.0, name=\"TestCircle\">"
         self.assertEqual(repr(geo_circle_fence), expected)
 
+    def test_eq(self):
+        geo_circle_fence = GeoCircleFence(latitude=30, longitude=30, radius=3000, name="Somewhere")
+        matching_fence = GeoCircleFence(latitude=30, longitude=30, radius=3000, name="Somewhere")
+        mismatching_fence = GeoCircleFence(latitude=30, longitude=30, radius=3000, name="Somewhere Else")
+        different_kind_of_fence = TerritoryFence(country="US", name="America", administrative_area=None, postal_code=None)
+        self.assertEqual(geo_circle_fence, matching_fence)
+        self.assertNotEqual(geo_circle_fence, mismatching_fence)
+        self.assertNotEqual(geo_circle_fence, different_kind_of_fence)
+
 
 class TestTerritoryFence(unittest.TestCase):
     def test_default_instantiation(self):
@@ -1145,6 +1154,15 @@ class TestTerritoryFence(unittest.TestCase):
         fence_dict = dict(territory_fence)
         self.assertIsNone(territory_fence.postal_code)
         self.assertIsNone(fence_dict["postal_code"])
+
+    def test_eq(self):
+        territory_fence = TerritoryFence(country="US", name="America")
+        matching_fence = TerritoryFence(country="US", name="America", administrative_area=None, postal_code=None)
+        mismatching_fence = TerritoryFence(country="CA", name="Canada")
+        different_kind_of_fence = GeoCircleFence(latitude=30, longitude=30, radius=3000, name="Somewhere")
+        self.assertEqual(territory_fence, matching_fence)
+        self.assertNotEqual(territory_fence, mismatching_fence)
+        self.assertNotEqual(territory_fence, different_kind_of_fence)
 
 class TestLegacyPolicy(unittest.TestCase):
     def setUp(self):

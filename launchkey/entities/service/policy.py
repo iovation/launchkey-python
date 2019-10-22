@@ -427,6 +427,15 @@ class GeoCircleFence(Fence):
         yield "longitude", self.longitude
         yield "radius", self.radius
 
+    def __eq__(self, other):
+        if isinstance(other, GeoCircleFence):
+            return self.latitude == other.latitude \
+                and self.longitude == other.longitude \
+                and self.radius == other.radius \
+                and self.name == other.name
+
+        return False
+
 
 class TerritoryFence(Fence):
     """
@@ -463,3 +472,12 @@ class TerritoryFence(Fence):
         yield "administrative_area", self.administrative_area
         yield "country", self.country
         yield "postal_code", self.postal_code
+
+    def __eq__(self, other):
+        if isinstance(other, TerritoryFence):
+            return self.country == other.country \
+                and self.administrative_area == other.administrative_area \
+                and self.postal_code == other.postal_code \
+                and self.name == other.name
+
+        return False

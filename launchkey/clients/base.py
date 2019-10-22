@@ -25,7 +25,7 @@ from launchkey.exceptions import InvalidEntityID, LaunchKeyAPIException, \
     AuthorizationInProgress, Conflict, AuthorizationResponseExists, \
     AuthorizationRequestCanceled, UnknownPolicyException, InvalidFenceType
 from launchkey.transports.base import APIResponse
-from launchkey.utils.shared import iso_format
+from launchkey.utils.shared import iso_format, deprecated
 
 ERROR_CODE_MAP = {
     "ARG-001": InvalidParameters,
@@ -375,8 +375,12 @@ class ServiceManagingBaseClient(BaseClient):
             "{}/keys".format(self.__service_base_path[0:-1]),
             self._subject, **kwargs)
 
+    @deprecated
     def get_service_policy(self, service_id):
         """
+        NOTE: This method is being deprecated. Use
+        `get_advanced_service_policy` instead!
+
         Retrieves a Service's Security Policy
         :param service_id: Unique Service ID
         :raise: launchkey.exceptions.ServiceNotFound - No Service could be
@@ -435,8 +439,10 @@ class ServiceManagingBaseClient(BaseClient):
         found matching the input ID
         :return: ConditionalGeoFencePolicy, FactorsPolicy, MethodAmountPolicy
         or LegacyPolicy
-        :return: None if policy returned from `get_advanced_service_policy` is
-        not a legacy policy
+        :raises UnknownPolicyError: in the event an unrecognized policy type
+        is received
+        :raises InvalidFenceType: in the event an unrecognized fence type is
+        received
         """
         response = self._transport.post(
             "{}/policy/item".format(self.__service_base_path[0:-1]),
@@ -568,8 +574,12 @@ class ServiceManagingBaseClient(BaseClient):
             )
         return new_policy
 
+    @deprecated
     def set_service_policy(self, service_id, policy):
         """
+        NOTE: This method is being deprecated. Use
+        `set_advanced_service_policy` instead!
+
         Sets a Service's Security Policy
         :param service_id: Unique Service ID
         :param policy: launchkey.clients.shared.ServiceSecurityPolicy

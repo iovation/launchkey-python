@@ -1,6 +1,8 @@
 """ Shared Utilities """
 
+from functools import wraps
 from uuid import UUID
+import warnings
 
 import six
 from jwkest import JWKESTException
@@ -135,3 +137,23 @@ def iso_format(datetime):
     """
     return datetime.strftime("%Y-%m-%dT%H:%M:%SZ") \
         if datetime is not None else None
+
+
+# pylint: disable=invalid-name
+def deprecated(fn):
+    """
+    Decorator for issuing warnings
+    :param fn: Function to be called
+    :return Any: The expected return of the passed function
+    """
+
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        """ Decorator function """
+        warnings.warn("The %s method has been deprecated and will be removed "
+                      "in the next major release." % fn.__name__,
+                      DeprecationWarning)
+
+        return fn(*args, **kwargs)
+
+    return wrapper

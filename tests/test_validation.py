@@ -8,7 +8,7 @@ from six import assertRaisesRegex
 
 from launchkey.entities.validation import AuthorizeValidator, \
     ConditionalGeoFenceValidator, PolicyFenceValidator, FenceValidator, \
-    GeoFenceValidator, TerritoryFenceValidator
+    GeoFenceValidator, TerritoryFenceValidator, GeoCircleFenceValidator
 from launchkey.exceptions.validation import AuthorizationInProgressValidator
 
 
@@ -390,6 +390,35 @@ class TestFenceValidator(TestCase):
 
 @ddt
 class TestGeoFenceValidator(TestCase):
+    def __construct_fence(self, name, lat, lon, rad):
+        fence = {
+            "name": name,
+            "latitude": lat,
+            "longitude": lon,
+            "radius": rad
+        }
+
+        return fence
+
+    def test_valid_fence(self):
+        fence_dict = {"latitude": 30, "longitude": 30, "radius": 3000, "name": "cool"}
+        parsed = GeoFenceValidator.to_python(fence_dict)
+        self.assertEqual(fence_dict, parsed)
+
+    @data([30], "hello", {})
+    def test_lat_lon_rad_must_be_integers(self, val):
+        with self.assertRaises(Invalid):
+            GeoFenceValidator.to_python(self.__construct_fence("awesome", val, 30, 3000))
+
+        with self.assertRaises(Invalid):
+            GeoFenceValidator.to_python(self.__construct_fence("awesome", 30, val, 3000))
+
+        with self.assertRaises(Invalid):
+            GeoFenceValidator.to_python(self.__construct_fence("awesome", 30, 30, val))
+
+
+@ddt
+class TestGeoCircleFenceValidator(TestCase):
     def __construct_fence(self, name, type, lat, lon, rad):
         fence = {
             "name": name,
@@ -401,29 +430,15 @@ class TestGeoFenceValidator(TestCase):
 
         return fence
 
-    @data(
-        {"latitude": 30, "longitude": 30, "radius": 3000, "name": "cool"},
-        {"type": "GEO_CIRCLE", "latitude": 30, "longitude": 30, "radius": 3000, "name": "awesome"},
-    )
-    def test_valid_fence(self, fence_dict):
-        parsed = GeoFenceValidator.to_python(fence_dict)
+    def test_valid_fence(self):
+        fence_dict = {"latitude": 30, "longitude": 30, "radius": 3000, "name": "cool", "type": "GEO_CIRCLE"}
+        parsed = GeoCircleFenceValidator.to_python(fence_dict)
         self.assertEqual(fence_dict, parsed)
 
     @data("TERRITORY", 0, ["GEO_CIRCLE"])
     def test_raises_on_invalid_type(self, fence_type):
         with self.assertRaises(Invalid):
-            GeoFenceValidator.to_python(self.__construct_fence("awesome", fence_type, 30, 30, 3000))
-
-    @data([30], "hello", {})
-    def test_lat_lon_rad_must_be_integers(self, val):
-        with self.assertRaises(Invalid):
-            GeoFenceValidator.to_python(self.__construct_fence("awesome", "GEO_CIRCLE", val, 30, 3000))
-
-        with self.assertRaises(Invalid):
-            GeoFenceValidator.to_python(self.__construct_fence("awesome", "GEO_CIRCLE", 30, val, 3000))
-
-        with self.assertRaises(Invalid):
-            GeoFenceValidator.to_python(self.__construct_fence("awesome", "GEO_CIRCLE", 30, 30, val))
+            GeoCircleFenceValidator.to_python(self.__construct_fence("awesome", fence_type, 30, 30, 3000))
 
 
 @ddt

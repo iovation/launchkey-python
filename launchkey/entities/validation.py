@@ -103,15 +103,14 @@ class AuthMethodsValidator(Schema):
 class GeoFenceValidator(Schema):
     """ GeoFence Validator, can represent both GeoFence and GeoCircleFence """
     name = validators.String(if_missing=None)
-    type = validators.OneOf(["GEO_CIRCLE"], if_missing=None)
     latitude = validators.Number()
     longitude = validators.Number()
     radius = validators.Number()
 
-    @staticmethod
-    def _validate_python(value, _state):
-        if not value["type"]:
-            del value["type"]
+
+class GeoCircleFenceValidator(GeoFenceValidator):
+    """ GeoFence Validator, can represent ONLY GeoCircleFence """
+    type = validators.OneOf(["GEO_CIRCLE"])
 
 
 class TerritoryFenceValidator(Schema):
@@ -145,7 +144,7 @@ class FenceValidator(Schema):
             GeoFenceValidator().to_python(value)
 
         elif value["type"] == "GEO_CIRCLE":
-            GeoFenceValidator().to_python(value)
+            GeoCircleFenceValidator().to_python(value)
 
         elif value["type"] == "TERRITORY":
             TerritoryFenceValidator().to_python(value)

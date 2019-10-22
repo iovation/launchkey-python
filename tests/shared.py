@@ -600,7 +600,7 @@ class SharedTests(object):
             expected_service_id = 'expected-service-id'
             policy = self._client.get_service_policy(expected_service_id)
             self.assertIsNone(policy)
-            warn.assert_called_once_with("Policy received was not a legacy policy and cannot "
+            warn.assert_called_with("Policy received was not a legacy policy and cannot "
                                              "be converted into a ServiceSecurityPolicy.",
                                              category=DeprecationWarning)
 

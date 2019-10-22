@@ -3,16 +3,20 @@ from behave import given, when, then
 from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
     MethodAmountPolicy, GeoCircleFence, TerritoryFence, FactorsPolicy
 
-DEFAULT_FACTORS_POLICY = FactorsPolicy(
-    knowledge_required=True,
-    deny_emulator_simulator=False,
-    deny_rooted_jailbroken=False
-)
 
-DEFAULT_COND_GEO_POLICY = ConditionalGeoFencePolicy(
-    inside=DEFAULT_FACTORS_POLICY,
-    outside=DEFAULT_FACTORS_POLICY
-)
+def default_factors_policy():
+    return FactorsPolicy(
+        knowledge_required=True,
+        deny_emulator_simulator=False,
+        deny_rooted_jailbroken=False
+    )
+
+
+def default_cond_geo_policy():
+    return ConditionalGeoFencePolicy(
+        inside=default_factors_policy(),
+        outside=default_factors_policy()
+    )
 
 
 @given("the current Authorization Policy requires {count:d} factors")
@@ -203,7 +207,7 @@ def step_impl(context, amount):
 
 @given(u"I have any Conditional Geofence Policy")
 def step_impl(context):
-    new_policy = DEFAULT_COND_GEO_POLICY
+    new_policy = default_cond_geo_policy()
     context.entity_manager.set_current_auth_policy(new_policy)
 
 
@@ -212,7 +216,7 @@ def step_impl(context):
     policy = context.entity_manager.get_current_auth_policy()
     try:
         ConditionalGeoFencePolicy(
-            inside=DEFAULT_COND_GEO_POLICY,
+            inside=default_cond_geo_policy(),
             outside=policy.outside
         )
     except Exception as e:
@@ -578,7 +582,7 @@ def step_impl(context, subpolicy, raw_factors):
       "with a radius of {rad}, a latitude of {lat}, a longitude of {lon}, "
       "and a name of \"{name}\"")
 def step_impl(context, rad, lat, lon, name):
-    policy = context.entity_manager.get_current_auth_response().auth_policy
+    policy = context.entity_manager.get_current_auth_response().policy
     if not policy.fences:
         raise Exception("Expected a GeoCircleFence within the auth response "
                         "but no fences exist.")
@@ -598,7 +602,7 @@ def step_impl(context, rad, lat, lon, name):
       "\"{admin_area}\", a postal code of \"{postal_code}\", and a name of "
       "\"{name}\"")
 def step_impl(context, country, admin_area, postal_code, name):
-    policy = context.entity_manager.get_current_auth_response().auth_policy
+    policy = context.entity_manager.get_current_auth_response().policy
     if not policy.fences:
         raise Exception("Expected a TerritoryFence within the auth response "
                         "but no fences exist.")

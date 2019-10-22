@@ -128,9 +128,9 @@ def verify_current_auth_response_requires_count_factors(context, count):
       "{count:d}")
 def verify_current_auth_response_requires_count_factors(context, count):
     current_auth = context.entity_manager.get_current_auth_response()
-    if current_auth.auth_policy.amount is not count:
+    if current_auth.policy.amount is not count:
         raise Exception("Device response policy did not require %s factors: "
-                        "%s" % (count, current_auth.auth_policy))
+                        "%s" % (count, current_auth.policy))
 
 
 @then("the Authorization response should contain a geofence with a radius of "
@@ -202,7 +202,7 @@ def verify_auth_response_policy_requires_type_inherence(context):
 
 @then("the Advanced Authorization response should require inherence")
 def verify_advanced_auth_response_policy_requires_type_inherence(context):
-    policy = context.entity_manager.get_current_auth_response().auth_policy
+    policy = context.entity_manager.get_current_auth_response().policy
     if not policy.inherence_required:
         raise Exception("Inherence is not in the requested Authorization "
                         "Response Policy")
@@ -211,7 +211,7 @@ def verify_advanced_auth_response_policy_requires_type_inherence(context):
 @then("the Advanced Authorization response should have the requirement "
       "\"{requirement}\"")
 def verify_advanced_auth_response_has_types_requirement(context, requirement):
-    policy = context.entity_manager.get_current_auth_response().auth_policy
+    policy = context.entity_manager.get_current_auth_response().policy
     if policy.requirement != Requirement(requirement.upper()):
         raise Exception("Requirement for auth policy was not %s", requirement)
 

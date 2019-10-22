@@ -9,7 +9,7 @@ from launchkey.exceptions import InvalidParameters, \
     UnableToDecryptWebhookRequest, UnexpectedAuthorizationResponse, \
     UnexpectedAPIResponse, UnexpectedWebhookRequest, XiovJWTValidationFailure,\
     XiovJWTDecryptionFailure
-from launchkey.utils.shared import XiovJWTService
+from launchkey.utils.shared import XiovJWTService, deprecated
 from launchkey.entities.validation import AuthorizationResponseValidator, \
     AuthorizeSSEValidator, AuthorizeValidator
 from launchkey.entities.service import AuthPolicy, AuthorizationResponse, \
@@ -209,8 +209,12 @@ class ServiceClient(BaseClient):
 
         return authorization_response
 
+    @deprecated
     def get_authorization_response(self, authorization_request_id):
         """
+        NOTE: This method is being deprecated. Use
+        `get_advanced_authorization_response` instead!
+
         Request the response for a previous authorization call.
         :param authorization_request_id: Unique identifier returned by
         authorization_request()
@@ -365,8 +369,12 @@ class ServiceClient(BaseClient):
 
         return result
 
+    @deprecated
     def handle_webhook(self, body, headers, method=None, path=None):
         """
+        NOTE: This method is being deprecated. Use `handle_advanced_webhook`
+        instead!
+
         Handle a webhook callback
         In the event of a Logout webhook, be sure to call session_end() when
         you complete the process of ending the user's session in your
