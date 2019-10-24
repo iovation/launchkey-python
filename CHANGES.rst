@@ -6,9 +6,21 @@ CHANGELOG for LaunchKey Python SDK
 
 * Bug fix to ensure that requests do not follow redirects
 * Bug fix to ensure that public key is cached using `kid` header of JWT found within a response header
-* Added Policies: ConditionalGeofence, MethodAmount, Factors
-* Deprecated: TimeFence
+* Added Policies: ConditionalGeofence, MethodAmount, Factors, Legacy
+* Added Requirement enum
 * enum34 only required on python versions < 3.4
+* Deprecated: TimeFence
+* Deprecated: `ServiceSecurityPolicy`
+* Deprecated: `get_service_policy` method on `ServiceManagingBaseClient` class
+* Deprecated: `set_servivce_policy` method on `ServiceManagingBaseClient` class
+* Deprecated: `get_authorization_response` method on `ServiceClient` class
+* Deprecated: `handle_webhook` method on `ServiceClient` class
+* Added: `get_advanced_service_policy` method on `ServiceManagingBaseClient` class
+* Added: `set_advanced_service_policy` method on `ServiceManagingBaseClient` class
+* Added: `get_advanced_authorization_response` method on `ServiceClient` class
+* Added: `handle_advanced_webhook` method on `ServiceClient` class
+* Added: `AdvancedAuthorizationResponse` class
+* Added: `AuthorizationResponsePolicy` class
 
 3.5.0
 -----

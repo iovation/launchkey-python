@@ -223,8 +223,14 @@ class LegacyPolicy(Policy):
                  knowledge_required=False, possession_required=False,
                  deny_rooted_jailbroken=False, fences=None,
                  time_restrictions=None):
-        sanitized_fences = filter(lambda f: isinstance(f, GeoCircleFence),
-                                  fences)
+
+        sanitized_fences = []
+        for fence in fences:
+            if not isinstance(fence, GeoCircleFence):
+                raise InvalidFenceType("A LegacyPolicy may only contain a "
+                                       "GeoCircleFence.")
+
+            sanitized_fences.append(fence)
 
         super(LegacyPolicy, self).__init__(sanitized_fences)
         self.amount = amount

@@ -1164,6 +1164,7 @@ class TestTerritoryFence(unittest.TestCase):
         self.assertNotEqual(territory_fence, mismatching_fence)
         self.assertNotEqual(territory_fence, different_kind_of_fence)
 
+@ddt
 class TestLegacyPolicy(unittest.TestCase):
     def setUp(self):
         self.legacy_policy = LegacyPolicy(amount=0, inherence_required=False, knowledge_required=True,
@@ -1195,6 +1196,30 @@ class TestLegacyPolicy(unittest.TestCase):
             "time_restrictions=[]>"
 
         self.assertEqual(repr(self.legacy_policy), expected)
+
+    def test_valid_when_passed_a_geo_circle_fence(self):
+        fence = GeoCircleFence(latitude=30, longitude=30, radius=3000, name="cool")
+        legacy_policy = LegacyPolicy(amount=0, inherence_required=False,
+                                     knowledge_required=True,
+                                     possession_required=False, deny_rooted_jailbroken=True,
+                                     fences=[fence], time_restrictions=[])
+
+        self.assertEqual(len(legacy_policy.fences), 1)
+        self.assertEqual(legacy_policy.fences[0], fence)
+
+    @data(
+        TerritoryFence(name="America", country="US"),
+        GeoFence(latitude=30, longitude=30, radius=3000, name="cool"),
+        {"type": "GEO_CIRCLE", "latitude": 30, "longitude": 30, "radius": 3000, "name": "cool"}
+    )
+    def test_throws_when_passed_non_geo_circle_fence(self, fence):
+        with self.assertRaises(InvalidFenceType):
+            LegacyPolicy(amount=0, inherence_required=False,
+                         knowledge_required=True,
+                         possession_required=False, deny_rooted_jailbroken=True,
+                         fences=[fence], time_restrictions=[])
+
+
 
 @ddt
 class TestAuthorizationResponsePolicy(unittest.TestCase):
