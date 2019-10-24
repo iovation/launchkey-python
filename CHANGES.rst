@@ -12,7 +12,7 @@ CHANGELOG for LaunchKey Python SDK
 * Deprecated: TimeFence
 * Deprecated: `ServiceSecurityPolicy`
 * Deprecated: `get_service_policy` method on `ServiceManagingBaseClient` class
-* Deprecated: `set_servivce_policy` method on `ServiceManagingBaseClient` class
+* Deprecated: `set_service_policy` method on `ServiceManagingBaseClient` class
 * Deprecated: `get_authorization_response` method on `ServiceClient` class
 * Deprecated: `handle_webhook` method on `ServiceClient` class
 * Added: `get_advanced_service_policy` method on `ServiceManagingBaseClient` class
