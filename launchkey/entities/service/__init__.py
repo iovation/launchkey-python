@@ -12,6 +12,8 @@ from json import loads, dumps
 import pytz
 from formencode import Invalid
 
+from launchkey.entities.service.policy import AuthorizationResponsePolicy, \
+    GeoCircleFence, TerritoryFence, Requirement
 from launchkey.entities.validation import \
     AuthorizationResponsePackageValidator, \
     JWEAuthorizationResponsePackageValidator
@@ -183,6 +185,15 @@ class TimeFence(object):
                 sunday=self.sunday
             )
 
+    def __iter__(self):
+        yield "days", self.days
+        yield "start hour", self.start_time.hour
+        yield "end hour", self.end_time.hour
+        yield "name", self.name
+        yield "start minute", self.start_time.minute
+        yield "end minute", self.end_time.minute
+        yield "timezone", self.timezone
+
 
 class DenialReason(object):
     """
@@ -214,9 +225,9 @@ class AuthPolicy(object):
         If all values are left at 0, service defaults will be used.
 
         :param any: Int. Whether to require any x number of factors
-        :param knowledge: Boolean. Whether to require knowledge factors
-        :param inherence: Boolean. Whether to require inherence factors
-        :param possession: Boolean. Whether to require possesion factors
+        :param knowledge: Boolean. Whether to require knowledge factor
+        :param inherence: Boolean. Whether to require inherence factor
+        :param possession: Boolean. Whether to require possesion factor
         :param jailbreak_protection: Boolean. Whether to allow jailbroken /
                rooted devices to authenticate
         """
@@ -234,7 +245,7 @@ class AuthPolicy(object):
                                     "]input must be a boolean.")
         if any != 0 and (knowledge or inherence or possession):
             raise InvalidParameters("Cannot use \"any\" with other specific "
-                                    "]factor requirements")
+                                    "factor requirements")
 
         self.geofences = []
         self.minimum_requirements = []
@@ -542,7 +553,7 @@ class AuthMethod(object):
         return eq
 
 
-class AuthorizationResponse(object):
+class AdvancedAuthorizationResponse(object):
     """
     Authorization Response object containing decrypted auth response and
     other related information
@@ -560,6 +571,62 @@ class AuthorizationResponse(object):
             return enum_class(value)
         except ValueError:
             return enum_class.OTHER
+
+    @staticmethod
+    def __generate_fence_from_policy_dict(fence):
+        if not fence.get("type"):
+            # Denotes a legacy geofence that can become a GeoCircleFence
+            return GeoCircleFence(
+                fence["latitude"],
+                fence["longitude"],
+                fence["radius"],
+                name=fence.get("name")
+            )
+
+        if fence["type"] == "TERRITORY":
+            return TerritoryFence(
+                fence["country"],
+                administrative_area=fence.get("administrative_area"),
+                postal_code=fence.get("postal_code"),
+                name=fence.get("name")
+            )
+
+        if fence["type"] == "GEO_CIRCLE":
+            return GeoCircleFence(
+                fence["latitude"],
+                fence["longitude"],
+                fence["radius"],
+                name=fence.get("name")
+            )
+
+        raise ValueError("Invalid fence type received in Auth Response")
+
+    def _parse_and_set_auth_policy(self, auth_policy):
+        kwargs = {}
+        requirement = auth_policy["requirement"]
+
+        try:
+            if requirement:
+                kwargs["requirement"] = Requirement(requirement.upper())
+
+        except ValueError:
+            kwargs["requirement"] = Requirement.OTHER
+
+        if requirement == "amount":
+            kwargs["amount"] = auth_policy["amount"]
+
+        if requirement == "types":
+            policy_types = map(lambda t: t.lower(), auth_policy["types"])
+            kwargs["inherence_required"] = "inherence" in policy_types
+            kwargs["knowledge_required"] = "knowledge" in policy_types
+            kwargs["possession_required"] = "possession" in policy_types
+
+        if auth_policy.get('geofences'):
+            kwargs["fences"] = list(map(
+                self.__generate_fence_from_policy_dict,
+                auth_policy["geofences"]))
+
+        self.policy = AuthorizationResponsePolicy(**kwargs)
 
     def _parse_device_response_from_jwe(self, jwe_payload, transport):
         """
@@ -617,29 +684,7 @@ class AuthorizationResponse(object):
 
         auth_policy = decrypted_jwe.get("auth_policy")
         if auth_policy:
-            kwargs = {}
-            if auth_policy['requirement'] == "amount":
-                kwargs['any'] = auth_policy['amount']
-            elif auth_policy['requirement'] == "types":
-                for item in auth_policy['types']:
-                    type = item.lower()
-                    if type in ['knowledge', 'inherence', 'possession']:
-                        kwargs[type] = True
-                    else:
-                        warnings.warn(
-                            "Invalid policy type given: %s. "
-                            "It will be ignored, but this could "
-                            "signify the need for an update." % type)
-
-            if auth_policy.get('geofences') or kwargs:
-                self.auth_policy = AuthPolicy(**kwargs)
-                for fence in auth_policy.get('geofences', []):
-                    self.auth_policy.add_geofence(
-                        fence['latitude'],
-                        fence['longitude'],
-                        fence['radius'],
-                        name=fence['name']
-                    )
+            self._parse_and_set_auth_policy(auth_policy)
 
     def _parse_device_response_from_auth_package(self, auth_package, key_id,
                                                  transport):
@@ -696,6 +741,8 @@ class AuthorizationResponse(object):
         self.user_push_id = data.get("user_push_id")
 
     def __init__(self, data, transport):
+        self.data = data
+        self.transport = transport
         self.device_id = None
         self.type = None
         self.authorization_request_id = None
@@ -704,9 +751,45 @@ class AuthorizationResponse(object):
         self.reason = None
         self.denial_reason = None
         self.fraud = None
-        self.auth_policy = None
+        self.policy = None
         self.auth_methods = None
         self._parse_device_response(data, transport)
+
+
+class AuthorizationResponse(AdvancedAuthorizationResponse):
+    """
+    Authorization Response object containing decrypted auth response and
+    other related information
+    """
+    def __init__(self, data, transport):
+        self.auth_policy = None
+        super(AuthorizationResponse, self).__init__(data, transport)
+        del self.policy
+
+    def _parse_and_set_auth_policy(self, auth_policy):
+        kwargs = {}
+        if auth_policy['requirement'] == "amount":
+            kwargs['any'] = auth_policy['amount']
+        elif auth_policy['requirement'] == "types":
+            for item in auth_policy['types']:
+                type = item.lower()
+                if type in ['knowledge', 'inherence', 'possession']:
+                    kwargs[type] = True
+                else:
+                    warnings.warn(
+                        "Invalid policy type given: %s. "
+                        "It will be ignored, but this could "
+                        "signify the need for an update." % type)
+
+        if auth_policy.get('geofences') or kwargs:
+            self.auth_policy = AuthPolicy(**kwargs)
+            for fence in auth_policy.get('geofences', []):
+                self.auth_policy.add_geofence(
+                    fence['latitude'],
+                    fence['longitude'],
+                    fence['radius'],
+                    name=fence['name']
+                )
 
 
 class SessionEndRequest(object):

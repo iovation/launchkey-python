@@ -101,11 +101,53 @@ class AuthMethodsValidator(Schema):
 
 
 class GeoFenceValidator(Schema):
-    """GeoFence validator"""
+    """ GeoFence Validator, can represent both GeoFence and GeoCircleFence """
     name = validators.String(if_missing=None)
     latitude = validators.Number()
     longitude = validators.Number()
     radius = validators.Number()
+
+
+class GeoCircleFenceValidator(GeoFenceValidator):
+    """ GeoFence Validator, can represent ONLY GeoCircleFence """
+    type = validators.OneOf(["GEO_CIRCLE"])
+
+
+class TerritoryFenceValidator(Schema):
+    """ TerritoryFence Validator"""
+    name = validators.String(if_missing=None)
+    type = validators.OneOf(["TERRITORY"], if_missing=None)
+    country = validators.Regex(r"^[A-Z]{2}$", not_empty=True)
+    administrative_area = validators.Regex(r"^[A-Z]{2}-[A-Z]{2}[A-Z]?$",
+                                           if_missing=None)
+    postal_code = validators.String(if_missing=None, if_empty=None)
+
+    @staticmethod
+    def _validate_python(value, _state):
+        if not value["administrative_area"]:
+            del value["administrative_area"]
+
+        if not value["postal_code"]:
+            del value["postal_code"]
+
+
+class FenceValidator(Schema):
+    """Fence validator"""
+    allow_extra_fields = True
+    type = validators.OneOf(["GEO_CIRCLE", "TERRITORY"], if_missing=None)
+    name = validators.String(if_missing=None)
+
+    @staticmethod
+    def _validate_python(value, _state):
+        if not value["type"]:
+            del value["type"]
+            GeoFenceValidator().to_python(value)
+
+        elif value["type"] == "GEO_CIRCLE":
+            GeoCircleFenceValidator().to_python(value)
+
+        elif value["type"] == "TERRITORY":
+            TerritoryFenceValidator().to_python(value)
 
 
 class AuthPolicyValidator(Schema):
@@ -113,7 +155,7 @@ class AuthPolicyValidator(Schema):
     requirement = validators.String(if_missing=None, if_empty=None)
     amount = validators.Number(if_missing=None)
     types = ForEach(validators.String(), if_missing=None)
-    geofences = ForEach(GeoFenceValidator(), if_missing=[], if_empty=[])
+    geofences = ForEach(FenceValidator(), if_missing=[], if_empty=[])
 
 
 class PolicyTerritoryValidator(Schema):

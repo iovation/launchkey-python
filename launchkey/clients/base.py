@@ -4,12 +4,13 @@
 
 from functools import wraps
 from uuid import UUID
+import warnings
 
 from formencode import Invalid
 
 from launchkey.entities.service import Service, ServiceSecurityPolicy
 from launchkey.entities.service.policy import ConditionalGeoFencePolicy, \
-    GeoCircleFence, TerritoryFence, \
+    GeoCircleFence, TerritoryFence, LegacyPolicy, \
     MethodAmountPolicy, FactorsPolicy
 from launchkey.entities.shared import PublicKey
 from launchkey.entities.validation import ServiceValidator, \
@@ -24,7 +25,7 @@ from launchkey.exceptions import InvalidEntityID, LaunchKeyAPIException, \
     AuthorizationInProgress, Conflict, AuthorizationResponseExists, \
     AuthorizationRequestCanceled, UnknownPolicyException, InvalidFenceType
 from launchkey.transports.base import APIResponse
-from launchkey.utils.shared import iso_format
+from launchkey.utils.shared import iso_format, deprecated
 
 ERROR_CODE_MAP = {
     "ARG-001": InvalidParameters,
@@ -374,15 +375,74 @@ class ServiceManagingBaseClient(BaseClient):
             "{}/keys".format(self.__service_base_path[0:-1]),
             self._subject, **kwargs)
 
-    @api_call
+    @deprecated
     def get_service_policy(self, service_id):
         """
+        NOTE: This method is being deprecated. Use
+        `get_advanced_service_policy` instead!
+
         Retrieves a Service's Security Policy
         :param service_id: Unique Service ID
         :raise: launchkey.exceptions.ServiceNotFound - No Service could be
         found matching the input ID
         :return: launchkey.entities.service.ServiceSecurityPolicy object
         containing policy details
+        :return: None if policy returned from `get_advanced_service_policy` is
+        not a legacy policy
+        """
+        current_policy = self.get_advanced_service_policy(service_id)
+        if not isinstance(current_policy, LegacyPolicy):
+            warnings.warn("Policy received was not a legacy policy and cannot "
+                          "be converted into a ServiceSecurityPolicy.",
+                          category=DeprecationWarning)
+
+            return None
+
+        policy = ServiceSecurityPolicy(
+            any=current_policy.amount,
+            knowledge=current_policy.knowledge_required,
+            inherence=current_policy.inherence_required,
+            possession=current_policy.possession_required,
+            jailbreak_protection=current_policy.deny_rooted_jailbroken
+        )
+
+        for fence in current_policy.fences:
+            policy.add_geofence(
+                fence.latitude,
+                fence.longitude,
+                fence.radius,
+                name=fence.name
+            )
+
+        for fence in current_policy.time_restrictions:
+            policy.add_timefence(
+                fence.name,
+                fence.start_time,
+                fence.end_time,
+                monday=fence.monday,
+                tuesday=fence.tuesday,
+                wednesday=fence.wednesday,
+                thursday=fence.thursday,
+                friday=fence.friday,
+                saturday=fence.saturday,
+                sunday=fence.sunday
+            )
+
+        return policy
+
+    @api_call
+    def get_advanced_service_policy(self, service_id):
+        """
+        Retrieves a Service's Security Policy
+        :param service_id: Unique Service ID
+        :raise: launchkey.exceptions.ServiceNotFound - No Service could be
+        found matching the input ID
+        :return: ConditionalGeoFencePolicy, FactorsPolicy, MethodAmountPolicy
+        or LegacyPolicy
+        :raises UnknownPolicyError: in the event an unrecognized policy type
+        is received
+        :raises InvalidFenceType: in the event an unrecognized fence type is
+        received
         """
         response = self._transport.post(
             "{}/policy/item".format(self.__service_base_path[0:-1]),
@@ -391,77 +451,103 @@ class ServiceManagingBaseClient(BaseClient):
         policy_data = self._validate_response(response.data,
                                               ServiceSecurityPolicyValidator)
 
-        if policy_data["type"] == "LEGACY":
-            policy = ServiceSecurityPolicy()
-            policy.set_policy(policy_data)
+        if policy_data["type"] == "COND_GEO":
+            inside = self.__process_nested_service_policy(
+                policy_data["inside"]
+            )
+            outside = self.__process_nested_service_policy(
+                policy_data["outside"]
+            )
+
+            policy = ConditionalGeoFencePolicy(
+                inside,
+                outside,
+                deny_rooted_jailbroken=policy_data["deny_rooted_jailbroken"],
+                deny_emulator_simulator=policy_data["deny_emulator_simulator"],
+                fences=self.__generate_fence_objects_from_policy(policy_data)
+            )
+        elif policy_data["type"] == "LEGACY":
+            ss_policy = ServiceSecurityPolicy()
+            ss_policy.set_policy(policy_data)
+            policy = self.__service_security_policy_to_legacy_policy(ss_policy)
+        elif policy_data["type"] == "METHOD_AMOUNT":
+            policy = MethodAmountPolicy(
+                deny_rooted_jailbroken=policy_data[
+                    "deny_rooted_jailbroken"],
+                deny_emulator_simulator=policy_data[
+                    "deny_emulator_simulator"],
+                fences=self.__generate_fence_objects_from_policy(policy_data),
+                amount=policy_data["amount"]
+            )
+        elif policy_data["type"] == "FACTORS":
+            policy = FactorsPolicy(
+                deny_rooted_jailbroken=policy_data[
+                    "deny_rooted_jailbroken"],
+                deny_emulator_simulator=policy_data[
+                    "deny_emulator_simulator"],
+                inherence_required="INHERENCE" in policy_data["factors"],
+                knowledge_required="KNOWLEDGE" in policy_data["factors"],
+                possession_required="POSSESSION" in policy_data["factors"],
+                fences=self.__generate_fence_objects_from_policy(policy_data)
+            )
         else:
-            fences = list()
-            for fence in policy_data["fences"]:
-                if fence["type"] == "GEO_CIRCLE":
-                    fences.append(
-                        GeoCircleFence(
-                            latitude=fence["latitude"],
-                            longitude=fence["longitude"],
-                            radius=fence["radius"],
-                            name=fence["name"]
-                        )
-                    )
-                elif fence["type"] == "TERRITORY":
-                    fences.append(
-                        TerritoryFence(
-                            country=fence["country"],
-                            administrative_area=fence["administrative_area"],
-                            postal_code=fence["postal_code"],
-                            name=fence["name"]
-                        )
-                    )
-                else:
-                    raise InvalidFenceType(
-                        "Fence type \"{0}\" was not a valid Fence type".format(
-                            fence["type"]
-                        )
-                    )
-
-            if policy_data["type"] == "COND_GEO":
-                inside = self.__process_nested_service_policy(
-                    policy_data["inside"]
-                )
-                outside = self.__process_nested_service_policy(
-                    policy_data["outside"]
-                )
-
-                policy = ConditionalGeoFencePolicy(
-                    inside,
-                    outside,
-                    policy_data["deny_rooted_jailbroken"],
-                    policy_data["deny_emulator_simulator"],
-                    fences
-                )
-            elif policy_data["type"] == "METHOD_AMOUNT":
-                policy = MethodAmountPolicy(
-                    deny_rooted_jailbroken=policy_data[
-                        "deny_rooted_jailbroken"],
-                    deny_emulator_simulator=policy_data[
-                        "deny_emulator_simulator"],
-                    fences=fences,
-                    amount=policy_data["amount"]
-                )
-            elif policy_data["type"] == "FACTORS":
-                policy = FactorsPolicy(
-                    deny_rooted_jailbroken=policy_data[
-                        "deny_rooted_jailbroken"],
-                    deny_emulator_simulator=policy_data[
-                        "deny_emulator_simulator"],
-                    fences=fences,
-                    factors=policy_data["factors"]
-                )
-            else:
-                raise UnknownPolicyException(
-                    "The Policy {0} was not a known Policy type".format(
-                        policy_data["type"])
-                )
+            raise UnknownPolicyException(
+                "The Policy {0} was not a known Policy type".format(
+                    policy_data["type"])
+            )
 
         return policy
+
+    def __service_security_policy_to_legacy_policy(self, policy):
+        return LegacyPolicy(
+            amount=policy.minimum_amount,
+            inherence_required="inherence" in policy.minimum_requirements,
+            knowledge_required="knowledge" in policy.minimum_requirements,
+            possession_required="possession" in policy.minimum_requirements,
+            deny_rooted_jailbroken=policy.jailbreak_protection,
+            fences=list(map(self.__geofence_to_geo_circle, policy.geofences)),
+            time_restrictions=policy.timefences
+        )
+
+    @staticmethod
+    def __geofence_to_geo_circle(geofence):
+        return GeoCircleFence(
+            geofence.latitude,
+            geofence.longitude,
+            geofence.radius,
+            name=geofence.name
+        )
+
+    @staticmethod
+    def __generate_fence_objects_from_policy(policy):
+        fences = list()
+        for fence in policy["fences"]:
+            if fence["type"] == "GEO_CIRCLE":
+                fences.append(
+                    GeoCircleFence(
+                        latitude=fence["latitude"],
+                        longitude=fence["longitude"],
+                        radius=fence["radius"],
+                        name=fence["name"]
+                    )
+                )
+            elif fence["type"] == "TERRITORY":
+                fences.append(
+                    TerritoryFence(
+                        country=fence["country"],
+                        administrative_area=fence["administrative_area"],
+                        postal_code=fence["postal_code"],
+                        name=fence["name"]
+                    )
+                )
+            else:
+                raise InvalidFenceType(
+                    "Fence type \"{0}\" was not a valid Fence type".format(
+                        fence["type"]
+                    )
+                )
+
+        return fences
 
     @staticmethod
     def __process_nested_service_policy(policy):
@@ -474,9 +560,11 @@ class ServiceManagingBaseClient(BaseClient):
             )
         elif policy["type"] == "FACTORS":
             new_policy = FactorsPolicy(
-                factors=policy["factors"],
                 deny_rooted_jailbroken=None,
                 deny_emulator_simulator=None,
+                inherence_required="INHERENCE" in policy["factors"],
+                knowledge_required="KNOWLEDGE" in policy["factors"],
+                possession_required="POSSESSION" in policy["factors"],
                 fences=policy["fences"]
             )
         else:
@@ -486,12 +574,30 @@ class ServiceManagingBaseClient(BaseClient):
             )
         return new_policy
 
-    @api_call
+    @deprecated
     def set_service_policy(self, service_id, policy):
         """
+        NOTE: This method is being deprecated. Use
+        `set_advanced_service_policy` instead!
+
         Sets a Service's Security Policy
         :param service_id: Unique Service ID
         :param policy: launchkey.clients.shared.ServiceSecurityPolicy
+        :raise: launchkey.exceptions.InvalidParameters - Input parameters were
+        not correct
+        :raise: launchkey.exceptions.ServiceNotFound - No Service could be
+        found matching the input ID
+        :return:
+        """
+        self.set_advanced_service_policy(service_id, policy)
+
+    @api_call
+    def set_advanced_service_policy(self, service_id, policy):
+        """
+        Sets a Service's Security Policy
+        :param service_id: Unique Service ID
+        :param policy: LegacyPolicy, ConditionalGeoFencePolicy,
+        MethodAmountPolicy, FactorsPolicy, or ServiceSecurityPolicy
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.ServiceNotFound - No Service could be

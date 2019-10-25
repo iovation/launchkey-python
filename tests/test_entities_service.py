@@ -1,5 +1,6 @@
 import unittest
 
+import json
 from mock import MagicMock, patch
 from ddt import data, unpack, ddt
 from formencode import Invalid
@@ -7,7 +8,8 @@ from datetime import time
 
 from launchkey.entities.service import AuthorizationResponse, \
     AuthResponseType, AuthResponseReason, GeoFence, TimeFence, \
-    AuthMethodType, AuthPolicy, AuthorizationRequest, AuthMethod
+    AuthMethodType, AuthPolicy, AuthorizationRequest, AuthMethod, \
+    AdvancedAuthorizationResponse, GeoCircleFence, TerritoryFence, Requirement
 from launchkey.exceptions import UnexpectedDeviceResponse
 from launchkey.transports.jose_auth import JOSETransport
 
@@ -231,6 +233,222 @@ class TestAuthorizationResponse(unittest.TestCase):
         self.transport.decrypt_rsa_response.side_effect = exc
         with self.assertRaises(UnexpectedDeviceResponse):
             AuthorizationResponse(self.data, self.transport)
+
+
+class TestAdvancedAuthorizationResponse(unittest.TestCase):
+    def setUp(self):
+        self.data = {
+            "auth": "auth data",
+            "auth_jwe": "auth jwe data",
+            "service_user_hash": "vf8fg663aauTkVUFCiR0Er6kctIN9d6958hkzznVHF9",
+            "user_push_id": "399e1d6c-f651-5b82-9dff-d5d63f16c849",
+            "org_user_hash": "SlwSGZz0M9kPtZUL6mzAGjdYcmdUS1jHccRKOJ9rTMO",
+            "public_key_id": "56:66:9d:72:f8:c3:e0:0b:3d:52:f4:81:36:f1:cc:74"
+        }
+
+        self.transport = MagicMock(spec=JOSETransport)
+        self.json_loads_patch = patch('launchkey.entities.service.loads').start()
+        self.json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008"
+        }
+
+        self.json_loads_patch.return_value = self.json_data
+        self.addCleanup(patch.stopall)
+
+    def test_default_instantiation(self):
+        response = AdvancedAuthorizationResponse(self.data, self.transport)
+        self.json_loads_patch.assert_called_with(self.transport.decrypt_response.return_value)
+        self.assertEqual(response.authorization_request_id, self.json_data["auth_request"])
+        self.assertEqual(response.authorized, True)
+        self.assertEqual(response.device_id, self.json_data["device_id"])
+        self.assertEqual(response.service_pins, self.json_data["service_pins"])
+        self.assertEqual(response.service_user_hash, self.data["service_user_hash"])
+        self.assertEqual(response.organization_user_hash, self.data["org_user_hash"])
+        self.assertEqual(response.user_push_id, self.data["user_push_id"])
+        self.assertEqual(response.type.value, self.json_data["type"])
+        self.assertEqual(response.reason.value, self.json_data["reason"])
+        self.assertEqual(response.denial_reason, self.json_data["denial_reason"])
+        self.assertIsNone(response.policy)
+
+    def test_parses_auth_policy(self):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": None,
+                "geofences": [
+                    {"latitude": 30, "longitude": 30, "radius": 3000, "name": "cool"},
+                    {"type": "GEO_CIRCLE", "latitude": 30, "longitude": 30, "radius": 3000, "name": "awesome"},
+                    {"type": "TERRITORY", "country": "US", "administrative_area": "US-NV", "name": "Nevada"},
+                ]
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        response = AdvancedAuthorizationResponse(self.data, self.transport)
+
+        self.assertEqual(response.policy.requirement, Requirement.OTHER)
+        self.assertEqual(response.policy.amount, 0)
+        self.assertFalse(response.policy.inherence_required)
+        self.assertFalse(response.policy.knowledge_required)
+        self.assertFalse(response.policy.possession_required)
+        self.assertEqual(
+            response.policy.fences, [
+                GeoCircleFence(latitude=30.0, longitude=30.0, radius=3000.0, name="cool"),
+                GeoCircleFence(latitude=30.0, longitude=30.0, radius=3000.0, name="awesome"),
+                TerritoryFence(country="US", administrative_area="US-NV", name="Nevada")
+            ]
+        )
+
+    def test_instantiates_with_any_type_of_geofence(self):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": None,
+                "geofences": [
+                    {"latitude": 30, "longitude": 30, "radius": 3000, "name": "cool"},
+                    {"type": "GEO_CIRCLE", "latitude": 30, "longitude": 30, "radius": 3000, "name": "awesome"},
+                    {"type": "TERRITORY", "country": "US", "administrative_area": "US-NV", "name": "Nevada"},
+                ]
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        AdvancedAuthorizationResponse(self.data, self.transport)
+
+    def test_instantiates_with_factors(self):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": "types",
+                "geofences": [],
+                "types": ["inherence", "knowledge", "possession"]
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        response = AdvancedAuthorizationResponse(self.data, self.transport)
+        self.assertTrue(response.policy.inherence_required)
+        self.assertTrue(response.policy.knowledge_required)
+        self.assertTrue(response.policy.possession_required)
+
+    def test_instantiates_with_amount(self):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": "amount",
+                "geofences": [],
+                "amount": 3
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        response = AdvancedAuthorizationResponse(self.data, self.transport)
+        self.assertEqual(response.policy.amount, 3)
+
+    def test_instantiates_with_proper_requirement(self):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": "cond_geo",
+                "geofences": []
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        response = AdvancedAuthorizationResponse(self.data, self.transport)
+        self.assertEqual(response.policy.requirement, Requirement.COND_GEO)
+
+    def test_defaults_requirement_to_other_when_unrecognized_requirement_passed(self):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": "not_an_actual_requirement",
+                "geofences": []
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        response = AdvancedAuthorizationResponse(self.data, self.transport)
+        self.assertEqual(response.policy.requirement, Requirement.OTHER)
+
+    def test_raises_when_invalid_fence_type_received(self):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": None,
+                "geofences": [
+                    {"type": "NOT_A_FENCE", "latitude": 30, "longitude": 30, "radius": 3000, "name": "awesome"},
+                ]
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        with self.assertRaises(UnexpectedDeviceResponse):
+            AdvancedAuthorizationResponse(self.data, self.transport)
+
+    @patch('launchkey.entities.service.JWEAuthorizationResponsePackageValidator')
+    def test_raises_value_error_when_non_geo_circle_or_territory_fence_received(self, validator_patch):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": None,
+                "geofences": [
+                    {"type": "NOT_A_FENCE", "latitude": 30, "longitude": 30,
+                     "radius": 3000, "name": "awesome"},
+                ]
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        validator_patch.return_value.to_python.return_value = json_data
+
+        with self.assertRaises(ValueError):
+            AdvancedAuthorizationResponse(self.data, self.transport)
 
 
 @ddt
@@ -1318,6 +1536,21 @@ class TestTimeFence(unittest.TestCase):
             'end_time="03:04:00", monday=True, tuesday=True, wednesday=True, '
             'thursday=True, friday=True, saturday=True, sunday=True>'
         )
+
+    def test_is_serializable(self):
+        fence = TimeFence(
+            "AWESOME timefence",
+            time(hour=1, minute=2),
+            time(hour=3, minute=4),
+            monday=True,
+            tuesday=True,
+            wednesday=True,
+            thursday=True,
+            friday=True,
+            saturday=True,
+            sunday=True
+        )
+        json.dumps(dict(fence))
 
 
 class TestAuthorizationRequest(unittest.TestCase):

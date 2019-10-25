@@ -4,15 +4,27 @@ from pytz import utc
 from behave import given, when, then, step
 
 from launchkey.entities.service import TimeFence, GeoFence
-
+from launchkey.entities.service.policy import GeoCircleFence, \
+    TerritoryFence, FactorsPolicy
 
 # Retrieve Directory Service Policy
+from launchkey.entities.service.policy import ConditionalGeoFencePolicy
 
 @step("I retrieve the Policy for the Current Directory Service")
 def retrieve_policy_for_current_directory_service(context):
     current_service = context.entity_manager.get_current_directory_service()
     current_directory = context.entity_manager.get_current_directory()
     context.directory_service_policy_manager.retrieve_service_policy(
+        current_service.id,
+        current_directory.id
+    )
+
+
+@step("I retrieve the Advanced Policy for the Current Directory Service")
+def retrieve_policy_for_current_directory_service(context):
+    current_service = context.entity_manager.get_current_directory_service()
+    current_directory = context.entity_manager.get_current_directory()
+    context.directory_service_policy_manager.retrieve_advanced_service_policy(
         current_service.id,
         current_directory.id
     )
@@ -326,3 +338,90 @@ def attempt_to_remove_policy_from_given_directory_service_id(context,
         )
     except Exception as e:
         context.current_exception = e
+
+
+@step("I set the Policy for the Current Directory Service "
+      "to the new policy")
+def step_impl(context):
+    current_service = context.entity_manager.get_current_directory_service()
+    current_directory = context.entity_manager.get_current_directory()
+    policy = context.entity_manager.get_current_auth_policy()
+    context.directory_service_policy_manager.set_service_policy(
+        current_service.id,
+        current_directory.id,
+        policy
+    )
+
+
+@step("I set the Advanced Policy for the Current Directory Service "
+      "to the new policy")
+def step_impl(context):
+    current_service = context.entity_manager.get_current_directory_service()
+    current_directory = context.entity_manager.get_current_directory()
+    policy = context.entity_manager.get_current_auth_policy()
+    context.directory_service_policy_manager.set_advanced_service_policy(
+        current_service.id,
+        current_directory.id,
+        policy
+    )
+
+
+@given("the Directory Service is set to any Conditional Geofence Policy")
+def step_impl(context):
+
+    default_nested_policy = FactorsPolicy(
+        knowledge_required=True,
+        deny_emulator_simulator=None,
+        deny_rooted_jailbroken=None,
+        fences=None
+    )
+
+    default_cond_geo_policy = ConditionalGeoFencePolicy(
+        inside=default_nested_policy,
+        outside=default_nested_policy,
+        fences=[GeoCircleFence(latitude=30, longitude=30, radius=3000,
+                               name="cool geofence")]
+    )
+
+    context.entity_manager.set_current_directory_service_policy(
+        default_cond_geo_policy)
+    context.entity_manager.set_current_auth_policy(default_cond_geo_policy)
+
+
+@then('the Directory Service Policy contains the GeoCircleFence "{name}"')
+def step_impl(context, name):
+    policy = context.entity_manager.get_current_directory_service_policy()
+    for fence in policy.fences:
+        if fence.name == name:
+            if isinstance(fence, GeoCircleFence):
+                return True
+    raise ValueError("Fence {0} was not found".format(name))
+
+
+@step('the Directory Service Policy contains the TerritoryFence "{name}"')
+def step_impl(context, name):
+    policy = context.entity_manager.get_current_directory_service_policy()
+    for fence in policy.fences:
+        if fence.name == name:
+            if isinstance(fence, TerritoryFence):
+                return True
+    raise ValueError("Fence {0} was not found".format(name))
+
+
+@then(u'the Directory Service Policy has "{amount}" fences')
+def directory_service_amount_fences(context, amount):
+    policy = context.entity_manager.get_current_directory_service_policy()
+    if len(policy.fences) != int(amount):
+        raise ValueError(
+            "{0} does not equal current policy amount of {1}".format(
+                amount,
+                len(policy.fences)
+            )
+        )
+
+
+@then(u'the Directory Service Policy has "{amount}" fence')
+def single_fence(context, amount):
+    # Handles the english phrasing for a single fence without
+    # changing the behave matcher
+    directory_service_amount_fences(context, amount)

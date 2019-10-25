@@ -6,7 +6,9 @@ from ddt import data, ddt
 from formencode import Invalid
 from six import assertRaisesRegex
 
-from launchkey.entities.validation import AuthorizeValidator, ConditionalGeoFenceValidator, PolicyFenceValidator
+from launchkey.entities.validation import AuthorizeValidator, \
+    ConditionalGeoFenceValidator, PolicyFenceValidator, FenceValidator, \
+    GeoFenceValidator, TerritoryFenceValidator, GeoCircleFenceValidator
 from launchkey.exceptions.validation import AuthorizationInProgressValidator
 
 
@@ -356,3 +358,127 @@ class TestConditionalGeoFenceValidator(TestCase):
         }
         with assertRaisesRegex(self, Invalid, "^outside: Missing value$"):
             self._validator().to_python(self._data)
+
+
+@ddt
+class TestFenceValidator(TestCase):
+    def __construct_fence(self, name, type):
+        fence = {
+            "name": name,
+            "type": type,
+            "latitude": 30,
+            "longitude": 30,
+            "radius": 3000
+        }
+
+        return fence
+
+    @data(
+        {"latitude": 30, "longitude": 30, "radius": 3000, "name": "cool"},
+        {"type": "GEO_CIRCLE", "latitude": 30, "longitude": 30, "radius": 3000, "name": "awesome"},
+        {"type": "TERRITORY", "country": "US", "administrative_area": "US-NV", "name": "Nevada"},
+    )
+    def test_valid_fence(self, fence_dict):
+        parsed = FenceValidator.to_python(fence_dict)
+        self.assertEqual(fence_dict, parsed)
+
+    @data("NOT_A_FENCE", 0, ["GEO_CIRCLE"])
+    def test_raises_on_invalid_type(self, fence_type):
+        with self.assertRaises(Invalid):
+            FenceValidator.to_python(self.__construct_fence("awesome", fence_type))
+
+
+@ddt
+class TestGeoFenceValidator(TestCase):
+    def __construct_fence(self, name, lat, lon, rad):
+        fence = {
+            "name": name,
+            "latitude": lat,
+            "longitude": lon,
+            "radius": rad
+        }
+
+        return fence
+
+    def test_valid_fence(self):
+        fence_dict = {"latitude": 30, "longitude": 30, "radius": 3000, "name": "cool"}
+        parsed = GeoFenceValidator.to_python(fence_dict)
+        self.assertEqual(fence_dict, parsed)
+
+    @data([30], "hello", {})
+    def test_lat_lon_rad_must_be_integers(self, val):
+        with self.assertRaises(Invalid):
+            GeoFenceValidator.to_python(self.__construct_fence("awesome", val, 30, 3000))
+
+        with self.assertRaises(Invalid):
+            GeoFenceValidator.to_python(self.__construct_fence("awesome", 30, val, 3000))
+
+        with self.assertRaises(Invalid):
+            GeoFenceValidator.to_python(self.__construct_fence("awesome", 30, 30, val))
+
+
+@ddt
+class TestGeoCircleFenceValidator(TestCase):
+    def __construct_fence(self, name, type, lat, lon, rad):
+        fence = {
+            "name": name,
+            "type": type,
+            "latitude": lat,
+            "longitude": lon,
+            "radius": rad
+        }
+
+        return fence
+
+    def test_valid_fence(self):
+        fence_dict = {"latitude": 30, "longitude": 30, "radius": 3000, "name": "cool", "type": "GEO_CIRCLE"}
+        parsed = GeoCircleFenceValidator.to_python(fence_dict)
+        self.assertEqual(fence_dict, parsed)
+
+    @data("TERRITORY", 0, ["GEO_CIRCLE"])
+    def test_raises_on_invalid_type(self, fence_type):
+        with self.assertRaises(Invalid):
+            GeoCircleFenceValidator.to_python(self.__construct_fence("awesome", fence_type, 30, 30, 3000))
+
+
+@ddt
+class TestTerritoryFenceValidator(TestCase):
+    def __construct_fence(self, name, type, country, admin_area, postal_code):
+        fence = {
+            "name": name,
+            "type": type,
+            "country": country,
+            "administrative_area": admin_area,
+            "postal_code": postal_code
+        }
+
+        return fence
+
+    @data(
+        {"name": "Nevada", "type": "TERRITORY", "country": "US", "administrative_area": "US-NV", "postal_code": "12345"},
+        {"name": "Nevada", "type": "TERRITORY", "country": "US", "administrative_area": "US-NV"},
+        {"name": "Nevada", "type": "TERRITORY", "country": "US"},
+    )
+    def test_valid_fence(self, fence_dict):
+        parsed = TerritoryFenceValidator.to_python(fence_dict)
+        self.assertEqual(fence_dict, parsed)
+
+    @data("GEO_FENCE", 0, ["TERRITORY"])
+    def test_raises_on_invalid_type(self, fence_type):
+        with self.assertRaises(Invalid):
+            TerritoryFenceValidator.to_python(self.__construct_fence("awesome", fence_type, "US", "US-NV", "12345"))
+
+    @data("USA", "America", "CAN", 123, ["US"], "us")
+    def test_raises_on_invalid_country(self, country):
+        with self.assertRaises(Invalid):
+            TerritoryFenceValidator.to_python(self.__construct_fence("awesome", "TERRITORY", country, "US-NV", "12345"))
+
+    @data("USA-NV", "Nevada", 123, ["US"], "us-nv", "US-nv")
+    def test_raises_on_invalid_admin_area(self, admin_area):
+        with self.assertRaises(Invalid):
+            TerritoryFenceValidator.to_python(self.__construct_fence("awesome", "TERRITORY", "US", admin_area, "12345"))
+
+    @data(["12345"], {})
+    def test_raises_on_invalid_postal_code(self, postal_code):
+        with self.assertRaises(Invalid):
+            TerritoryFenceValidator.to_python(self.__construct_fence("awesome", "TERRITORY", "US", "US-NV", postal_code))
