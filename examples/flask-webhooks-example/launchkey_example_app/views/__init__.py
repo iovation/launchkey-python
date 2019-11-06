@@ -2,7 +2,7 @@ from flask import session, request, render_template, redirect, abort
 from flask.views import MethodView
 
 from launchkey.entities.directory import DeviceLinkCompletionResponse
-from launchkey.entities.service import AuthorizationResponse, SessionEndRequest
+from launchkey.entities.service import AuthorizationResponse, AdvancedAuthorizationResponse, SessionEndRequest
 from launchkey.exceptions import AuthorizationInProgress
 
 
@@ -165,7 +165,8 @@ class ServiceWebhookView(MethodView):
     def post(self):
         package = self.launchkey_service.handle_service_webhook(
             request.data, request.headers, request.method, request.path)
-        if isinstance(package, AuthorizationResponse):
+        if isinstance(package, AdvancedAuthorizationResponse) or isinstance(package, AuthorizationResponse):
+            self.logger.info(f"Service Webhook Received {type(package)}")
             auth_request = self.database_service.get_auth_request(
                 package.authorization_request_id)
             if auth_request:

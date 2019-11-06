@@ -3,7 +3,7 @@ from launchkey.factories import OrganizationFactory
 
 class LaunchKeyService:
     def __init__(self, organization_id, organization_key, directory_id,
-                 service_id, launchkey_url):
+                 service_id, launchkey_url, use_advanced_webhooks):
         self.organization_id = organization_id
         self.directory_id = directory_id
         self.service_id = service_id
@@ -21,6 +21,8 @@ class LaunchKeyService:
         self.service_client = organization_factory.make_service_client(
             service_id
         )
+
+        self.use_advanced_webhooks = use_advanced_webhooks
 
     def update_directory_webhook_url(self, webhook_url):
         self.organization_client.update_directory(
@@ -54,7 +56,10 @@ class LaunchKeyService:
         self.service_client.session_end(username)
 
     def handle_service_webhook(self, body, headers, method, path):
-        return self.service_client.handle_webhook(body, headers, method, path)
+        if self.use_advanced_webhooks:
+            return self.service_client.handle_advanced_webhook(body, headers, method, path)
+        else:
+            return self.service_client.handle_webhook(body, headers, method, path)
 
     def handle_directory_webhook(self, body, headers, method, path):
         return self.directory_client.handle_webhook(body, headers, method, path)
