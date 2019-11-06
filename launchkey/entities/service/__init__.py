@@ -780,16 +780,22 @@ class AuthorizationResponse(AdvancedAuthorizationResponse):
                         "Invalid policy type given: %s. "
                         "It will be ignored, but this could "
                         "signify the need for an update." % type)
-
         if auth_policy.get('geofences') or kwargs:
             self.auth_policy = AuthPolicy(**kwargs)
             for fence in auth_policy.get('geofences', []):
-                self.auth_policy.add_geofence(
-                    fence['latitude'],
-                    fence['longitude'],
-                    fence['radius'],
-                    name=fence['name']
-                )
+                if not fence.get("type") or fence.get("type") == "GEO_CIRCLE":
+                    self.auth_policy.add_geofence(
+                        fence['latitude'],
+                        fence['longitude'],
+                        fence['radius'],
+                        name=fence.get('name', None)
+                    )
+                else:
+                    warnings.warn(
+                        "A Fence besides GeoCircleFence was present"
+                        " while using legacy functionality. This fence "
+                        "has been skipped from being processed."
+                    )
 
 
 class SessionEndRequest(object):
