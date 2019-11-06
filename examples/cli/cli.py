@@ -82,9 +82,15 @@ def main(ctx, entity_type, entity_id, private_key, api):
               help="How many custom denial reasons to include. "
                    "If this is not included default denial reasons are used.",
               type=click.IntRange(min=2))
+@click.option('--use-advanced',
+              is_flag=True,
+              default=False,
+              help="Whether to retrieve the Advanced Authorization Response "
+                   "or the old Authorization Response",
+              type=click.BOOL)
 @click.pass_context
 def authorize(ctx, service_id, username, context, title, ttl, push_title,
-              push_body, denial_reason_count):
+              push_body, denial_reason_count, use_advanced):
     """SERVICE_ID USERNAME"""
     client = get_service_client(service_id, ctx.obj['factory'])
 
@@ -146,9 +152,14 @@ def authorize(ctx, service_id, username, context, title, ttl, push_title,
     click.echo("Checking for response from user.")
 
     try:
-        auth_response = wait_for_response(
-            client.get_authorization_response, [auth.auth_request]
-        )
+        if use_advanced:
+            auth_response = wait_for_response(
+                client.get_advanced_authorization_response, [auth.auth_request]
+            )
+        else:
+            auth_response = wait_for_response(
+                client.get_authorization_response, [auth.auth_request]
+            )
 
         if auth_response.authorized:
             message = "Authorization request approved by user."
@@ -173,7 +184,7 @@ def authorize(ctx, service_id, username, context, title, ttl, push_title,
                 "User Push ID": auth_response.user_push_id,
                 "Org User Hash": auth_response.organization_user_hash,
                 "Auth Methods": auth_response.auth_methods,
-                "Auth Policy": auth_response.auth_policy
+                "Auth Policy": auth_response.policy if use_advanced else auth_response.auth_policy
             },
             color=color
         )
