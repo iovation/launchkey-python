@@ -450,7 +450,6 @@ class TestAdvancedAuthorizationResponse(unittest.TestCase):
         with self.assertRaises(ValueError):
             AdvancedAuthorizationResponse(self.data, self.transport)
 
-
 @ddt
 class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
 
@@ -576,6 +575,31 @@ class TestAuthorizationResponseAuthPolicy(unittest.TestCase):
             response.auth_policy.minimum_requirements,
             ['knowledge']
         )
+        warnings_patch.warn.assert_called()
+
+    @patch("launchkey.entities.service.warnings")
+    def test_territory_fence_logs_warning(self, warnings_patch):
+        json_data = {
+            "auth_request": "62e09ff8-f9a9-11e8-bbe2-0242ac130008",
+            "type": "AUTHORIZED",
+            "reason": "APPROVED",
+            "denial_reason": "32",
+            "service_pins": ["1", "2", "3"],
+            "device_id": "31e5b804-f9a7-11e8-97ef-0242ac130008",
+            "auth_policy": {
+                "requirement": "cond_geo",
+                "geofences": [{
+                    'country': 'US',
+                    'name': 'UnitedStatesNVPostalCode',
+                    'administrative_area': 'US-NV',
+                    'type': 'TERRITORY',
+                    'postal_code': '89169'
+                }]
+            }
+        }
+
+        self.json_loads_patch.return_value = json_data
+        response = AuthorizationResponse(self.data, self.transport)
         warnings_patch.warn.assert_called()
 
     def test_amount_requirement(self):
