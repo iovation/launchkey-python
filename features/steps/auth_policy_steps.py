@@ -110,7 +110,7 @@ def step_impl(context):
 
 @when(u'I set the factors to "{raw_factors}"')
 def policy_set_factors(context, raw_factors):
-    factors = map(lambda f: f.strip(), raw_factors.split(","))
+    factors = map(lambda f: f.upper().strip(), raw_factors.split(","))
     policy = context.entity_manager.get_current_auth_policy()
     if isinstance(policy, FactorsPolicy):
         for factor in factors:

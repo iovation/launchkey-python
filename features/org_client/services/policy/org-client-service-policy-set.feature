@@ -175,20 +175,20 @@ Feature: Organization Client can set Organization Service Policy
     And I set the factors to "<factors>"
     And I set the Advanced Policy for the Current Organization Service to the new policy
     And I retrieve the Advanced Policy for the Current Organization Service
-    Then factors should be set to <factors>
-    Examples:
-    | factors                          |
-    | KNOWLEDGE                        |
-    | INHERENCE                        |
-    | POSSESSION                       |
-    | KNOWLEDGE, INHERENCE             |
-    | KNOWLEDGE, POSSESSION            |
-    | INHERENCE, POSSESSION            |
-    | KNOWLEDGE, INHERENCE, POSSESSION |
+    Then factors should be set to "<factors>"
+  Examples:
+  | factors                          |
+  | Knowledge                        |
+  | Inherence                        |
+  | Possession                       |
+  | Knowledge, Inherence             |
+  | Knowledge, Possession            |
+  | Inherence, Possession            |
+  | Knowledge, Inherence, Possession |
 
   Scenario: Setting Fences on a Factors Policy works as expected
     When I create a new Factors Policy
-    And I set the factors to "KNOWLEDGE"
+    And I set the factors to "Knowledge"
     And I add the following GeoCircleFence items
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
@@ -203,7 +203,7 @@ Feature: Organization Client can set Organization Service Policy
 
   Scenario: Setting deny_rooted_jailbroken works as expected on a Factors Policy
     When I create a new Factors Policy
-    And I set the factors to "KNOWLEDGE"
+    And I set the factors to "Knowledge"
     And I set deny_rooted_jailbroken to "True"
     And I set the Advanced Policy for the Current Organization Service to the new policy
     And I retrieve the Advanced Policy for the Current Organization Service
@@ -219,7 +219,7 @@ Feature: Organization Client can set Organization Service Policy
 
   Scenario: Setting deny_emulator_simulator works as expected on a Factors Policy
     When I create a new Factors Policy
-    And I set the factors to "KNOWLEDGE"
+    And I set the factors to "Knowledge"
     And I set deny_emulator_simulator to "True"
     And I set the Advanced Policy for the Current Organization Service to the new policy
     And I retrieve the Advanced Policy for the Current Organization Service
@@ -235,7 +235,7 @@ Feature: Organization Client can set Organization Service Policy
 
   Scenario: Setting Inside Policy to Factors Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I set the inside Policy to a new FactorsPolicy
+    When I set the inside Policy to a new Factors Policy
     And I set the inside Policy factors to "Knowledge"
     And I set the Advanced Policy for the Current Organization Service to the new policy
     And I retrieve the Advanced Policy for the Current Organization Service
@@ -251,7 +251,7 @@ Feature: Organization Client can set Organization Service Policy
 
   Scenario: Setting Outside Policy to Factors Policy works as expected
     Given the Organization Service is set to any Conditional Geofence Policy
-    When I set the outside Policy to a new FactorsPolicy
+    When I set the outside Policy to a new Factors Policy
     And I set the outside Policy factors to "Knowledge"
     And I set the Advanced Policy for the Current Organization Service to the new policy
     And I retrieve the Advanced Policy for the Current Organization Service

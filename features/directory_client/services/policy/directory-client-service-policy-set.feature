@@ -177,20 +177,20 @@ Feature: Directory Client can set Directory Service Policy
     And I set the factors to "<factors>"
     And I set the Advanced Policy for the Current Directory Service to the new policy
     And I retrieve the Advanced Policy for the Current Directory Service
-    Then factors should be set to <factors>
+    Then factors should be set to "<factors>"
     Examples:
     | factors                          |
-    | KNOWLEDGE                        |
-    | INHERENCE                        |
-    | POSSESSION                       |
-    | KNOWLEDGE, INHERENCE             |
-    | KNOWLEDGE, POSSESSION            |
-    | INHERENCE, POSSESSION            |
-    | KNOWLEDGE, INHERENCE, POSSESSION |
+    | Knowledge                        |
+    | Inherence                        |
+    | Possession                       |
+    | Knowledge, Inherence             |
+    | Knowledge, Possession            |
+    | Inherence, Possession            |
+    | Knowledge, Inherence, Possession |
 
   Scenario: Setting Fences on a Factors Policy works as expected
     When I create a new Factors Policy
-    And I set the factors to "KNOWLEDGE"
+    And I set the factors to "Knowledge"
     And I add the following GeoCircleFence items
     | latitude | longitude | radius | name        |
     | 45.1250  | 150.51    | 15200  | Large Fence |
@@ -205,7 +205,7 @@ Feature: Directory Client can set Directory Service Policy
 
   Scenario: Setting deny_rooted_jailbroken works as expected on a Factors Policy
     When I create a new Factors Policy
-    And I set the factors to "KNOWLEDGE"
+    And I set the factors to "Knowledge"
     And I set deny_rooted_jailbroken to "True"
     And I set the Advanced Policy for the Current Directory Service to the new policy
     And I retrieve the Advanced Policy for the Current Directory Service
@@ -221,7 +221,7 @@ Feature: Directory Client can set Directory Service Policy
 
   Scenario: Setting deny_emulator_simulator works as expected on a Factors Policy
     When I create a new Factors Policy
-    And I set the factors to "KNOWLEDGE"
+    And I set the factors to "Knowledge"
     And I set deny_emulator_simulator to "True"
     And I set the Advanced Policy for the Current Directory Service to the new policy
     And I retrieve the Advanced Policy for the Current Directory Service

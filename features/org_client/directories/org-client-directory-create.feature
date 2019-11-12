@@ -7,6 +7,7 @@ Feature: Organization clients can create Directories
     When I create a Directory with a unique name
     And I retrieve the created Directory
     Then the Directory name is the same as was sent
+    And DenialContextInquiryEnabled is set to "true"
 
   Scenario: Client sending duplicate Directory name raises DirectoryNameInUse
     Given I created a Directory

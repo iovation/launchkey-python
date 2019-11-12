@@ -3,12 +3,12 @@ Feature: Service Client Authorization Request: Get Device Response Policy - New 
   In order to understand an auth response
   As a Directory Service
   I can retrieve an Authorization Requests that been responded to and determine the policy that was last processed by the device in the new policy format
-​
+
   Background:
     Given I created a Directory
     And I have added an SDK Key to the Directory
     And I created a Directory Service
-    And I have a linked device
+    And I have a linked Device
 
   Scenario: Verify that a Factors Policy can be parsed
     When I create a new Factors Policy
