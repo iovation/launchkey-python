@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime
 from uuid import UUID
+import warnings
 
 from mock import MagicMock, patch
 from ddt import ddt, data
@@ -9,7 +10,8 @@ from jwkest import JWKESTException
 import pytz
 
 from launchkey.exceptions import InvalidIssuerVersion, InvalidIssuerFormat, WebhookAuthorizationError, JWTValidationFailure, XiovJWTValidationFailure, InvalidJWTResponse, XiovJWTDecryptionFailure
-from launchkey.utils.shared import iso_format, UUIDHelper, XiovJWTService
+from launchkey.utils.shared import iso_format, UUIDHelper, XiovJWTService, \
+    deprecated
 from launchkey.entities.validation import ValidateISODate
 from launchkey.transports import JOSETransport
 
@@ -183,3 +185,23 @@ class TestUUIDHelper(unittest.TestCase):
     def test_invalid_uuid_5(self, value):
         with self.assertRaises(InvalidIssuerVersion):
             UUIDHelper().from_string(value, 5)
+
+
+class TestDeprecatedDecorator(unittest.TestCase):
+    def test_deprecated_method_issues_warning(self):
+        fn = MagicMock()
+        fn_name = "faux_function"
+        fn.__name__ = fn_name
+        deprecated_fn = deprecated(fn)
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            deprecated_fn()
+
+            fn.assert_called_once()
+            self.assertEqual(len(w), 1)
+            self.assertIsInstance(w[0].message, DeprecationWarning)
+            self.assertEqual(
+                str(w[0].message),
+                "The %s method has been deprecated and will be removed "
+                "in the next major release." % fn_name)

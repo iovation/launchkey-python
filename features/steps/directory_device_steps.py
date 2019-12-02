@@ -5,6 +5,7 @@ from formencode import Invalid, validators
 
 
 @given("I made a Device linking request")
+@given("I have made a Device linking request")
 @when("I make a Device linking request")
 def make_device_linking_request(context):
     current_directory = context.entity_manager.get_current_directory()
@@ -180,3 +181,13 @@ def deny_auth_request(context):
 @when("I receive the auth request and acknowledge the failure message")
 def deny_auth_request(context):
     context.sample_app_device_manager.receive_and_acknowledge_auth_failure()
+
+
+@when("I make a Device linking request with a TTL of {ttl:d} seconds")
+def step_impl(context, ttl):
+    current_directory = context.entity_manager.get_current_directory()
+    context.directory_device_manager.create_linking_request(
+        user_identifier=str(uuid4()),
+        directory_id=current_directory.id,
+        ttl=ttl
+    )

@@ -9,6 +9,7 @@ Feature: Service Client Authorization Request: Get Device Response
     And I have added an SDK Key to the Directory
     And I created a Directory Service
     And I have a linked Device
+    And I retrieve the Devices list for the current User
     And I made an Authorization request
 
   Scenario: Verify that a device approval response can be parsed

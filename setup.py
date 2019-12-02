@@ -14,7 +14,7 @@ requires = [
     'formencode >= 1.3.1, < 2.0.0',
     'pyjwkest >= 1.3.2, < 2.0.0',
     'pycryptodomex >= 3.4.12, < 4.0.0',
-    'enum34 >= 1.1.6, < 2.0.0',
+    'enum34 >= 1.1.6, < 2.0.0; python_version < "3.4"',
     'pytz'
 ]
 
@@ -22,6 +22,7 @@ setup(name='launchkey',
       version=SDK_VERSION,
       description='LaunchKey Python SDK',
       long_description=README + '\n\n' + CHANGES + '\n',
+      long_description_content_type="text/x-rst",
       classifiers=[
           "Programming Language :: Python",
           "License :: OSI Approved :: MIT License",
@@ -48,6 +49,7 @@ setup(name='launchkey',
           'launchkey',
           'launchkey.clients',
           'launchkey.entities',
+          'launchkey.entities.service',
           'launchkey.exceptions',
           'launchkey.factories',
           'launchkey.transports',

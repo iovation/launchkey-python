@@ -216,7 +216,6 @@ class TestServiceSecurityPolicy(unittest.TestCase):
         with self.assertRaises(InvalidTimeFenceName):
             policy.remove_timefence("name")
 
-
     def test_import_timefence_from_policy(self):
         policy = ServiceSecurityPolicy()
         self.assertEqual(len(policy.timefences), 0)

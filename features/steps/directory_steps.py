@@ -260,23 +260,6 @@ def verify_directory_ios_fingerprint_is_not_set(context):
                         % current_directory.ios_certificate_fingerprint)
 
 
-@when("I update the Directory denial context inquiry enabled flag to false")
-def update_directory_to_have_denial_context_inquiry_disabled(context):
-    current_directory = context.entity_manager.get_current_directory()
-    context.directory_manager.update_directory(
-        current_directory.id,
-        denial_context_inquiry_enabled=False
-    )
-
-
-@then("Directory denial context inquiry enabled flag is false")
-def verify_denial_context_inquiry_is_disabled(context):
-    current_directory = context.entity_manager.get_current_directory()
-    if current_directory.denial_context_inquiry_enabled is not False:
-        raise Exception("Denial context inquiry was enabled when it "
-                        "shouldn't have been ")
-
-
 @given("I have added an SDK Key to the Directory")
 @when("I generate and add an SDK Key to the Directory")
 def generate_and_add_sdk_key_to_directory(context):
@@ -400,3 +383,23 @@ def verify_directory_webhook_url_is_null(context):
     current_directory = context.entity_manager.get_current_directory()
     assert_that(current_directory.webhook_url, empty(),
                 "Directory webhook url is set when it shouldn't be")
+
+
+@then('DenialContextInquiryEnabled is set to "{boolean}"')
+@then('DenialContextInquiryEnabled should be set to "{boolean}"')
+def denial_context_set_to_bool(context, boolean):
+    current_directory = context.entity_manager.get_current_directory()
+    assert_that(
+        current_directory.denial_context_inquiry_enabled,
+        bool(boolean),
+        "DenialContext was not approriately set"
+    )
+
+
+@when('I update the DenialContextInquiryEnabled to "{boolean}"')
+def step_impl(context, boolean):
+    current_directory = context.entity_manager.get_current_directory()
+    context.directory_manager.update_directory(
+        current_directory.id,
+        denial_context_inquiry_enabled=bool(boolean)
+    )

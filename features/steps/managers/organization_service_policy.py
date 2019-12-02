@@ -31,8 +31,17 @@ class OrganizationServicePolicyManager(BaseManager):
             self._organization_client.get_service_policy(service_id)
         return self._current_service_policy
 
+    def retrieve_advanced_service_policy(self, service_id):
+        self._current_service_policy = \
+            self._organization_client.get_advanced_service_policy(service_id)
+        return self._current_service_policy
+
     def remove_service_policy(self, service_id):
         self._organization_client.remove_service_policy(service_id)
 
     def set_service_policy(self, service_id, policy):
         self._organization_client.set_service_policy(service_id, policy)
+
+    def set_advanced_service_policy(self, service_id, policy):
+        self._organization_client.set_advanced_service_policy(
+            service_id, policy)

@@ -32,7 +32,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy
   Scenario: Verify that required factor counts received from a device can be parsed
     Given the current Authorization Policy requires 3 factors
     When I make a Policy based Authorization request for the User
-    And I receive the auth request and acknowledge the failure message
+    And I deny the auth request
     And I get the response for the Authorization request
     Then the Authorization response should require 3 factors
 
@@ -40,7 +40,7 @@ Feature: Service Client Authorization Request: Get Device Response Policy
     Given the current Authorization Policy requires inherence
     And the current Authorization Policy requires possession
     When I make a Policy based Authorization request for the User
-    And I receive the auth request and acknowledge the failure message
+    And I deny the auth request
     And I get the response for the Authorization request
     Then the Authorization response should require inherence
     And the Authorization response should require possession

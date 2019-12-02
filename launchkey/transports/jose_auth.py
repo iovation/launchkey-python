@@ -17,7 +17,7 @@ from jwkest import JWKESTException
 from jwkest.jwk import RSAKey, import_rsa_key
 from jwkest.jws import JWS, NoSuitableSigningKeys
 from jwkest.jwe import JWE, JWEnc
-from jwkest.jwt import BadSyntax
+from jwkest.jwt import JWT, BadSyntax
 
 import six
 
@@ -63,7 +63,13 @@ class JOSETransport(object):
         self.loaded_issuer_private_keys = {}
         self.issuer_private_keys = []
         self._server_time_difference = None, None
-        self._api_public_keys = [], None
+
+        # Single key ID with timestamp of when it was set.
+        self._current_kid = None, None
+
+        # Dictionary of public keys with `kid` being the dict key
+        # and the public key being the value
+        self._public_key_cache = {}
 
         self.jwt_algorithm = self.__verify_supported_algorithm(
             jwt_algorithm, JOSE_SUPPORTED_JWT_ALGS)
@@ -108,6 +114,43 @@ class JOSETransport(object):
             md5digest[i:i + 2] for i in range(0, len(md5digest), 2))
 
     @staticmethod
+    def __get_kid_from_api_response_headers(headers):
+        """
+        Gets `kid` property from a JWT token within the headers of a
+        LaunchKey API response.
+        :param headers: Response headers
+        :return: string of the `kid`
+        :raises launchkey.exceptions.UnexpectedAPIResponse: if unable to unpack
+            the JWT or if the JWT header does not exist
+        :raises launchkey.exceptions.JWTValidationFailure: if `kid` is missing
+            or invalid
+        """
+        try:
+            jwt = headers.get("X-IOV-JWT")
+            jwt_headers = JWT().unpack(jwt).headers
+
+        except (BadSyntax, IndexError, ValueError):
+            raise UnexpectedAPIResponse("JWT was missing or malformed in API "
+                                        "response.")
+
+        kid = jwt_headers.get("kid")
+
+        if not isinstance(kid, six.string_types):
+            raise JWTValidationFailure("`kid` header in JWT was missing or"
+                                       " invalid.")
+
+        return kid
+
+    def _get_kid_from_api_response(self, response):
+        """
+        Gets `kid` property from a JWT token within a LaunchKey API
+        response.
+        :param response: Response object
+        :return: string of the `kid`
+        """
+        return self.__get_kid_from_api_response_headers(response.headers)
+
+    @staticmethod
     def parse_api_time(api_time):
         """
         Parses LaunchKey api_time to a unix timestamp
@@ -136,27 +179,100 @@ class JOSETransport(object):
     @property
     def api_public_keys(self):
         """
-        The public key retrieved from the LaunchKey API. The result is
-        cached for API_CACHE_TIME
+        List of RSA keys that have been generated from public keys supplied
+        by the LaunchKey API. If no keys exist in the public key cache,
+        then fetch from LaunchKey API
+        :return: List of RSAKeys
+        """
+        if not self._public_key_cache:
+            self._set_current_kid()
+
+        rsa_keys = map(lambda kv: kv[1], self._public_key_cache.items())
+        return list(rsa_keys)
+
+    def _set_current_kid(self):
+        """
+        Determines whether a new current key is necessary, and if so, retrieves
+        new `kid` and public key from LaunchKey API, sets the current `kid`
+        with current timestamp, and caches the new key.
+        :return:
         """
         now = int(time())
-        if self._api_public_keys[1] is None \
-                or now - self._api_public_keys[1] > API_CACHE_TIME:
-            response = self.get("/public/v3/public-key", None)
+        current_kid, current_kid_timestamp = self._current_kid
+
+        if (not current_kid or not isinstance(current_kid_timestamp, int)) \
+                or now - current_kid_timestamp > API_CACHE_TIME:
+            new_kid, new_public_key = self._get_current_kid_and_key()
+            self._current_kid = new_kid, now
+            self._cache_public_key(new_kid, new_public_key)
+
+    def _get_key_by_kid(self, kid):
+        """
+        Gets public key from LaunchKey API by `kid` string.
+        :param kid: string of the `kid`
+        :return: string of the public key
+        """
+        response = self.get("/public/v3/public-key/%s" % kid)
+        return self._handle_public_key_api_response(response)[1]
+
+    def _get_current_kid_and_key(self):
+        """
+        Gets the current `kid` public key from LaunchKey API.
+        :return: tuple with string of the `kid` and string of the public key
+        """
+        response = self.get("/public/v3/public-key")
+        return self._handle_public_key_api_response(response)
+
+    def _handle_public_key_api_response(self, response):
+        """
+        Parses a LaunchKey public key API response.
+        :return: tuple with string of the `kid` and string of the public key
+        :raises UnexpectedAPIResponse: if the LaunchKey API returns a 404
+            or if the response object contains no data
+        """
+        if response.status_code == 404:
+            raise UnexpectedAPIResponse("Key was not found.")
+
+        kid = self._get_kid_from_api_response(response)
+        public_key = response.data
+
+        if not isinstance(public_key, six.string_types):
+            raise UnexpectedAPIResponse("Unexpected API public key response"
+                                        " received: %s" % response.data)
+
+        return kid, public_key
+
+    def _cache_public_key(self, kid, public_key):
+        """
+        Generate an RSAKey with the public key, and store within the public
+        key cache. This only occurs if an RSAKey has not already been cached
+        for the given `kid` and public key.
+        :param kid: string of the `kid`
+        :param public_key: string of the public key
+        :return:
+        """
+        if not self._public_key_cache.get(kid):
             try:
-                key = RSAKey(key=import_rsa_key(response.data),
-                             kid=response.headers.get('X-IOV-KEY-ID'))
-            except (IndexError, TypeError):
-                raise UnexpectedAPIResponse(
-                    "Unexpected api public key received: %s" % response.data)
-            except ValueError:
-                raise UnexpectedAPIResponse("Unexpected api public key "
-                                            "received, RSA parsing error"
-                                            ": %s" % response.data)
-            if key not in self._api_public_keys[0]:
-                self._api_public_keys[0].append(key)
-            self._api_public_keys = self._api_public_keys[0], now
-        return self._api_public_keys[0]
+                rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
+
+            except (TypeError, ValueError):
+                raise UnexpectedAPIResponse("RSA parsing error for public key"
+                                            ": %s" % public_key)
+
+            self._public_key_cache[kid] = rsa_key
+
+    def _find_key_by_kid(self, kid):
+        """
+        Finds a public key within the public key cache given a `kid`. If
+        none exists, retrieves from the LaunchKey API by `kid`.
+        :param kid: string of the `kid`
+        :return: string of the public key
+        """
+        key = self._public_key_cache.get(kid)
+        if not key:
+            return self._get_key_by_kid(kid)
+
+        return key
 
     def add_issuer_key(self, private_key):
         """
@@ -385,6 +501,12 @@ class JOSETransport(object):
 
         ci_headers = {k.lower(): v for k, v in headers.items()}
         auth = headers.get('X-IOV-JWT')
+
+        # Ensure key exists in cache, fetch from API by ID otherwise
+        kid = self.__get_kid_from_api_response_headers(headers)
+        public_key = self._find_key_by_kid(kid)
+        self._cache_public_key(kid, public_key)
+
         try:
             payload = self._get_jwt_payload(auth)
         except JWKESTException as reason:
@@ -445,6 +567,7 @@ class JOSETransport(object):
         :return: The claims of the JWT
         """
         try:
+            self._set_current_kid()
             payload = self._get_jwt_payload(compact_jwt)
         except JWKESTException as reason:
             raise JWTValidationFailure("Unable to parse JWT", reason=reason)
