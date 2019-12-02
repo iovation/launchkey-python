@@ -142,3 +142,141 @@ Feature: Directory Client can set Directory Service Policy
       | Name           | Latitude | Longitude | Radius |
       | Location Alpha | 12.3     | 23.4      | 500    |
       | Location Beta  | 32.1     | 43.2      | 1000   |
+
+  Scenario Outline: Setting Amount on a Method Amount policy works as expected
+    When I create a new MethodAmountPolicy
+    And I set the amount to "<amount>"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then the amount should be set to "<amount>"
+    Examples:
+    | amount |
+    | 0      |
+    | 1      |
+    | 2      |
+    | 3      |
+    | 4      |
+    | 5      |
+
+  Scenario: Setting Fences on a Method Amount Policy works as expected
+    When I create a new MethodAmountPolicy
+    And I add the following GeoCircleFence items
+    | latitude | longitude | radius | name        |
+    | 45.1250  | 150.51    | 15200  | Large Fence |
+    | -50.0111 | -140      | 100    | Small Fence |
+    And I add the following TerritoryFence items
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then the Directory Service Policy has "4" fences
+
+  Scenario Outline: Setting Factors on a Factors Policy works as expected
+    When I create a new Factors Policy
+    And I set the factors to "<factors>"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then factors should be set to "<factors>"
+    Examples:
+    | factors                          |
+    | Knowledge                        |
+    | Inherence                        |
+    | Possession                       |
+    | Knowledge, Inherence             |
+    | Knowledge, Possession            |
+    | Inherence, Possession            |
+    | Knowledge, Inherence, Possession |
+
+  Scenario: Setting Fences on a Factors Policy works as expected
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I add the following GeoCircleFence items
+    | latitude | longitude | radius | name        |
+    | 45.1250  | 150.51    | 15200  | Large Fence |
+    | -50.0111 | -140      | 100    | Small Fence |
+    And I add the following TerritoryFence items
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then the Directory Service Policy has "4" fences
+
+  Scenario: Setting deny_rooted_jailbroken works as expected on a Factors Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set deny_rooted_jailbroken to "True"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then deny_rooted_jailbroken should be set to "True"
+
+  Scenario: Setting deny_rooted_jailbroken works as expected on a Method Amount Policy
+    When I create a new MethodAmountPolicy
+    And I set the amount to "2"
+    And I set deny_rooted_jailbroken to "True"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then deny_rooted_jailbroken should be set to "True"
+
+  Scenario: Setting deny_emulator_simulator works as expected on a Factors Policy
+    When I create a new Factors Policy
+    And I set the factors to "Knowledge"
+    And I set deny_emulator_simulator to "True"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then deny_emulator_simulator should be set to "True"
+
+  Scenario: Setting deny_emulator_simulator works as expected on a Method Amount Policy
+    When I create a new MethodAmountPolicy
+    And I set the amount to "2"
+    And I set deny_emulator_simulator to "True"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then deny_emulator_simulator should be set to "True"
+
+  Scenario: Setting Inside Policy to Factors Policy works as expected
+    Given the Directory Service is set to any Conditional Geofence Policy
+    When I set the inside Policy to a new Factors Policy
+    And I set the inside Policy factors to "Knowledge"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then the inside Policy should be a FactorsPolicy
+
+  Scenario: Setting Inside Policy to Methods Amount Policy works as expected
+    Given the Directory Service is set to any Conditional Geofence Policy
+    When I set the inside Policy to a new MethodAmountPolicy
+    And I set the inside Policy amount to "2"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then the inside Policy should be a MethodAmountPolicy
+
+  Scenario: Setting Outside Policy to Factors Policy works as expected
+    Given the Directory Service is set to any Conditional Geofence Policy
+    When I set the outside Policy to a new Factors Policy
+    And I set the outside Policy factors to "Knowledge"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then the outside Policy should be a FactorsPolicy
+
+  Scenario: Setting Outside Policy to Methods Amount Policy works as expected
+    Given the Directory Service is set to any Conditional Geofence Policy
+    When I set the outside Policy to a new MethodAmountPolicy
+    And I set the outside Policy amount to "2"
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then the outside Policy should be a MethodAmountPolicy
+
+  Scenario: Setting Fences on a Conditional Geofence Policy works as expected
+    Given the Directory Service is set to any Conditional Geofence Policy
+    When I add the following GeoCircleFence items
+    | latitude | longitude | radius | name        |
+    | 45.1250  | 150.51    | 15200  | Large Fence |
+    | -50.0111 | -140      | 100    | Small Fence |
+    And I add the following TerritoryFence items
+    | country | admin_area | postal_code | name  |
+    | US      | US-NV      | 89120       | US-NV |
+    | US      | US-CA      | 90001       | US-CA |
+    And I set the Advanced Policy for the Current Directory Service to the new policy
+    And I retrieve the Advanced Policy for the Current Directory Service
+    Then the Directory Service Policy has "5" fences

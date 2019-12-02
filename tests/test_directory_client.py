@@ -1,9 +1,15 @@
 import unittest
+from datetime import datetime
 from json import dumps
-from mock import MagicMock, ANY, patch
 from uuid import uuid4
+
+import pytz
+import six
+from mock import MagicMock, ANY, patch
+
 from launchkey.clients import DirectoryClient
 from launchkey.clients.directory import Session
+from launchkey.entities.directory import DeviceLinkCompletionResponse
 from launchkey.entities.directory import DeviceStatus
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     InvalidDirectoryIdentifier, EntityNotFound, \
@@ -12,11 +18,7 @@ from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
     UnableToDecryptWebhookRequest
 from launchkey.transports import JOSETransport
 from launchkey.transports.base import APIResponse
-from launchkey.entities.directory import DeviceLinkCompletionResponse
 from .shared import SharedTests
-import six
-from datetime import datetime
-import pytz
 
 
 class TestDirectoryClientServices(SharedTests.Services):

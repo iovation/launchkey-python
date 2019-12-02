@@ -25,7 +25,8 @@ launchkey_service = LaunchKeyService(
     app.config['ORGANIZATION_KEY'],
     app.config['DIRECTORY_ID'],
     app.config['SERVICE_ID'],
-    app.config.get('LAUNCHKEY_API', LAUNCHKEY_PRODUCTION)
+    app.config.get('LAUNCHKEY_API', LAUNCHKEY_PRODUCTION),
+    app.config.get("USE_ADVANCED_WEBHOOKS", False)
 )
 
 launchkey_service.update_directory_webhook_url(
