@@ -1,5 +1,7 @@
 from behave import given, when, then
 
+from hamcrest import assert_that, equal_to
+
 from launchkey.entities.service import GeoFence, AuthMethod, AuthMethodType, \
     Requirement, AuthResponseReason
 
@@ -263,4 +265,29 @@ def set_directory_service_policy_time_fences_from_table(context):
                     "is not supported on all devices, so this may fail." %
                     (expected_method, methods[i], expected_method.method))
             else:
-                raise Exception("Expected %s but got %s" % (expected_method, methods[i]))
+                raise Exception("Expected %s but got %s" % (expected_method,
+                                                            methods[i]))
+
+
+@then("the Authorization Request response Device IDs matches the current "
+      "Devices list")
+def verify_device_ids_match_device_list(context):
+    request = context.directory_service_auths_manager.current_auth_request
+
+    if not request:
+        raise Exception("Expected an auth request to be present but got none.")
+
+    request_device_ids = request.device_ids
+
+    if not request_device_ids:
+        raise Exception("Expected device IDs to be present in auth request "
+                        "but got none.")
+
+    current_directory = context.entity_manager.get_current_directory()
+    current_user_identifier = context.directory_device_manager. \
+        current_user_identifier
+    current_user_devices = context.directory_device_manager \
+        .retrieve_user_devices(current_user_identifier, current_directory.id)
+    current_user_device_ids = map(lambda d: d.id, current_user_devices)
+
+    assert_that(request_device_ids, equal_to(current_user_device_ids))

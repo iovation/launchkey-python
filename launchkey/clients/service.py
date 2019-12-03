@@ -171,7 +171,8 @@ class ServiceClient(BaseClient):
                                         self._subject, **kwargs)
         data = self._validate_response(response, AuthorizeValidator)
         return AuthorizationRequest(data.get('auth_request'),
-                                    data.get('push_package'))
+                                    data.get('push_package'),
+                                    data.get('device_ids'))
 
     @api_call
     def get_advanced_authorization_response(self, authorization_request_id):

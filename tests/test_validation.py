@@ -17,7 +17,8 @@ class TestAuthorizeValidator(TestCase):
     def setUp(self):
         self._data = {
             'auth_request': 'Expected Auth Request',
-            'push_package': 'Expected Push Package'
+            'push_package': 'Expected Push Package',
+            'device_ids': ['expected_device_id']
         }
         self._validator = AuthorizeValidator()
 
@@ -62,6 +63,12 @@ class TestAuthorizeValidator(TestCase):
         actual = self._validator.to_python(self._data)
         self.assertIn('push_package', actual)
         self.assertEqual(actual['push_package'], expected)
+
+    def test_device_ids_may_be_missing(self):
+        del self._data["device_ids"]
+        actual = self._validator.to_python(self._data)
+        self.assertIn('device_ids', actual)
+        self.assertIsNone(actual['device_ids'])
 
 
 @ddt

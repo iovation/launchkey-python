@@ -1583,7 +1583,8 @@ class TestAuthorizationRequest(unittest.TestCase):
         self.assertEqual(
             str(auth_request),
             'AuthorizationRequest <auth_request="auth", '
-            'push_package="package">'
+            'push_package="package", '
+            'device_ids="None">'
         )
 
 

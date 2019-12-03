@@ -13,7 +13,7 @@ class DirectoryServiceAuthsManager(BaseManager):
     def __init__(self, organization_factory):
         self.current_auth_response = None
         self.previous_auth_response = None
-        self.current_auth_request_id = None
+        self.current_auth_request = None
         self.previous_auth_request_id = None
         super(DirectoryServiceAuthsManager, self, ).__init__(
             organization_factory)
@@ -30,7 +30,8 @@ class DirectoryServiceAuthsManager(BaseManager):
 
     @property
     def current_auth_request_id(self):
-        return self._current_auth_request_id
+        return None if not self.current_auth_request else \
+            self.current_auth_request.auth_request
 
     @current_auth_request_id.setter
     def current_auth_request_id(self, value):
@@ -52,7 +53,7 @@ class DirectoryServiceAuthsManager(BaseManager):
                 push_title=push_title,
                 push_body=push_body,
                 denial_reasons=denial_reasons
-            ).auth_request
+            )
         except EntityNotFound:
             sleep(2)
             self.current_auth_request_id = client.authorization_request(
@@ -64,7 +65,7 @@ class DirectoryServiceAuthsManager(BaseManager):
                 push_title=push_title,
                 push_body=push_body,
                 denial_reasons=denial_reasons
-            ).auth_request
+            )
 
     def get_auth_response(self, service_id, auth_request):
         client = self._get_service_client(service_id)
