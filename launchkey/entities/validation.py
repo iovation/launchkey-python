@@ -270,6 +270,7 @@ class AuthorizeValidator(Schema):
     """Authorize entity validator"""
     auth_request = validators.String(not_empty=True)
     push_package = validators.String(if_missing=None, not_empty=True)
+    device_ids = ForEach(validators.String(), if_missing=None)
     allow_extra_fields = True
 
 

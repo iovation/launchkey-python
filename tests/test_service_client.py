@@ -83,6 +83,18 @@ class TestServiceClient(unittest.TestCase):
         self._response.data = {"auth_request": "auth", "push_package": "expected package"}
         self.assertEqual('expected package', self._service_client.authorization_request(ANY).push_package)
 
+    def test_authorization_request_response_has_device_ids(self):
+        expected_device_ids = ["expected_device_id"]
+        self._response.data = {
+            "auth_request": "auth",
+            "push_package": "expected package",
+            "device_ids": expected_device_ids
+        }
+
+        self.assertEqual(
+            expected_device_ids,
+            self._service_client.authorization_request(ANY).device_ids)
+
     def test_authorization_request_invalid_policy_input(self):
         self._response.data = {"auth_request": ANY}
         with self.assertRaises(InvalidParameters):
