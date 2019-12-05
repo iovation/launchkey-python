@@ -281,7 +281,7 @@ def verify_device_ids_match_device_list(context):
 
     if not request_device_ids:
         raise Exception("Expected device IDs to be present in auth request "
-                        "but got none.")
+                        "but got %s instead." % request_device_ids)
 
     current_directory = context.entity_manager.get_current_directory()
     current_user_identifier = context.directory_device_manager. \
