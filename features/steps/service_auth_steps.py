@@ -288,6 +288,6 @@ def verify_device_ids_match_device_list(context):
         current_user_identifier
     current_user_devices = context.directory_device_manager \
         .retrieve_user_devices(current_user_identifier, current_directory.id)
-    current_user_device_ids = map(lambda d: d.id, current_user_devices)
+    current_user_device_ids = [d.id for d in current_user_devices]
 
     assert_that(request_device_ids, equal_to(current_user_device_ids))
