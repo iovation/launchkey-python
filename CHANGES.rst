@@ -2,7 +2,7 @@ CHANGELOG for LaunchKey Python SDK
 ==================================
 
 3.7.0
-_____
+-----
 
 * Add device ID list to `AuthorizationRequest` object
 * Update CLI to display device ID list upon authorization request
