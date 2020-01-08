@@ -479,21 +479,24 @@ class AuthPolicy(object):
 
 class AuthorizationRequest(object):
     """
-    Authorization Response object containing decrypted auth response
+    Authorization Request object containing decrypted auth response
     and other related information
     """
 
-    def __init__(self, auth_request, push_package):
+    def __init__(self, auth_request, push_package, device_ids=None):
         self.auth_request = auth_request
         self.push_package = push_package
+        self.device_ids = device_ids
 
     def __repr__(self):
         return "AuthorizationRequest <" \
                "auth_request=\"{auth_request}\", " \
-               "push_package=\"{push_package}\">".\
+               "push_package=\"{push_package}\", " \
+               "device_ids=\"{device_ids}\">".\
             format(
                 auth_request=self.auth_request,
-                push_package=self.push_package
+                push_package=self.push_package,
+                device_ids=self.device_ids
             )
 
 

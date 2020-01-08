@@ -1,6 +1,8 @@
 import unittest
 
 import json
+from uuid import uuid4
+
 from mock import MagicMock, patch
 from ddt import data, unpack, ddt
 from formencode import Invalid
@@ -1583,7 +1585,21 @@ class TestAuthorizationRequest(unittest.TestCase):
         self.assertEqual(
             str(auth_request),
             'AuthorizationRequest <auth_request="auth", '
-            'push_package="package">'
+            'push_package="package", '
+            'device_ids="None">'
+        )
+
+        faux_device_id = str(uuid4())
+        auth_request_with_device_ids = AuthorizationRequest(
+            auth_request='auth',
+            push_package='package',
+            device_ids=[faux_device_id])
+
+        self.assertEqual(
+            str(auth_request_with_device_ids),
+            'AuthorizationRequest <auth_request="auth", '
+            'push_package="package", '
+            'device_ids="[\'%s\']">' % faux_device_id
         )
 
 

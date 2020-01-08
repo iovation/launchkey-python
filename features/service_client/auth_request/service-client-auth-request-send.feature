@@ -8,6 +8,7 @@ Feature: Service Client Authorization Request: Can Send Request
 
   Background:
     Given I created a Directory
+    And I have added an SDK Key to the Directory
     And I created a Directory Service
 
   Scenario: Making a request with a valid User an no linked Devices raises EntityNotFound
@@ -22,3 +23,9 @@ Feature: Service Client Authorization Request: Can Send Request
   Scenario: Making a request including context with an invalid User Throws EntityNotFound
     When I attempt to make an Authorization request with the context value "Hello iovation!"
     Then a EntityNotFound error occurs
+
+  @device_testing
+  Scenario: Making a request with a valid user device parses the device IDs in the response
+    Given I have a linked Device
+    When I make an Authorization request
+    Then the Authorization Request response Device IDs matches the current Devices list

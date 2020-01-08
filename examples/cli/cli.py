@@ -133,7 +133,8 @@ def authorize(ctx, service_id, username, context, title, ttl, push_title,
             "Authorization request successful",
             {
                 "Auth Request": auth.auth_request,
-                "Push Package": auth.push_package
+                "Push Package": auth.push_package,
+                "Device IDs": auth.device_ids
             },
             color=SUCCESS_COLOR
         )
