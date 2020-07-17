@@ -85,6 +85,16 @@ class DirectoryUserDeviceLinkData(object):
         self.device_id = data['device_id']
 
 
+class DirectoryUserTOTP(object):
+    """Directory user TOTP data that is returned after an add request"""
+
+    def __init__(self, data):
+        self.secret = data['secret']
+        self.algorithm = data['algorithm']
+        self.period = data['period']
+        self.digits = data['digits']
+
+
 class DeviceLinkCompletionResponse(object):
     """Package returned on the event that a device finishes linking"""
 

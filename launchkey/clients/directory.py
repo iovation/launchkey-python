@@ -7,9 +7,9 @@ from json import loads
 from formencode import Invalid
 from ..entities.validation import DirectoryGetDeviceResponseValidator, \
     DirectoryGetSessionsValidator, DirectoryUserDeviceLinkResponseValidator, \
-    DirectoryDeviceLinkCompletionValidator
+    DirectoryDeviceLinkCompletionValidator, DirectoryUserTOTPValidator
 from ..entities.directory import Session, DirectoryUserDeviceLinkData, Device,\
-    DeviceLinkCompletionResponse
+    DeviceLinkCompletionResponse, DirectoryUserTOTP
 from .base import ServiceManagingBaseClient, api_call
 from ..exceptions import UnableToDecryptWebhookRequest, \
     UnexpectedWebhookRequest, XiovJWTValidationFailure, \
@@ -138,6 +138,37 @@ class DirectoryClient(ServiceManagingBaseClient):
             sessions.append(session)
 
         return sessions
+
+    @api_call
+    def add_user_totp(self, user_id):
+        """
+        Generates, adds, and returns a TOTP secret for a given user identifier.
+
+        Note that a user can only have a single TOTP configured. Submitting
+        this request when there is an existing configuration will overwrite any
+        previous settings.
+
+        :param user_id: Unique value identifying the End User in the your
+        system. This value was used to create the Directory User and Link
+        Device.
+        :return: launchkey.entities.directory.DirectoryUserTOTP
+        """
+        response = self._transport.post("/directory/v3/totp",
+                                        self._subject, identifier=user_id)
+        validated_data = self._validate_response(
+            response, DirectoryUserTOTPValidator)
+        return DirectoryUserTOTP(validated_data)
+
+    @api_call
+    def remove_user_totp(self, user_id):
+        """
+        Removes a TOTP configuration from a given user.
+        :param user_id: Unique value identifying the End User in the your
+        system. This value was used to create the Directory User and Link
+        Device.
+        :return:
+        """
+        self._transport.delete("/directory/v3/totp", self._subject, identifier=user_id)
 
     def handle_webhook(self, body, headers, method, path):
         """

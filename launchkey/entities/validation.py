@@ -290,3 +290,18 @@ class ServiceValidator(Schema):
     active = validators.Bool()
     callback_url = validators.String()
     allow_extra_fields = True
+
+
+class ServiceTOTPVerificationValidator(Schema):
+    """Service TOTP verification validation"""
+    valid = validators.Bool()
+    allow_extra_fields = True
+
+
+class DirectoryUserTOTPValidator(Schema):
+    """Directory TOTP post validator"""
+    algorithm = validators.String()
+    digits = validators.Int()
+    period = validators.Int()
+    secret = validators.String()
+    allow_extra_fields = True
