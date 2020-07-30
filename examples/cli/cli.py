@@ -320,10 +320,10 @@ def device_unlink(ctx, directory_id, user_identifier, device_identifier):
 @click.argument("directory_id", type=click.STRING)
 @click.argument("user_identifier", type=click.STRING)
 @click.pass_context
-def add_user_totp(ctx, directory_id, user_identifier):
+def generate_user_totp(ctx, directory_id, user_identifier):
     """DIRECTORY_ID USER_IDENTIFIER"""
     client = get_directory_client(directory_id, ctx.obj['factory'])
-    response = client.add_user_totp(user_identifier)
+    response = client.generate_user_totp(user_identifier)
     print_result(
         "Device link request successful",
         {

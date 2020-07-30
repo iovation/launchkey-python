@@ -140,7 +140,7 @@ class DirectoryClient(ServiceManagingBaseClient):
         return sessions
 
     @api_call
-    def add_user_totp(self, user_id):
+    def generate_user_totp(self, user_id):
         """
         Generates, adds, and returns a TOTP secret for a given user identifier.
 
