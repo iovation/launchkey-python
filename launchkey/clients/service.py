@@ -297,10 +297,10 @@ class ServiceClient(BaseClient):
                                username=user)
 
     @api_call
-    def verify_totp(self, user_id, otp):
+    def verify_totp(self, user, otp):
         """
         Verifies a given TOTP is valid for a given user.
-        :param user_id: Unique value identifying the End User in the your
+        :param user: Unique value identifying the End User in the your
         system. This value was used to create the Directory User and Link
         Device.
         :param otp: 6-8 digit OTP code for to verify.
@@ -309,7 +309,7 @@ class ServiceClient(BaseClient):
         configuration for given user.
         """
         response = self._transport.post("/service/v3/totp",
-                                        self._subject, identifier=user_id,
+                                        self._subject, identifier=user,
                                         otp=otp)
         data = self._validate_response(
             response,
