@@ -8,7 +8,7 @@ import six
 from mock import MagicMock, ANY, patch
 
 from launchkey.clients import DirectoryClient
-from launchkey.clients.directory import Session
+from launchkey.clients.directory import Session, DirectoryUserTOTP
 from launchkey.entities.directory import DeviceLinkCompletionResponse
 from launchkey.entities.directory import DeviceStatus
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, \
@@ -195,6 +195,48 @@ class TestDirectoryClient(unittest.TestCase):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
         with self.assertRaises(InvalidParameters):
             self._directory_client.get_all_service_sessions(ANY)
+
+    def test_generate_user_totp_transport_call(self):
+        self._response.data = {
+            "algorithm": "SHA1",
+            "digits": 6,
+            "period": 30,
+            "secret": "abcdefghijklmnop"
+        }
+        self._directory_client.generate_user_totp("expected user id")
+        self._transport.post.assert_called_once_with(
+            "/directory/v3/totp",
+            self._expected_subject,
+            identifier="expected user id"
+        )
+
+    def test_generate_user_totp_return_object(self):
+        self._response.data = {
+            "algorithm": "SHA256",
+            "digits": 8,
+            "period": 60,
+            "secret": "qrstuvwxyz"
+        }
+        return_data = self._directory_client.generate_user_totp(
+            "expected user id")
+        self.assertIsInstance(return_data, DirectoryUserTOTP)
+        self.assertEqual("SHA256", return_data.algorithm)
+        self.assertEqual(8, return_data.digits)
+        self.assertEqual(60, return_data.period)
+        self.assertEqual("qrstuvwxyz", return_data.secret)
+
+    def test_remove_user_totp_transport_call(self):
+        self._directory_client.remove_user_totp("expected user id")
+        self._transport.delete.assert_called_once_with(
+            "/directory/v3/totp",
+            self._expected_subject,
+            identifier="expected user id"
+        )
+
+    def test_remove_user_totp_return_object(self):
+        return_data = self._directory_client.remove_user_totp(
+            "expected user id")
+        self.assertIsNone(return_data)
 
 
 class TestHandleWebhook(unittest.TestCase):
