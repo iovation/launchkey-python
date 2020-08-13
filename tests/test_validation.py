@@ -73,7 +73,8 @@ class TestDirectoryUserTOTPValidator(TestCase):
         )
 
     def test_invalid_digits(self):
-        with self.assertRaisesRegexp(
+        with assertRaisesRegex(
+                self,
                 Invalid,
                 r"^digits: Please enter an integer value$"):
             self._validator.to_python({
@@ -97,7 +98,8 @@ class TestDirectoryUserTOTPValidator(TestCase):
         )
 
     def test_invalid_period(self):
-        with self.assertRaisesRegexp(
+        with assertRaisesRegex(
+                self,
                 Invalid,
                 r"^period: Please enter an integer value$"):
             self._validator.to_python({

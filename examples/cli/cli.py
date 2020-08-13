@@ -186,7 +186,8 @@ def authorize(ctx, service_id, username, context, title, ttl, push_title,
                 "User Push ID": auth_response.user_push_id,
                 "Org User Hash": auth_response.organization_user_hash,
                 "Auth Methods": auth_response.auth_methods,
-                "Auth Policy": auth_response.policy if use_advanced else auth_response.auth_policy
+                "Auth Policy": auth_response.policy if use_advanced else
+                auth_response.auth_policy
             },
             color=color
         )

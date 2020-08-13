@@ -5,7 +5,7 @@ verify_ssl = true
 
 [packages]
 launchkey = {path = ".",editable = true}
-urllib3 = ">= 1.24.2"  # Ensure CVE-2019-11324 is mitigated
+urllib3 = ">= 1.25.10"
 
 [dev-packages]
 # From setup.py tests_require to lock testing requirements
@@ -14,10 +14,9 @@ nose-exclude = ">= 0.5.0, < 1.0.0"
 mock = ">= 2.0.0, < 3.0.0"
 ddt = ">= 1.1.1, < 2.0.0"
 # Tools for static analysis
-flake8 = "~=3.6.0"
-pylint = "~=2.2.2"
+flake8 = "~=3.8.3"
+pylint = "~=2.5.3"
 coverage = "~=4.5.2"
-astroid = "~=2.1.0"  # Remove after pylint is updated to 2.3.0+
 # Tools for multi-environment testing before sending to CI
 tox = "~=3.7.0"
 behave = "~=1.2.6"
@@ -25,4 +24,4 @@ appium-python-client = "*"
 pyhamcrest = "*"
 
 [requires]
-python = "~=3.4"
+python = "~=3.6"

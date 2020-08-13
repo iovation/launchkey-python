@@ -60,7 +60,7 @@ class AuthorizationResponsePolicy(Policy):
             raise InvalidPolicyAttributes("Requirement must be an enumeration "
                                           "of \"Requirement\"")
 
-        elif requirement and isinstance(requirement, Requirement):
+        if requirement and isinstance(requirement, Requirement):
             self.requirement = requirement
 
         else:
