@@ -13,3 +13,4 @@ from .auth_policy import AuthPolicyManager
 from .sample_app_device_manager import SampleAppDeviceManager
 from .kobiton_manager import KobitonManager
 from .appium_device_manager import AppiumDeviceManager
+from .directory_totp import DirectoryTOTPManager
