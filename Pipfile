@@ -23,6 +23,7 @@ tox = "~=3.7.0"
 behave = "~=1.2.6"
 appium-python-client = "*"
 pyhamcrest = "*"
+pyotp = "*"
 
 [requires]
 python = "~=3.4"

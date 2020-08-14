@@ -6,7 +6,8 @@ from steps.managers import DirectoryManager, DirectoryDeviceManager, \
     DirectoryServicePolicyManager, DirectoryServiceSessionManager, \
     DirectorySessionManager, KeysManager, OrganizationServiceManager, \
     OrganizationServicePolicyManager, EntityManager, AuthPolicyManager, \
-    SampleAppDeviceManager, AppiumDeviceManager, KobitonManager
+    SampleAppDeviceManager, AppiumDeviceManager, KobitonManager, \
+    DirectoryTOTPManager
 
 
 def before_all(context):
@@ -128,6 +129,8 @@ def before_scenario(context, scenario):
     context.organization_service_policy_manager = OrganizationServicePolicyManager(
         context.organization_factory)
     context.auth_policy_manager = AuthPolicyManager()
+    context.directory_totp_manager = DirectoryTOTPManager(
+        context.organization_factory)
     context.entity_manager = EntityManager(
         context.directory_manager,
         context.directory_session_manager,
@@ -137,10 +140,12 @@ def before_scenario(context, scenario):
         context.directory_service_policy_manager,
         context.organization_service_manager,
         context.organization_service_policy_manager,
-        context.auth_policy_manager
+        context.auth_policy_manager,
+        context.directory_totp_manager
     )
     context.current_exception = None
 
 
 def after_scenario(context, scenario):
     context.directory_device_manager.cleanup()
+    context.directory_totp_manager.cleanup()
