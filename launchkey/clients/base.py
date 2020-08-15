@@ -85,11 +85,10 @@ def api_call(function_):
             if error_code in ERROR_CODE_MAP:
                 raise ERROR_CODE_MAP[error_code](error_detail, status_code,
                                                  error_data=error_data)
-            elif status_code in STATUS_CODE_MAP:
+            if status_code in STATUS_CODE_MAP:
                 raise STATUS_CODE_MAP[status_code](error_detail, status_code,
                                                    error_data=error_data)
-            else:
-                raise
+            raise
 
     return wrapper
 

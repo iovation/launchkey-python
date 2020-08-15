@@ -108,9 +108,9 @@ class TimeFence(object):
 
         if not isinstance(start_time, datetime.time):
             raise InvalidTimeFenceStartTime
-        elif not isinstance(end_time, datetime.time):
+        if not isinstance(end_time, datetime.time):
             raise InvalidTimeFenceEndTime
-        elif start_time.tzname() != end_time.tzname():
+        if start_time.tzname() != end_time.tzname():
             raise MismatchedTimeFenceTimezones
 
         self.name = name
