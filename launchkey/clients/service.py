@@ -300,7 +300,7 @@ class ServiceClient(BaseClient):
     def verify_totp(self, user, otp):
         """
         Verifies a given TOTP is valid for a given user.
-        :param user: Unique value identifying the End User in the your
+        :param user: Unique value identifying the End User in your
         system. This value was used to create the Directory User and Link
         Device.
         :param otp: 6-8 digit OTP code for to verify.

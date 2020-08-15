@@ -518,7 +518,7 @@ class JOSETransport(object):
             raise JWTValidationFailure(
                 "JTI does not match: expected {0} but got {1}".format(
                     jti, payload.get("jti")))
-        elif not payload.get('response'):
+        if not payload.get('response'):
             raise JWTValidationFailure("Expected JWT to contain a response "
                                        "segment but there was none!")
 
@@ -527,7 +527,7 @@ class JOSETransport(object):
             raise JWTValidationFailure("Expected JWT to contain status "
                                        "in the response segment but there "
                                        "was none!")
-        elif status_code and status_code != response['status']:
+        if status_code and status_code != response['status']:
             raise JWTValidationFailure("Unexpected response status value")
 
         self._verify_jwt_response_headers(ci_headers, response)
@@ -539,20 +539,20 @@ class JOSETransport(object):
         if 'location' in response and 'location' not in ci_headers:
             raise JWTValidationFailure(
                 "Expected headers to location but there was none!")
-        elif 'location' not in response and 'location' in ci_headers:
+        if 'location' not in response and 'location' in ci_headers:
             raise JWTValidationFailure("Expected JWT to contain location "
                                        "in the response segment but there "
                                        "was none!")
-        elif 'location' in response and 'location' in ci_headers \
+        if 'location' in response and 'location' in ci_headers \
                 and response['location'] != ci_headers['location']:
             raise JWTValidationFailure("Invalid location header!")
-        elif 'cache' in response and 'cache-control' not in ci_headers:
+        if 'cache' in response and 'cache-control' not in ci_headers:
             raise JWTValidationFailure("Expected headers to contain "
                                        "cache-control but there was none!")
-        elif 'cache' not in response and 'cache-control' in ci_headers:
+        if 'cache' not in response and 'cache-control' in ci_headers:
             raise JWTValidationFailure("Expected JWT to contain cache in the "
                                        "response segment but there was none!")
-        elif 'cache' in response and 'cache-control' in ci_headers and \
+        if 'cache' in response and 'cache-control' in ci_headers and \
                 response['cache'] != ci_headers['cache-control']:
             raise JWTValidationFailure("Invalid cache-control header!")
 
@@ -577,17 +577,17 @@ class JOSETransport(object):
         if 'request' not in payload:
             raise JWTValidationFailure("Expected JWT to contain a request "
                                        "segment but there was none!")
-        elif 'meth' not in payload['request']:
+        if 'meth' not in payload['request']:
             raise JWTValidationFailure("Expected method attribute but "
                                        "there was none!")
-        elif method is not None and payload['request']['meth'] != method:
+        if method is not None and payload['request']['meth'] != method:
             raise JWTValidationFailure(
                 "Method does not match: expected {} but got {}".format(
                     payload['request']['meth'], method))
-        elif 'path' not in payload['request']:
+        if 'path' not in payload['request']:
             raise JWTValidationFailure(
                 "Expected path attribute but there was none!")
-        elif path is not None and payload['request']['path'] != path:
+        if path is not None and payload['request']['path'] != path:
             raise JWTValidationFailure(
                 "Path does not match: expected {} but got {}".format(
                     payload['request']['path'], path))
@@ -615,17 +615,17 @@ class JOSETransport(object):
             raise JWTValidationFailure(
                 "Audience does not match: expected %s but got %s" % (
                     audience, payload.get('aud')))
-        elif payload.get('nbf') > now + JOSE_JWT_LEEWAY:
+        if payload.get('nbf') > now + JOSE_JWT_LEEWAY:
             seconds = payload.get('nbf') - (now + JOSE_JWT_LEEWAY)
             raise JWTValidationFailure("NBF failed by %s seconds" % seconds)
-        elif payload.get('exp') < now - JOSE_JWT_LEEWAY:
+        if payload.get('exp') < now - JOSE_JWT_LEEWAY:
             seconds = (now - JOSE_JWT_LEEWAY) - payload.get('exp')
             raise JWTValidationFailure("EXP failed by %s seconds" % seconds)
-        elif payload.get('sub') != subject:
+        if payload.get('sub') != subject:
             raise JWTValidationFailure(
                 "Subject does not match: expected %s but got %s" % (
                     subject, payload.get('sub')))
-        elif payload.get('iat') > now + JOSE_JWT_LEEWAY:
+        if payload.get('iat') > now + JOSE_JWT_LEEWAY:
             seconds = (payload.get('iat') - (now + JOSE_JWT_LEEWAY))
             raise JWTValidationFailure(
                 "IAT failed as its %s seconds in the future" % seconds)
@@ -637,13 +637,13 @@ class JOSETransport(object):
                 custom_segment.get('hash') or custom_segment.get('func')):
             raise JWTValidationFailure(
                 "JWT expected response body but was none!")
-        elif content and not custom_segment.get('hash'):
+        if content and not custom_segment.get('hash'):
             raise JWTValidationFailure(
                 "Expected JWT to contain a hash attribute but there was none!")
-        elif content and not custom_segment.get('func'):
+        if content and not custom_segment.get('func'):
             raise JWTValidationFailure(
                 "Expected JWT to contain a func attribute but there was none!")
-        elif content:
+        if content:
             try:
                 expected_hash = self._get_content_hash(content,
                                                        custom_segment.get(
