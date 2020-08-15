@@ -94,6 +94,30 @@ class DirectoryUserTOTP(object):
         self.period = data['period']
         self.digits = data['digits']
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __eq__(self, other):
+        if isinstance(other, DirectoryUserTOTP):
+            eq = self.secret == other.secret and \
+                 self.algorithm == other.algorithm and \
+                 self.period == other.period and \
+                 self.digits == other.digits
+        else:
+            eq = False
+        return eq
+
+    def __repr__(self):
+        return "DirectoryUserTOTP <secret=\"{secret}\", " \
+               "algorithm=\"{algorithm}\", period={period}, " \
+               "digits={digits}>". \
+            format(
+                secret=self.secret,
+                algorithm=self.algorithm,
+                period=self.period,
+                digits=self.digits
+            )
+
 
 class DeviceLinkCompletionResponse(object):
     """Package returned on the event that a device finishes linking"""
