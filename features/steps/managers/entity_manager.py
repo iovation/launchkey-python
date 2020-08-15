@@ -103,3 +103,6 @@ class EntityManager:
 
     def get_current_totp_user_identifier(self):
         return self._directory_totp_manager.current_user_identifier
+
+    def get_current_totp_verification_response(self):
+        return self._directory_totp_manager.current_verification_response

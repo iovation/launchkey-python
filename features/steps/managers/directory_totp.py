@@ -11,11 +11,10 @@ class TOTPNotGenerated(Exception):
 
 class DirectoryTOTPManager(BaseManager):
     def __init__(self, organization_factory):
+        self.current_verification_response = None
         self.current_totp_response = None
         self.current_totp_configuration = None
-        self._current_user_identifier = None
         self.current_user_identifier = None
-        self._current_user_identifier = None
         self.directory_user_identifiers = dict()
         self._logger = getLogger(
             "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
@@ -30,6 +29,16 @@ class DirectoryTOTPManager(BaseManager):
                                directory_id)
             for user_identifier in user_identifier_set:
                 self.remove_user_totp(user_identifier, directory_id)
+
+    @property
+    def current_verification_response(self):
+        return self._current_verification_response
+
+    @current_verification_response.setter
+    def current_verification_response(self, value):
+        self.previous_verification_response = getattr(
+            self, "_current_verification_response", None)
+        self._current_verification_response = value
 
     @property
     def current_totp_configuration(self):
@@ -105,7 +114,8 @@ class DirectoryTOTPManager(BaseManager):
 
     def verify_totp(self, user_identifier, otp, service_id):
         service_client = self._get_service_client(service_id)
-        service_client.verify_totp(
+        response = service_client.verify_totp(
             user_identifier,
             otp
         )
+        self.current_verification_response = response
