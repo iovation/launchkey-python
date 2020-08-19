@@ -326,7 +326,7 @@ def generate_user_totp(ctx, directory_id, user_identifier):
     client = get_directory_client(directory_id, ctx.obj['factory'])
     response = client.generate_user_totp(user_identifier)
     print_result(
-        "Device link request successful",
+        "TOTP Generated for User",
         {
             "Algorithm": response.algorithm,
             "Digits": response.digits,

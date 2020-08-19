@@ -7,6 +7,7 @@
     * [Commands](#commands)
     * [Service User Session Management](#service)
     * [Directory User Device Management](#directory)
+    * [TOTP](#totp)
 
 ## <a name="installation"></a>Installation
 
@@ -204,7 +205,7 @@ Service credentials for the Service ID you provide in the calls.
 Directory User devices are authenticators utilizing the Authenticator SDK.  The linking and unlinking of devices for 
 users in your application can be achieved via "directory" commands.
 
-Directory commands a performed utilizing credentials for the Directory.
+Directory commands are performed utilizing credentials for the Directory.
 
   1. Linking a Device
 
@@ -226,8 +227,7 @@ Directory commands a performed utilizing credentials for the Directory.
             QR Code URL: https://api.launchkey.com/public/v3/qr/5r53j9z
             Manual verification code: 5r53j9z
         ```
-
-
+    
   2. Listing the Devices linked to a Directory User
 
         Pass a unique identifier for a user in your system to the devices-list action. The example request below is
@@ -259,8 +259,7 @@ Directory commands a performed utilizing credentials for the Directory.
             Type:    Android
             Status:  LINKED
         ```
-
-
+  
   3. Unlinking a Device
 
         Pass a unique identifier for the end user in your system to the device-unlink action. The example request below is
@@ -280,3 +279,108 @@ Directory commands a performed utilizing credentials for the Directory.
         ```
         Device unlinked
         ```
+### <a name="totp"></a>TOTP
+
+TOTP can be configured, removed, and verified for a Directory User.
+
+Directory commands are performed utilizing credentials for the Directory.
+
+  1. Configuring TOTP for a Directory User
+  
+        Pass a unique identifier for the end user in your system to the `generate-user-totp` action. The example request below is
+        for an Organization _bdc16040-976e-11e7-bb33-5e1e4c59c6c8_ with a private key _/tmp/private.key_ a directory id of
+        _3cb7c699-be47-414f-830b-e81b9bb8cc40_, and a user identifier of _326335b0-8569-4aa3-90a3-ac4372104ea3_.
+
+        Request:
+    
+        ```
+        python cli.py organization bdc16040-976e-11e7-bb33-5e1e4c59c6c8 /tmp/private.key generate-user-totp 3cb7c699-be47-414f-830b-e81b9bb8cc40 326335b0-8569-4aa3-90a3-ac4372104ea3
+
+        ```
+
+        Response when a user successfully has TOTP configured:
+
+        ```
+        TOTP Generated for User
+        Algorithm:  SHA1
+        Digits: 6
+        Period: 30
+        Secret: 6FNFGYQLLWVMPNTGGUWC7XFVA2WU5FKU
+        
+        █▀▀▀▀▀█ ▄█▄▄▀███▀ ▄▀  ██▄▀▄▀█▄▄▀█▀▄█  █▀▄ ▀▀ ▀█▄ █ ██ █▀▀▀▀▀█
+        █ ███ █ ▄ █▄██ █▀  ██▀█ ▄█ ▄▄███ ██ █▄█ ▄  █▀ █ ▀▀█▀█ █ ███ █
+        █ ▀▀▀ █ ▀▄▀▄▄▀▄▄▄█▄ ▄█▄▀█▄███▀▀▀██▄▄▀ ▀ ██▄██▀ ▀ ██▀  █ ▀▀▀ █
+        ▀▀▀▀▀▀▀ █ ▀ █ █▄█▄▀ █ █▄▀ █ █ ▀ █▄█▄█ ▀ █▄█▄█▄█ ▀▄█ ▀ ▀▀▀▀▀▀▀
+         ▀▄▀█▀▀ █▀█  █▀   ▀█▀▄█  ▄▄ ▀▀▀▀▀█▄████ █▄█▄  █▀▀█▄ ▄██▄█▀ ▀
+        ▄█   █▀▀▄▀██▄▄▀██▀▀▀ ▀█▀███▀▄▄▄▀▀▄▄██ ▀█  ▄▀▄ █▄█▄▀▀   ███▄ █
+         ▀ ▀▀█▀█▀▀▄▀▄ ▄▄ █▄█▄█ ▀▀█▄▄▄█▄█▄▀   ▄█▀▀██ █   ▄█▀▄▀ ▄▀▀█▀▄▀
+        █ ▀▄ ▀▀▄▀▄▀ █   █ █▀▄ ███ █▄▄█▀███▄▀  ▄▀▀ ██▀ ▄███ ▀█▄▀▄ ▀▄▄▀
+        ▄▀▄██ ▀ ▄▀  ██▄ ▄▄██▄ ▄ ▀▀▄ ▀  █▄▄ ███▀ ▄▄▄▄▀█▀▄▄██▄██▀ ██▀▀▀
+          ▄█▀▄▀▀▄ █▄██  ▄▄ ▀ ▄ ▄▄▀   █▄▄▀▀   ▄   █▄▀█▄▄█▀█ ▄▀█ █▀█▀█▀
+        █▀█▄ ▀▀▀▄ ▀▄ ▄ █▄▄ ▀▀█ ██▄    ▄█ ▀ ▀▀▀█  █▄ ▄▀█▄█▀▀█▄ ▀█▄█  █
+        █▀█ █ ▀▄█▀ ▄▄ ▀ ▀   ▄▄█ ▀  ▀▀  ▀██▄█ ▀  ▀▀▄▄████▀▄▀▄▄█▄▄▄█▄▄█
+        █▀ ▄ ▄▀█▀█▄▀█  ▀ ▀▄██▀▄ ▀█▀ ▄█▀▄  ▀▄█▄█▀ █  ▀▀ ██▀█▀ ██▄█▀▄█▄
+        █▀▀█▀▀▀█▀▀▄▄ ██▀▀█ ▀ ▀ ▀▀▄▀▄ ▀█▄█▀▀█ ▄▀ ▄▄▀ ▀██▄ ██▄▀▄▄  ▄▄▀█
+        █▀███▀▀▀█▄█▀▄█ ▀ ▄▄▀██▄ ▄▄▄▄█▀▀▀█ █▄▀▀▀▀▀▀▄█ ▄▄ ▀▄▀▀█▀▀▀█▀███
+        ▀██▄█ ▀ █▀ ▄▄▄█  █ ▄▄  █ █▄▄█ ▀ █▀  ▀▄▄  █▀█ █▄▀▀▀▄ █ ▀ █  ▄▄
+        ▀ █ █▀▀███  █ ▀█ ▄▀▄▄▄█▀▄ ▀█▀▀█▀█▄▀██▀▀▄ ▄▄█▄▄▄ ▀ ▄▄▀████▄▄▀
+        ▀▀█▀ █▀▀▀▀▀█▀█▀█▀▀▄  ██▄ ██▀  ▄▀▄▀█  █▄▄ █ ▀▄▄██ █ █▄▀▀▀█▀▄██
+        ██▄█▄▀▀▄█▀   ▀▄█▀▄ █▀███▄██▀   ▀█▄▄▀▀▄▀ ▀▀▄▄▄ ▀ ▀▀█▀▄▀███  █▄
+         ▄ ▄▀█▀▄██ █▀ █▀▀█▀▀██▀ ▄▄ ▀▀ ▄█▀▀█ ▀██▄▀ █ ▀▄▄▀ ▀█▄▄ ▀█▀▄▄▀█
+        █  █▄ ▀▄█▀▄    ▄▀█▄▄ █▀▄▀ █▄ ▄█ ▀█▄▄▀▀▄█▄██▀ █▄▀ ▄▀▀██▀██▄█▄
+         ▀█▄█ ▀█  ▀███ ▄▄▄ ▀▄▄  ▀▀▄▀▄█▄▀ █ ▄▄▀ █ █ ▄▀█▄ ████ █▀█▄  ▄▀
+        █ ▄▄ ▄▀ ▄█▄ ▄ ▀█ ▀█▀▄█ ▀ ▄█ ▀██▄█▀█▄██▀ ██▄ ▄▄▄  ▀▄▀ ▀███▄█ ▀
+        ▀██▄▄▀▀ █ █▀▄█  ▄▄█▀▄▄█▀ ███▄█ ▄█▄▀██▄▀ ▄ ▀▀█▀█▄▀▄█▄█▀▀  █  █
+        ▄▀▀▀ █▀▄▀▄ ▄█  ▄▄▀█▄▄▀▄█ ▀▄   ██▄ ▀█▄ █▄█ █ █▀▄▄▀█▀█▀▄ ▄▄███▀
+        ▄▄█▀█▀▀█▀▀▀▀▄█ ▄▄▀▄█▄▄▀▀█ ▄▀▄ ▄▀ ▄   ▀█ ▄▀ █ ▄▀▀▀█ █  █ █ █ ▀
+        ▀▀▀▀  ▀ █ ██▄▀█▀ ▀ ▄▄██▄ █▄▀█▀▀▀█▀ ▀ ▀ ▀▄ █ █   █ ███▀▀▀██ ▄▀
+        █▀▀▀▀▀█ ▄ █ ▄█▄   ▀▄▄▄ ▀ ▄█▀█ ▀ ██  ▀▄▄▀█▄▄█▀█▀▄▀█ ▀█ ▀ █▄ ▄▀
+        █ ███ █ █▀  ▀█▄█  █▄ ▄▄▄█ ▀▄█▀▀▀▀▄▄▄  █▀ ▄▀ ▄█▀ ▀▀▄▀▀█▀▀▀▄▄ █
+        █ ▀▀▀ █ ▄ ▀█▄▀██▀ ▀█▀ ▄ ▀ ▀█▄ ██▄█ █ ▄  ▀▀▀▀▀▀  ▀█ █ ▀▄█▀▄▄██
+        ▀▀▀▀▀▀▀  ▀ ▀ ▀▀ ▀▀  ▀▀  ▀ ▀▀▀ ▀▀▀  ▀▀▀ ▀▀ ▀▀ ▀  ▀ ▀  ▀▀ ▀   ▀
+        ```
+  
+  2. Removing TOTP for a user
+  
+        Pass a unique identifier for the end user in your system to the `remove-user-totp` action. The example request below is
+        for an Organization _bdc16040-976e-11e7-bb33-5e1e4c59c6c8_ with a private key _/tmp/private.key_ a directory id of
+        _3cb7c699-be47-414f-830b-e81b9bb8cc40_, and a user identifier of _326335b0-8569-4aa3-90a3-ac4372104ea3_.
+        
+        Request:
+    
+        ```
+        python cli.py organization bdc16040-976e-11e7-bb33-5e1e4c59c6c8 /tmp/private.key remove-user-totp 3cb7c699-be47-414f-830b-e81b9bb8cc40 326335b0-8569-4aa3-90a3-ac4372104ea3
+
+        ```
+
+        Response when a user successfully has TOTP removed:
+
+        ```
+        TOTP configuration removed from user
+        ```
+  
+  3. Verifying a One Time Password
+        
+        Pass a unique identifier for the end user in your system and the otp code to the `verify-user-totp` action. The example request below is
+        for an Organization _bdc16040-976e-11e7-bb33-5e1e4c59c6c8_ with a private key _/tmp/private.key_ a service id of
+        _998a8274-e261-11ea-a66b-da5a0a740c04_, and a user identifier of _326335b0-8569-4aa3-90a3-ac4372104ea3_.
+        
+        Request:
+    
+        ```
+        python cli.py organization bdc16040-976e-11e7-bb33-5e1e4c59c6c8 /tmp/private.key verify-user-totp 998a8274-e261-11ea-a66b-da5a0a740c04 326335b0-8569-4aa3-90a3-ac4372104ea3 123456
+
+        ```
+
+        Response when a TOTP code is valid:
+
+        ```
+        Input OTP code was valid
+        ```
+        
+        Response when a TOTP code is invalid:
+        ```
+        Input OTP code was not valid
+        ```
+  
+        
