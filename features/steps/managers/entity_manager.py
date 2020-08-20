@@ -4,7 +4,8 @@ class EntityManager:
                  directory_service_auths_manager,
                  directory_service_policy_manager,
                  organization_service_manager,
-                 organization_service_policy_manager, auth_policy_manager):
+                 organization_service_policy_manager, auth_policy_manager,
+                 directory_totp_manager):
         self._directory_manager = directory_manager
         self._directory_session_manager = directory_session_manager
         self._directory_device_manager = directory_device_manager
@@ -16,6 +17,7 @@ class EntityManager:
         self._organization_service_policy_manager = \
             organization_service_policy_manager
         self._auth_policy_manager = auth_policy_manager
+        self._directory_totp_manager = directory_totp_manager
 
     def get_current_auth_response(self):
         return self._directory_service_auths_manager.current_auth_response
@@ -92,3 +94,15 @@ class EntityManager:
 
     def set_current_auth_policy(self, policy):
         self._auth_policy_manager.current_policy = policy
+
+    def get_current_totp_response(self):
+        return self._directory_totp_manager.current_totp_response
+
+    def get_current_totp_configuration(self):
+        return self._directory_totp_manager.current_totp_configuration
+
+    def get_current_totp_user_identifier(self):
+        return self._directory_totp_manager.current_user_identifier
+
+    def get_current_totp_verification_response(self):
+        return self._directory_totp_manager.current_verification_response

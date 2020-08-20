@@ -1,6 +1,130 @@
 import unittest
 
-from launchkey.entities.directory import Directory, DeviceStatus, Device
+from launchkey.entities.directory import Directory, DeviceStatus, Device, \
+    DirectoryUserTOTP
+
+
+class TestDirectoryUserTOTP(unittest.TestCase):
+
+    def test_input_attributes(self):
+        totp = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        self.assertEqual("A Secret", totp.secret)
+        self.assertEqual("An Algorithm", totp.algorithm)
+        self.assertEqual(30, totp.period)
+        self.assertEqual(6, totp.digits)
+
+    def test_equal_entities(self):
+        totp_1 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        totp_2 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        self.assertTrue(totp_1 == totp_2)
+
+    def test_different_secret(self):
+        totp_1 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        totp_2 = DirectoryUserTOTP({
+            "secret": "Another Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        self.assertFalse(totp_1 == totp_2)
+        self.assertTrue(totp_1 != totp_2)
+
+    def test_different_algorithm(self):
+        totp_1 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        totp_2 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "Another Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        self.assertFalse(totp_1 == totp_2)
+        self.assertTrue(totp_1 != totp_2)
+
+    def test_different_period(self):
+        totp_1 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        totp_2 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 60,
+            "digits": 6
+        })
+        self.assertFalse(totp_1 == totp_2)
+        self.assertTrue(totp_1 != totp_2)
+
+    def test_different_digits(self):
+        totp_1 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        totp_2 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 8
+        })
+        self.assertFalse(totp_1 == totp_2)
+        self.assertTrue(totp_1 != totp_2)
+
+    def test_different_entity(self):
+        totp_1 = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        totp_2 = "Not a Directory User TOTP"
+        self.assertFalse(totp_1 == totp_2)
+        self.assertTrue(totp_1 != totp_2)
+
+    def test_repr(self):
+        totp = DirectoryUserTOTP({
+            "secret": "A Secret",
+            "algorithm": "An Algorithm",
+            "period": 30,
+            "digits": 6
+        })
+        self.assertEqual(
+            'DirectoryUserTOTP <secret="A Secret", algorithm="An Algorithm", '
+            'period=30, digits=6>',
+            repr(totp)
+        )
+        self.assertEqual(
+            'DirectoryUserTOTP <secret="A Secret", algorithm="An Algorithm", '
+            'period=30, digits=6>',
+            str(totp)
+        )
 
 
 class TestDirectoryEntity(unittest.TestCase):

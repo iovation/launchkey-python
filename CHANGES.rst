@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.8.0
+-----
+
+* Added TOTP generate_user_totp and remove_user_totp to Directory Client and verify_totp to Service Client
+
 3.7.0
 -----
 
