@@ -11,7 +11,7 @@ from launchkey.exceptions import InvalidParameters, \
     XiovJWTDecryptionFailure
 from launchkey.utils.shared import XiovJWTService, deprecated
 from launchkey.entities.validation import AuthorizationResponseValidator, \
-    AuthorizeSSEValidator, AuthorizeValidator
+    AuthorizeSSEValidator, AuthorizeValidator, ServiceTOTPVerificationValidator
 from launchkey.entities.service import AuthPolicy, AuthorizationResponse, \
     SessionEndRequest, AuthorizationRequest, AdvancedAuthorizationResponse, \
     DenialReason
@@ -295,6 +295,27 @@ class ServiceClient(BaseClient):
         self._transport.delete("/service/v3/sessions",
                                self._subject,
                                username=user)
+
+    @api_call
+    def verify_totp(self, user, otp):
+        """
+        Verifies a given TOTP is valid for a given user.
+        :param user: Unique value identifying the End User in your
+        system. This value was used to create the Directory User and Link
+        Device.
+        :param otp: 6-8 digit OTP code for to verify.
+        :return: Boolean stating whether the given OTP code is valid.
+        :raise: launchkey.exceptions.EntityNotFound - Unable to find TOTP
+        configuration for given user.
+        """
+        response = self._transport.post("/service/v3/totp",
+                                        self._subject, identifier=user,
+                                        otp=otp)
+        data = self._validate_response(
+            response,
+            ServiceTOTPVerificationValidator)
+
+        return data["valid"]
 
     def handle_advanced_webhook(self, body, headers, method=None, path=None):
         """

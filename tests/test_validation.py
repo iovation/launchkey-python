@@ -8,8 +8,132 @@ from six import assertRaisesRegex
 
 from launchkey.entities.validation import AuthorizeValidator, \
     ConditionalGeoFenceValidator, PolicyFenceValidator, FenceValidator, \
-    GeoFenceValidator, TerritoryFenceValidator, GeoCircleFenceValidator
+    GeoFenceValidator, TerritoryFenceValidator, GeoCircleFenceValidator, \
+    DirectoryUserTOTPValidator, ServiceTOTPVerificationValidator
 from launchkey.exceptions.validation import AuthorizationInProgressValidator
+
+
+@ddt
+class TestServiceTOTPVerificationValidator(TestCase):
+
+    def setUp(self):
+        self._validator = ServiceTOTPVerificationValidator()
+
+    @data(True, False)
+    def test_valid_values(self, given_valid):
+        validated = self._validator.to_python(
+            {"valid": given_valid}
+        )
+        self.assertEqual(
+            given_valid,
+            validated["valid"]
+        )
+
+    def test_extra_value(self):
+        validated = self._validator.to_python({
+            "valid": True,
+            "a_new_key": "A New Value"
+        })
+        self.assertEqual(
+            "A New Value",
+            validated["a_new_key"]
+        )
+
+
+@ddt
+class TestDirectoryUserTOTPValidator(TestCase):
+
+    def setUp(self):
+        self._validator = DirectoryUserTOTPValidator()
+
+    @data("SHA1", "SHA256", "SHA512")
+    def test_valid_algorithms(self, given_algorithm):
+        validated = self._validator.to_python({
+            "algorithm": given_algorithm,
+            "digits": 6,
+            "period": 30,
+            "secret": "ASecret"
+        })
+        self.assertEqual(
+            given_algorithm,
+            validated["algorithm"]
+        )
+
+    @data(6, 7, 8)
+    def test_valid_digits(self, given_digits):
+        validated = self._validator.to_python({
+            "algorithm": "SHA1",
+            "digits": given_digits,
+            "period": 30,
+            "secret": "ASecret"
+        })
+        self.assertEqual(
+            given_digits,
+            validated["digits"]
+        )
+
+    def test_invalid_digits(self):
+        with assertRaisesRegex(
+                self,
+                Invalid,
+                r"^digits: Please enter an integer value$"):
+            self._validator.to_python({
+                "algorithm": "SHA1",
+                "digits": "A String",
+                "period": 30,
+                "secret": "ASecret"
+            })
+
+    @data(10, 30, 60, 3600)
+    def test_valid_period(self, given_period):
+        validated = self._validator.to_python({
+            "algorithm": "SHA1",
+            "digits": 6,
+            "period": given_period,
+            "secret": "ASecret"
+        })
+        self.assertEqual(
+            given_period,
+            validated["period"]
+        )
+
+    def test_invalid_period(self):
+        with assertRaisesRegex(
+                self,
+                Invalid,
+                r"^period: Please enter an integer value$"):
+            self._validator.to_python({
+                "algorithm": "SHA1",
+                "digits": 6,
+                "period": "A String",
+                "secret": "ASecret"
+            })
+
+    @data("A Secret", "ab-dsad-ewq--dsa-123", "abcdefg")
+    def test_valid_secret(self, given_secret):
+        validated = self._validator.to_python({
+            "algorithm": "SHA1",
+            "digits": 6,
+            "period": 30,
+            "secret": given_secret
+        })
+        self.assertEqual(
+            given_secret,
+            validated["secret"]
+        )
+
+    def test_extra_value(self):
+        validated = self._validator.to_python({
+            "algorithm": "SHA1",
+            "digits": 6,
+            "period": 30,
+            "secret": "ASecret",
+            "a_new_key": "A New Value"
+        })
+        self.assertEqual(
+            "A New Value",
+            validated["a_new_key"]
+        )
 
 
 class TestAuthorizeValidator(TestCase):

@@ -7,9 +7,9 @@ from json import loads
 from formencode import Invalid
 from ..entities.validation import DirectoryGetDeviceResponseValidator, \
     DirectoryGetSessionsValidator, DirectoryUserDeviceLinkResponseValidator, \
-    DirectoryDeviceLinkCompletionValidator
+    DirectoryDeviceLinkCompletionValidator, DirectoryUserTOTPValidator
 from ..entities.directory import Session, DirectoryUserDeviceLinkData, Device,\
-    DeviceLinkCompletionResponse
+    DeviceLinkCompletionResponse, DirectoryUserTOTP
 from .base import ServiceManagingBaseClient, api_call
 from ..exceptions import UnableToDecryptWebhookRequest, \
     UnexpectedWebhookRequest, XiovJWTValidationFailure, \
@@ -33,7 +33,7 @@ class DirectoryClient(ServiceManagingBaseClient):
         Begin the process of Linking a Subscriber Authenticator Device with an
         End User based on the Directory User ID. If no Directory User exists
         for the Directory User ID, the Directory User will be created.
-        :param user_id: Unique value identifying the End User in the your
+        :param user_id: Unique value identifying the End User in your
         system. It is the permanent link for the End
         User between the your application(s) and the LaunchKey API. This
         will be used for authorization requests as well as managing the End
@@ -66,7 +66,7 @@ class DirectoryClient(ServiceManagingBaseClient):
         Get a list of Subscriber Authenticator Devices for a Directory User.
         If not Directory User exists for the Directory User ID, an empty
         list will be returned.
-        :param user_id: Unique value identifying the End User in the your
+        :param user_id: Unique value identifying the End User in your
         system. This value was used to create the Directory User and Link
         Device.
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
@@ -88,7 +88,7 @@ class DirectoryClient(ServiceManagingBaseClient):
     def unlink_device(self, user_id, device_id):
         """
         Unlink a users device
-        :param user_id: Unique value identifying the End User in the your
+        :param user_id: Unique value identifying the End User in your
         system. This value was used to create the Directory User and Link
         Device.
         :param device_id: The unique identifier of the Device you wish to
@@ -138,6 +138,38 @@ class DirectoryClient(ServiceManagingBaseClient):
             sessions.append(session)
 
         return sessions
+
+    @api_call
+    def generate_user_totp(self, user_id):
+        """
+        Generates, adds, and returns a TOTP secret for a given user identifier.
+
+        Note that a user can only have a single TOTP configured. Submitting
+        this request when there is an existing configuration will overwrite any
+        previous settings.
+
+        :param user_id: Unique value identifying the End User in your
+        system. This value was used to create the Directory User and Link
+        Device.
+        :return: launchkey.entities.directory.DirectoryUserTOTP
+        """
+        response = self._transport.post("/directory/v3/totp",
+                                        self._subject, identifier=user_id)
+        validated_data = self._validate_response(
+            response, DirectoryUserTOTPValidator)
+        return DirectoryUserTOTP(validated_data)
+
+    @api_call
+    def remove_user_totp(self, user_id):
+        """
+        Removes a TOTP configuration from a given user.
+        :param user_id: Unique value identifying the End User in your
+        system. This value was used to create the Directory User and Link
+        Device.
+        :return:
+        """
+        self._transport.delete("/directory/v3/totp", self._subject,
+                               identifier=user_id)
 
     def handle_webhook(self, body, headers, method, path):
         """

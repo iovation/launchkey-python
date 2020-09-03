@@ -186,6 +186,39 @@ When a user logs out
 
     service_client.session_end(user)
 
+TOTP
+****
+
+A user can have TOTP configured via the `generate_user_totp` method on the `DirectoryClient`.
+
+.. code-block:: python
+
+    identifier = "my-permanent-unique-user-identifier"
+    configuration = directory_client.generate_user_totp(identifier)
+    print("    Secret:    " + configuration.secret)
+    print("    Algorithm: " + configuration.algorithm)
+    print("    Period:    " + configuration.period)
+    print("    Digits:    " + configuration.digits)
+
+TOTP configurations can be removed via the `generate_user_totp` method on the `DirectoryClient`.
+
+.. code-block:: python
+
+    identifier = "my-permanent-unique-user-identifier"
+    directory_client.remove_user_totp(identifier)
+
+Finally codes can be validated via the `verify_totp` method on the `ServiceClient`.
+
+.. code-block:: python
+
+    identifier = "my-permanent-unique-user-identifier"
+    otp = "569874"
+    valid = service_client.verify_totp(identifier, otp)
+    if valid:
+        # Handle success scenario
+    else:
+        # Handle failure scenario
+
 Dealing with Webhooks
 *********************
 

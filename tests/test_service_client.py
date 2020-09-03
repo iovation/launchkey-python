@@ -331,6 +331,30 @@ class TestServiceClient(unittest.TestCase):
         with self.assertRaises(EntityNotFound):
             self._service_client.session_end(ANY)
 
+    def test_verify_totp_transport_call(self):
+        self._response.data = {
+            "valid": True
+        }
+        self._service_client.verify_totp("expected user", "otp code")
+        self._transport.post.assert_called_once_with(
+            "/service/v3/totp",
+            self._issuer,
+            identifier="expected user",
+            otp="otp code"
+        )
+
+    @data(True, False)
+    def test_verify_totp_return_value(self, valid_value):
+        self._response.data = {
+            "valid": valid_value
+        }
+        response = self._service_client.verify_totp(
+            "expected user", "otp code")
+        self.assertEqual(
+            valid_value,
+            response
+        )
+
 
 class TestHandleWebhookRegression(unittest.TestCase):
 

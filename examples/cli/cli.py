@@ -2,6 +2,7 @@ import random
 import string
 
 import click
+import qrcode
 
 from launchkey.factories import OrganizationFactory, DirectoryFactory, \
     ServiceFactory
@@ -185,7 +186,8 @@ def authorize(ctx, service_id, username, context, title, ttl, push_title,
                 "User Push ID": auth_response.user_push_id,
                 "Org User Hash": auth_response.organization_user_hash,
                 "Auth Methods": auth_response.auth_methods,
-                "Auth Policy": auth_response.policy if use_advanced else auth_response.auth_policy
+                "Auth Policy": auth_response.policy if use_advanced else
+                auth_response.auth_policy
             },
             color=color
         )
@@ -313,6 +315,70 @@ def device_unlink(ctx, directory_id, user_identifier, device_identifier):
     client = get_directory_client(directory_id, ctx.obj['factory'])
     client.unlink_device(user_identifier, device_identifier)
     click.secho("Device unlinked", fg=SUCCESS_COLOR)
+
+
+@main.command()
+@click.argument("directory_id", type=click.STRING)
+@click.argument("user_identifier", type=click.STRING)
+@click.pass_context
+def generate_user_totp(ctx, directory_id, user_identifier):
+    """DIRECTORY_ID USER_IDENTIFIER"""
+    client = get_directory_client(directory_id, ctx.obj['factory'])
+    response = client.generate_user_totp(user_identifier)
+    print_result(
+        "TOTP Generated for User",
+        {
+            "Algorithm": response.algorithm,
+            "Digits": response.digits,
+            "Period": response.period,
+            "Secret": response.secret
+        },
+        color=SUCCESS_COLOR
+    )
+
+    provisioning_uri = \
+        f"otpauth://totp/LaunchKey%20Test%20TOTP:{user_identifier}?" \
+            f"digits={response.digits}" \
+            f"&secret={response.secret}" \
+            f"&algorithm={response.algorithm}" \
+            f"&period={response.period}" \
+            f"&issuer=LaunchKey+Test+TOTP"
+
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_Q,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(provisioning_uri)
+    qr.make(fit=True)
+    qr.print_ascii()
+
+
+@main.command()
+@click.argument("directory_id", type=click.STRING)
+@click.argument("user_identifier", type=click.STRING)
+@click.pass_context
+def remove_user_totp(ctx, directory_id, user_identifier):
+    """DIRECTORY_ID USER_IDENTIFIER"""
+    client = get_directory_client(directory_id, ctx.obj['factory'])
+    client.remove_user_totp(user_identifier)
+    click.secho("TOTP configuration removed from user", fg=SUCCESS_COLOR)
+
+
+@main.command()
+@click.argument("service_id", type=click.STRING)
+@click.argument("user_identifier", type=click.STRING)
+@click.argument("otp_code", type=click.STRING)
+@click.pass_context
+def verify_user_totp(ctx, service_id, user_identifier, otp_code):
+    """SERVICE_ID USER_IDENTIFIER OTP_CODE"""
+    client = get_service_client(service_id, ctx.obj['factory'])
+    valid = client.verify_totp(user_identifier, otp_code)
+    if valid is True:
+        click.secho("Input OTP code was valid", fg=SUCCESS_COLOR)
+    else:
+        click.secho("Input OTP code was not valid", fg=FAILURE_COLOR)
 
 
 if __name__ == "__main__":
