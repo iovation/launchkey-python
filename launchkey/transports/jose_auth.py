@@ -141,7 +141,8 @@ class JOSETransport(object):
 
         return kid
 
-    def _get_kid_from_api_response(self, response):
+    @staticmethod
+    def _get_kid_from_api_response(response):
         """
         Gets `kid` property from a JWT token within a LaunchKey API
         response.

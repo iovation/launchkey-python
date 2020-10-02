@@ -4,7 +4,7 @@ from Cryptodome.PublicKey.RSA import RsaKey
 from ddt import data, ddt
 from jwkest import JWKESTException
 from jwkest.jws import JWS
-from jwkest.jwt import JWT
+from jwkest.jwt import JWT, BadSyntax
 from mock import MagicMock, ANY, patch, call
 from launchkey.transports import JOSETransport, RequestsTransport
 from launchkey.transports.base import APIResponse, APIErrorResponse
@@ -883,6 +883,24 @@ class TestCacheAndRetrieveKeyByKid(unittest.TestCase):
         self._jwt_patch.return_value.unpack.side_effect = jwt
         with self.assertRaises(JWTValidationFailure):
             self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+
+    def test_raises_when_jwt_unpack_returns_badsyntax(self):
+        self._jwt_patch.return_value.unpack.side_effect = BadSyntax("test", "error")
+        with self.assertRaises(UnexpectedAPIResponse):
+            self._transport.verify_jwt_response(
+                MagicMock(), self.jti, ANY, None)
+
+    def test_raises_when_jwt_unpack_returns_valueerror(self):
+        self._jwt_patch.return_value.unpack.side_effect = ValueError()
+        with self.assertRaises(UnexpectedAPIResponse):
+            self._transport.verify_jwt_response(
+                MagicMock(), self.jti, ANY, None)
+
+    def test_raises_when_jwt_unpack_returns_indexerror(self):
+        self._jwt_patch.return_value.unpack.side_effect = IndexError()
+        with self.assertRaises(UnexpectedAPIResponse):
+            self._transport.verify_jwt_response(
+                MagicMock(), self.jti, ANY, None)
 
     def test_raises_when_kid_header_is_missing_from_http_headers(self):
         self._requests_transport.get.return_value = APIResponse(
