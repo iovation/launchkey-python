@@ -70,13 +70,15 @@ faux_jwt_headers = {
     "kid": faux_kid
 }
 
+transport_request_headers = {"X-IOV-KEY-ID": faux_kid}
+
 
 class TestJOSETransport3rdParty(unittest.TestCase):
 
     def setUp(self):
         self._transport = JOSETransport()
         self._transport.get = MagicMock(return_value=MagicMock(spec=APIResponse))
-        public_key = APIResponse(valid_private_key, {}, 200)
+        public_key = APIResponse(valid_public_key, transport_request_headers, 200)
         self._transport.get.return_value = public_key
         self._transport._server_time_difference = 0, time()
 
@@ -152,7 +154,7 @@ class TestJWKESTSupportedAlgs(unittest.TestCase):
     def setUp(self):
         self._transport = JOSETransport()
         self._transport.get = MagicMock(return_value=MagicMock(spec=APIResponse))
-        public_key = APIResponse(valid_private_key, {}, 200)
+        public_key = APIResponse(valid_private_key, transport_request_headers, 200)
         self._transport.get.return_value = public_key
         self._transport._server_time_difference = 0, time()
 
@@ -265,7 +267,7 @@ class TestJOSETransportJWTResponse(unittest.TestCase):
     def setUp(self):
         self._transport = JOSETransport()
         self._transport.get = MagicMock(return_value=MagicMock(spec=APIResponse))
-        public_key = APIResponse(valid_private_key, {}, 200)
+        public_key = APIResponse(valid_public_key, transport_request_headers, 200)
         self._transport.get.return_value = public_key
         self._transport._server_time_difference = 0, time()
         self.issuer = "svc"
@@ -421,7 +423,7 @@ class TestJOSETransportJWTRequest(unittest.TestCase):
     def setUp(self):
         self._transport = JOSETransport()
         self._transport.get = MagicMock(return_value=MagicMock(spec=APIResponse))
-        public_key = APIResponse(valid_private_key, {}, 200)
+        public_key = APIResponse(valid_private_key, transport_request_headers, 200)
         self._transport.get.return_value = public_key
         self._transport._server_time_difference = 0, time()
         self.issuer = "svc"
@@ -808,7 +810,7 @@ class TestCacheAndRetrieveKeyByKid(unittest.TestCase):
         }
 
         self._requests_transport = MagicMock(spec=RequestsTransport)
-        self._requests_transport.get.return_value = APIResponse(valid_private_key, {}, 200)
+        self._requests_transport.get.return_value = APIResponse(valid_public_key, transport_request_headers, 200)
         self._transport = JOSETransport(http_client=self._requests_transport)
         self._import_rsa_key_patch = patch(
             "launchkey.transports.jose_auth.import_rsa_key",
@@ -850,8 +852,7 @@ class TestCacheAndRetrieveKeyByKid(unittest.TestCase):
             "kid": "jwt2keyid"
         }
 
-        self._jwt_patch.return_value.unpack.side_effect = [jwt1, jwt1, jwt2, jwt2]
-
+        self._jwt_patch.return_value.unpack.side_effect = [jwt1, jwt2]
         self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
         self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
         self._requests_transport.get.assert_has_calls([
@@ -865,15 +866,15 @@ class TestCacheAndRetrieveKeyByKid(unittest.TestCase):
         self._requests_transport.get.return_value.data = valid_public_key
         self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
 
-        # Verify that verify_compact is called one time with key created by our jwkest key patch
-        self._jws_patch.return_value.verify_compact.assert_called_once_with(ANY, keys=[rsa_key_patch.return_value])
+        # Verify that verify_compact is called one time with key created
+        # by our jwkest key patch
+        self._jws_patch.return_value.verify_compact\
+            .assert_called_once_with(ANY, keys=[rsa_key_patch.return_value])
 
-        # Assert that the jwkest key patch is built using the import_rsa_key patch return value and the key id
-        # from the header
-        rsa_key_patch.assert_called_with(key=self._import_rsa_key_patch.return_value, kid=faux_kid)
-
-        # Verify that we used the correct key to retrieve the key id from the header
-        self._requests_transport.get.return_value.headers.get.assert_called_with("X-IOV-JWT")
+        # Assert that the jwkest key patch is built using the import_rsa_key
+        # patch return value and the key id from the header
+        rsa_key_patch.assert_called_with(
+            key=self._import_rsa_key_patch.return_value, kid=faux_kid)
 
     def test_raises_when_kid_header_is_missing(self):
         headers_without_kid = {"alg": "RS512", "typ": "JWT"}
@@ -882,6 +883,13 @@ class TestCacheAndRetrieveKeyByKid(unittest.TestCase):
         self._jwt_patch.return_value.unpack.side_effect = jwt
         with self.assertRaises(JWTValidationFailure):
             self._transport.verify_jwt_response(MagicMock(), self.jti, ANY, None)
+
+    def test_raises_when_kid_header_is_missing_from_http_headers(self):
+        self._requests_transport.get.return_value = APIResponse(
+            valid_public_key, {}, 200)
+        with self.assertRaises(UnexpectedAPIResponse):
+            self._transport.verify_jwt_response(
+                MagicMock(), self.jti, ANY, None)
 
     def test_raises_when_kid_header_is_malformed(self):
         headers_with_kid_of_wrong_type = {"alg": "RS512", "typ": "JWT", "kid": 1234}

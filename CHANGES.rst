@@ -1,5 +1,9 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
+3.8.1
+-----
+
+* Fixed an issue where the SDK would improperly report which key was used when the encryption and signature keys differed
 
 3.8.0
 -----
