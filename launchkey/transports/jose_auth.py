@@ -141,14 +141,19 @@ class JOSETransport(object):
 
         return kid
 
-    def _get_kid_from_api_response(self, response):
+    @staticmethod
+    def _get_kid_from_api_response(response):
         """
         Gets `kid` property from a JWT token within a LaunchKey API
         response.
         :param response: Response object
         :return: string of the `kid`
         """
-        return self.__get_kid_from_api_response_headers(response.headers)
+        try:
+            return response.headers["X-IOV-KEY-ID"]
+        except KeyError:
+            raise UnexpectedAPIResponse("X-IOV-KEY-ID was missing or malformed"
+                                        " in API response.")
 
     @staticmethod
     def parse_api_time(api_time):
