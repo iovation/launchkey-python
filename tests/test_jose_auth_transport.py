@@ -453,7 +453,13 @@ class TestJOSETransportJWTRequest(unittest.TestCase):
         self._transport.content_hash_function().hexdigest.return_value = self._content_hash
 
         self._jwt_patch = patch("launchkey.transports.jose_auth.JWT", return_value=MagicMock(spec=JWT)).start()
-        self._jwt_patch.return_value.unpack.return_value.headers = faux_jwt_headers
+        self._faux_jwt_headers = {
+            "alg": "RS512",
+            "typ": "JWT",
+            # This should be different than the kid from the transport headers
+            "kid": "ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff"
+        }
+        self._jwt_patch.return_value.unpack.return_value.headers = self._faux_jwt_headers
 
         patcher = patch('launchkey.transports.jose_auth.sha256')
         patched = patcher.start()
@@ -473,6 +479,11 @@ class TestJOSETransportJWTRequest(unittest.TestCase):
     def test_none_path_returns_payload(self):
         actual = self._transport.verify_jwt_request(MagicMock(), self.jwt_payload['sub'], 'POST', None, MagicMock())
         self.assertEqual(actual, self.jwt_payload)
+
+    def test_jwt_signed_with_key_not_in_cache_fetches_key(self):
+        self._verify_jwt_request()
+        self._transport.get.assert_called_once_with(
+            "/public/v3/public-key/%s" % self._faux_jwt_headers["kid"])
 
     def test_none_path_still_requires_jwt_request_path(self):
         del self.jwt_payload['request']['path']

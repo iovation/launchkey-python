@@ -572,7 +572,10 @@ class JOSETransport(object):
         :return: The claims of the JWT
         """
         try:
-            self._set_current_kid()
+            # Ensure key exists in cache, fetch from API by ID otherwise
+            kid = JWT().unpack(compact_jwt).headers["kid"]
+            public_key = self._find_key_by_kid(kid)
+            self._cache_public_key(kid, public_key)
             payload = self._get_jwt_payload(compact_jwt)
         except JWKESTException as reason:
             raise JWTValidationFailure("Unable to parse JWT", reason=reason)
