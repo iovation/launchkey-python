@@ -48,6 +48,12 @@ class TestPublicKeyValidator(TestCase):
 
         self.assertEqual(sanitized["key_type"], expected)
 
+    @data(-1, 3, 4, "sup")
+    def test_invalid_key_type_throws_invalid(self, invalid_key_type):
+        with self.assertRaises(Invalid):
+            self._valid_key["key_type"] = invalid_key_type
+            self._validator.to_python(self._valid_key)
+
     def test_absent_key_type_defaults_to_zero(self):
         expected = 0
         del self._valid_key["key_type"]
