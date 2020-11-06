@@ -15,3 +15,5 @@ class PublicKey(object):
         self.created = public_key_data['date_created']
         self.expires = public_key_data['date_expires']
         self.public_key = public_key_data['public_key']
+        self.key_type = 0 if not public_key_data.get('key_type') \
+            else public_key_data['key_type']

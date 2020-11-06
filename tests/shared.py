@@ -246,6 +246,19 @@ class SharedTests(object):
                 public_key="public-key", date_expires="2017-10-03T22:50:15Z",
                 active=active)
 
+        @data(0, 1, 2)
+        def test_add_service_public_key_key_type(self, key_type):
+            self._response.data = {"key_id": ANY}
+            self._client.add_service_public_key(
+                "5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public-key",
+                active=True, key_type=key_type)
+            self._transport.post.assert_called_once_with(
+                self._expected_base_endpoint[0:-1] + "/keys",
+                self._expected_subject,
+                service_id="5e49fc4c-ddcb-48db-8473-a5f996b85fbc",
+                public_key="public-key", active=True,
+                key_type=key_type)
+
         def test_add_service_public_key_invalid_params(self):
             self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
             with self.assertRaises(InvalidParameters):
@@ -294,6 +307,65 @@ class SharedTests(object):
             self.assertEqual(key.expires, datetime(year=2018, month=10, day=3, hour=22, minute=50,
                                                    second=15, tzinfo=pytz.timezone("UTC")))
             self.assertEqual(key.public_key, "A Public Key")
+
+        @data(0, 1, 2)
+        def test_get_service_public_keys_applies_key_type(self, key_type):
+            self._response.data = [
+                {
+                    "id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                    "active": True,
+                    "date_created": "2017-10-03T22:50:15Z",
+                    "date_expires": "2018-10-03T22:50:15Z",
+                    "public_key": "A Public Key",
+                    "key_type": key_type
+                }
+            ]
+
+            public_keys = self._client.get_service_public_keys(
+                "3559a520-180f-4fee-ad52-75959286340d")
+
+            key = public_keys[0]
+            self.assertEqual(key.key_type, key_type)
+
+        def test_get_service_public_keys_null_key_type_defaults_to_zero(self):
+            actual = None
+            expected = 0
+
+            self._response.data = [
+                {
+                    "id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                    "active": True,
+                    "date_created": "2017-10-03T22:50:15Z",
+                    "date_expires": "2018-10-03T22:50:15Z",
+                    "public_key": "A Public Key",
+                    "key_type": actual
+                }
+            ]
+
+            public_keys = self._client.get_service_public_keys(
+                "3559a520-180f-4fee-ad52-75959286340d")
+
+            key = public_keys[0]
+            self.assertEqual(key.key_type, expected)
+
+        def test_get_service_public_keys_no_key_type_defaults_to_zero(self):
+            expected = 0
+
+            self._response.data = [
+                {
+                    "id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                    "active": True,
+                    "date_created": "2017-10-03T22:50:15Z",
+                    "date_expires": "2018-10-03T22:50:15Z",
+                    "public_key": "A Public Key"
+                }
+            ]
+
+            public_keys = self._client.get_service_public_keys(
+                "3559a520-180f-4fee-ad52-75959286340d")
+
+            key = public_keys[0]
+            self.assertEqual(key.key_type, expected)
 
         def test_get_service_public_keys_invalid_params(self):
             self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""},

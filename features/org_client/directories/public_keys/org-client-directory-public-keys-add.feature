@@ -11,6 +11,32 @@ Feature: Organization clients can add a Public Key to a Directory
     And I retrieve the current Directory's Public Keys
     Then the Public Key is in the list of Public Keys for the Directory
 
+
+  Scenario Outline: I may add a Public Key with a key type to a Directory
+    When I add a Public Key with a <key_type> type to the Directory
+    And I retrieve the current Directory's Public Keys
+    Then the Public Key is in the list of Public Keys for the Directory and has a <key_type> key type
+  Examples:
+  | key_type |
+  | 0        |
+  | 1        |
+  | 2        |
+
+  Scenario: Adding a Public Key to a Directory with an empty key type defaults to a dual use key type
+    When I add a Public Key to the Directory
+    And I retrieve the current Directory's Public Keys
+    Then the Public Key is in the list of Public Keys for the Directory and has a "0" key type
+
+  Scenario Outline: Adding a Public Key to a Directory with an invalid key type yields an error
+    When I attempt to add a Public Key with a <key_type> type to the Directory
+    Then an InvalidParameters error occurs
+  Examples:
+  | key_type |
+  | -1       |
+  | sup      |
+  | 3        |
+  | 4        |
+
   Scenario: Adding multiple Public Keys to a Directory works
     When I add a Public Key to the Directory
     When I add another Public Key to the Directory

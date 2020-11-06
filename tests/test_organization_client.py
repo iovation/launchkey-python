@@ -271,6 +271,18 @@ class TestOrganizationClientDirectories(unittest.TestCase):
             public_key="public-key", date_expires="2017-10-03T22:50:15Z",
             active=True)
 
+    @data(0, 1, 2)
+    def test_add_directory_public_key_key_type(self, key_type):
+        self._response.data = {"key_id": ANY}
+        self._organization_client.add_directory_public_key(
+            "5e49fc4c-ddcb-48db-8473-a5f996b85fbc", "public-key", active=True,
+            key_type=key_type)
+        self._transport.post.assert_called_once_with(
+            "/organization/v3/directory/keys", self._expected_subject,
+            directory_id="5e49fc4c-ddcb-48db-8473-a5f996b85fbc",
+            public_key="public-key", active=True,
+            key_type=key_type)
+
     def test_add_directory_public_key_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
         with self.assertRaises(InvalidParameters):

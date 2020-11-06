@@ -25,6 +25,56 @@ def add_public_key_to_directory(context):
     )
 
 
+@when("I add a Public Key with a {key_type} type to the Directory")
+def add_public_key_with_key_type_to_directory_service(context, key_type):
+    current_directory = context.entity_manager.get_current_directory()
+
+    public_key = PublicKey({
+        "id": context.keys_manager.alpha_md5_fingerprint,
+        "active": True,
+        "date_created": None,
+        "date_expires": None,
+        "public_key": context.keys_manager.alpha_public_key,
+        "key_type": int(key_type)
+    })
+
+    context.directory_manager.add_public_key_to_directory(
+        public_key,
+        current_directory.id
+    )
+
+
+@when("I attempt to add a Public Key with a {key_type} type to the Directory")
+def add_public_key_with_key_type_to_directory_service(context, key_type):
+    current_directory = context.entity_manager.get_current_directory()
+
+    try:
+        # Ensure that integers remain integers and are not recognized
+        # by Selenium as strings, and that strings remain strings
+        sanitized_key_type = int(key_type)
+
+    except ValueError:
+        sanitized_key_type = key_type
+
+    public_key = PublicKey({
+        "id": context.keys_manager.alpha_md5_fingerprint,
+        "active": True,
+        "date_created": None,
+        "date_expires": None,
+        "public_key": context.keys_manager.alpha_public_key,
+        "key_type": sanitized_key_type
+    })
+
+    try:
+        context.directory_manager.add_public_key_to_directory(
+            public_key,
+            current_directory.id
+        )
+
+    except Exception as e:
+        context.current_exception = e
+
+
 @when("I attempt to add the same Public Key to the Directory")
 def attempt_to_add_public_key_to_directory_service(context):
     current_directory = context.entity_manager.get_current_directory()
@@ -159,6 +209,20 @@ def verify_directory_public_key_is_in_list_of_public_keys(context):
         get_current_directory_public_keys()
     for key in current_directory_public_keys:
         if key.public_key == alpha_public_key:
+            return
+    raise Exception("Unable to find the current directory public key")
+
+
+@then("the Public Key is in the list of Public Keys for the Directory and has "
+      "a {key_type} key type")
+@then("the Public Key is in the list of Public Keys for the Directory and has "
+      "a \"{key_type}\" key type")
+def verify_directory_public_key_is_in_list_of_public_keys(context, key_type):
+    alpha_public_key = context.keys_manager.alpha_public_key
+    current_directory_public_keys = context.entity_manager. \
+        get_current_directory_public_keys()
+    for key in current_directory_public_keys:
+        if key.public_key == alpha_public_key and key.key_type == int(key_type):
             return
     raise Exception("Unable to find the current directory public key")
 
