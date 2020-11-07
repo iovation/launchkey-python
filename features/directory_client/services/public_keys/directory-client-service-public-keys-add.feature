@@ -27,15 +27,9 @@ Feature: Directory clients can add a Public Key to a Directory Service
     And I retrieve the current Directory Service's Public Keys
     Then the Public Key is in the list of Public Keys for the Directory Service and has a "0" key type
 
-  Scenario Outline: Adding a Public Key to a Directory Service with an invalid key type yields an error
-    When I attempt to add a Public Key with a <key_type> type to the Directory Service
+  Scenario: Adding a Public Key to a Directory Service with an invalid key type yields an error
+    When I attempt to add a Public Key with a "sup" type to the Directory Service
     Then an InvalidParameters error occurs
-  Examples:
-  | key_type |
-  | -1       |
-  | sup      |
-  | 3        |
-  | 4        |
 
   Scenario: Adding multiple Public Keys to a Directory Service works
     When I add a Public Key to the Directory Service

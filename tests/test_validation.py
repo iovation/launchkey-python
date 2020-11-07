@@ -48,7 +48,7 @@ class TestPublicKeyValidator(TestCase):
 
         self.assertEqual(sanitized["key_type"], expected)
 
-    @data(-1, 3, 4, "sup")
+    @data("sup", [], {})
     def test_invalid_key_type_throws_invalid(self, invalid_key_type):
         with self.assertRaises(Invalid):
             self._valid_key["key_type"] = invalid_key_type

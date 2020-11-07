@@ -48,7 +48,7 @@ def add_public_key_with_key_type_to_directory_service(context, key_type):
     )
 
 
-@when("I attempt to add a Public Key with a {key_type} type to the "
+@when("I attempt to add a Public Key with a \"{key_type}\" type to the "
       "Directory Service")
 def attempt_add_public_key_with_key_type_to_directory_service(context,
                                                               key_type):

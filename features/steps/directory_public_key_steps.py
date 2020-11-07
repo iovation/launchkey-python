@@ -44,7 +44,7 @@ def add_public_key_with_key_type_to_directory_service(context, key_type):
     )
 
 
-@when("I attempt to add a Public Key with a {key_type} type to the Directory")
+@when("I attempt to add a Public Key with a \"{key_type}\" type to the Directory")
 def add_public_key_with_key_type_to_directory_service(context, key_type):
     current_directory = context.entity_manager.get_current_directory()
 
