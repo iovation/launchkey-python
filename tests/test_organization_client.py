@@ -4,6 +4,7 @@ from uuid import uuid4
 from launchkey.clients import OrganizationClient
 from launchkey.clients.organization import Directory
 from launchkey.transports.base import APIResponse
+from launchkey.entities.shared import KeyType
 from launchkey.exceptions import LaunchKeyAPIException, InvalidParameters, LastRemainingKey, PublicKeyDoesNotExist, \
     InvalidPublicKey, PublicKeyAlreadyInUse, LastRemainingSDKKey, InvalidSDKKey, Forbidden, EntityNotFound
 from datetime import datetime
@@ -271,7 +272,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
             public_key="public-key", date_expires="2017-10-03T22:50:15Z",
             active=True)
 
-    @data(0, 1, 2)
+    @data(KeyType.both, KeyType.encryption, KeyType.signature)
     def test_add_directory_public_key_key_type(self, key_type):
         self._response.data = {"key_id": ANY}
         self._organization_client.add_directory_public_key(
@@ -281,7 +282,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
             "/organization/v3/directory/keys", self._expected_subject,
             directory_id="5e49fc4c-ddcb-48db-8473-a5f996b85fbc",
             public_key="public-key", active=True,
-            key_type=key_type)
+            key_type=key_type.value)
 
     def test_add_directory_public_key_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""}, 400)
@@ -328,6 +329,43 @@ class TestOrganizationClientDirectories(unittest.TestCase):
         self.assertEqual(key.expires, datetime(year=2018, month=10, day=3, hour=22, minute=50,
                                                second=15, tzinfo=pytz.timezone("UTC")))
         self.assertEqual(key.public_key, "A Public Key")
+        self.assertEqual(key.key_type, KeyType.both)
+
+    @data(0, 1, 2)
+    def test_get_directory_public_keys_key_type_enum(self, key_type_int):
+        self._response.data = [
+            {
+                "id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                "active": True,
+                "date_created": "2017-10-03T22:50:15Z",
+                "date_expires": "2018-10-03T22:50:15Z",
+                "public_key": "A Public Key",
+                "key_type": key_type_int
+            }
+        ]
+
+        key = self._organization_client.get_directory_public_keys(
+            "a08eab76-4094-4d60-aca1-30efbab3179b")[0]
+
+        self.assertEqual(key.key_type, KeyType(key_type_int))
+
+    @data(-1, 4, 100)
+    def test_get_directory_public_keys_key_type_other(self, key_type_int):
+        self._response.data = [
+            {
+                "id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+                "active": True,
+                "date_created": "2017-10-03T22:50:15Z",
+                "date_expires": "2018-10-03T22:50:15Z",
+                "public_key": "A Public Key",
+                "key_type": key_type_int
+            }
+        ]
+
+        key = self._organization_client.get_directory_public_keys(
+            "a08eab76-4094-4d60-aca1-30efbab3179b")[0]
+
+        self.assertEqual(key.key_type, KeyType.other)
 
     def test_get_service_public_keys_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""},

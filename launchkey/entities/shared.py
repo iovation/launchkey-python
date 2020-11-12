@@ -2,6 +2,19 @@
 
 # pylint: disable=invalid-name,too-few-public-methods
 
+from enum import Enum
+
+
+class KeyType(Enum):
+    """
+    An enum that represents what a key is to be used for, i.e. signature,
+    encryption, or both.
+    """
+    both = 0
+    encryption = 1
+    signature = 2
+    other = -1
+
 
 class PublicKey(object):
     """
@@ -15,5 +28,11 @@ class PublicKey(object):
         self.created = public_key_data['date_created']
         self.expires = public_key_data['date_expires']
         self.public_key = public_key_data['public_key']
-        self.key_type = 0 if not public_key_data.get('key_type') \
-            else public_key_data['key_type']
+
+        try:
+            self.key_type = KeyType.both if not \
+                public_key_data.get('key_type') else \
+                KeyType(public_key_data['key_type'])
+
+        except ValueError:
+            self.key_type = KeyType.other

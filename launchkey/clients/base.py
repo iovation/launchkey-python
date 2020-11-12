@@ -276,8 +276,8 @@ class ServiceManagingBaseClient(BaseClient):
         key will no longer be valid
         :param active: Optional bool stating whether the key should be
         considered active and usable.
-        :param key_type: Optional integer to identify whether the key is
-        an encryption key (1), signature key (2), or a dual use key (0)
+        :param key_type: Optional KeyType enum to identify whether the key is
+        an encryption key, signature key, or a dual use key
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.InvalidPublicKey - The public key you
@@ -294,7 +294,7 @@ class ServiceManagingBaseClient(BaseClient):
         if active is not None:
             kwargs['active'] = active
         if key_type is not None:
-            kwargs['key_type'] = key_type
+            kwargs['key_type'] = key_type.value
 
         key_id = self._transport.post(
             "{}/keys".format(self.__service_base_path[0:-1]),

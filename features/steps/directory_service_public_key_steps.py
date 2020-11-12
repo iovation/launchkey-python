@@ -3,7 +3,7 @@ from calendar import timegm
 
 from behave import given, when, then
 
-from launchkey.entities.shared import PublicKey
+from launchkey.entities.shared import KeyType, PublicKey
 
 
 # Add public keys
@@ -38,7 +38,7 @@ def add_public_key_with_key_type_to_directory_service(context, key_type):
         "date_created": None,
         "date_expires": None,
         "public_key": context.keys_manager.alpha_public_key,
-        "key_type": int(key_type)
+        "key_type": KeyType(int(key_type))
     })
 
     context.directory_service_manager.add_public_key_to_service(
@@ -243,11 +243,12 @@ def verify_directory_service_public_key_is_in_list_of_public_keys(context):
       "and has a \"{key_type}\" key type")
 def verify_directory_service_public_key_is_in_list_of_public_keys_with_key_type(
         context, key_type):
+    key_type_enum = KeyType(int(key_type))
     alpha_public_key = context.keys_manager.alpha_public_key
     current_directory_public_keys = context.entity_manager. \
         get_current_directory_service_public_keys()
     for key in current_directory_public_keys:
-        if key.public_key == alpha_public_key and key.key_type == int(key_type):
+        if key.public_key == alpha_public_key and key.key_type == key_type_enum:
             return
     raise Exception("Unable to find the current directory public key")
 
