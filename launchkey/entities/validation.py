@@ -13,6 +13,7 @@ class PublicKeyValidator(Schema):
     date_created = ValidateISODate()
     date_expires = ValidateISODate()
     public_key = validators.String()
+    key_type = validators.Int(if_missing=0, if_empty=0)
     allow_extra_fields = True
 
 
