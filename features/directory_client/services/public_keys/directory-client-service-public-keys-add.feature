@@ -12,7 +12,7 @@ Feature: Directory clients can add a Public Key to a Directory Service
     And I retrieve the current Directory Service's Public Keys
     Then the Directory Service Public Key is in the list of Public Keys for the Directory Service
 
-  Scenario Outline: I may add a Public Key with a key type to a Directory Service
+  Scenario Outline: I can add a Public Key with a key type to a Directory Service and the key type is present when the key is retrieved
     When I add a Public Key with a <key_type> type to the Directory Service
     And I retrieve the current Directory Service's Public Keys
     Then the Public Key is in the list of Public Keys for the Directory Service and has a <key_type> key type

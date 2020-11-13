@@ -272,7 +272,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
             public_key="public-key", date_expires="2017-10-03T22:50:15Z",
             active=True)
 
-    @data(KeyType.both, KeyType.encryption, KeyType.signature)
+    @data(KeyType.BOTH, KeyType.ENCRYPTION, KeyType.SIGNATURE)
     def test_add_directory_public_key_key_type(self, key_type):
         self._response.data = {"key_id": ANY}
         self._organization_client.add_directory_public_key(
@@ -329,7 +329,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
         self.assertEqual(key.expires, datetime(year=2018, month=10, day=3, hour=22, minute=50,
                                                second=15, tzinfo=pytz.timezone("UTC")))
         self.assertEqual(key.public_key, "A Public Key")
-        self.assertEqual(key.key_type, KeyType.both)
+        self.assertEqual(key.key_type, KeyType.BOTH)
 
     @data(0, 1, 2)
     def test_get_directory_public_keys_key_type_enum(self, key_type_int):
@@ -365,7 +365,7 @@ class TestOrganizationClientDirectories(unittest.TestCase):
         key = self._organization_client.get_directory_public_keys(
             "a08eab76-4094-4d60-aca1-30efbab3179b")[0]
 
-        self.assertEqual(key.key_type, KeyType.other)
+        self.assertEqual(key.key_type, KeyType.OTHER)
 
     def test_get_service_public_keys_invalid_params(self):
         self._transport.post.side_effect = LaunchKeyAPIException({"error_code": "ARG-001", "error_detail": ""},

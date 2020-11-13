@@ -247,7 +247,7 @@ class SharedTests(object):
                 public_key="public-key", date_expires="2017-10-03T22:50:15Z",
                 active=active)
 
-        @data(KeyType.both, KeyType.encryption, KeyType.signature)
+        @data(KeyType.BOTH, KeyType.ENCRYPTION, KeyType.SIGNATURE)
         def test_add_service_public_key_key_type(self, key_type):
             self._response.data = {"key_id": ANY}
             self._client.add_service_public_key(
@@ -309,7 +309,7 @@ class SharedTests(object):
                                                    second=15, tzinfo=pytz.timezone("UTC")))
             self.assertEqual(key.public_key, "A Public Key")
 
-        @data(KeyType.both, KeyType.encryption, KeyType.signature)
+        @data(KeyType.BOTH, KeyType.ENCRYPTION, KeyType.SIGNATURE)
         def test_get_service_public_keys_applies_key_type(self, key_type):
             self._response.data = [
                 {
@@ -330,7 +330,7 @@ class SharedTests(object):
 
         def test_get_service_public_keys_null_key_type_defaults_to_both(self):
             actual = None
-            expected = KeyType.both
+            expected = KeyType.BOTH
 
             self._response.data = [
                 {
@@ -350,7 +350,7 @@ class SharedTests(object):
             self.assertEqual(key.key_type, expected)
 
         def test_get_service_public_keys_no_key_type_defaults_to_both_key(self):
-            expected = KeyType.both
+            expected = KeyType.BOTH
 
             self._response.data = [
                 {

@@ -10,10 +10,10 @@ class KeyType(Enum):
     An enum that represents what a key is to be used for, i.e. signature,
     encryption, or both.
     """
-    both = 0
-    encryption = 1
-    signature = 2
-    other = -1
+    BOTH = 0
+    ENCRYPTION = 1
+    SIGNATURE = 2
+    OTHER = -1
 
 
 class PublicKey(object):
@@ -30,9 +30,9 @@ class PublicKey(object):
         self.public_key = public_key_data['public_key']
 
         try:
-            self.key_type = KeyType.both if not \
+            self.key_type = KeyType.BOTH if not \
                 public_key_data.get('key_type') else \
                 KeyType(public_key_data['key_type'])
 
         except ValueError:
-            self.key_type = KeyType.other
+            self.key_type = KeyType.OTHER
