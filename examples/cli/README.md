@@ -4,6 +4,7 @@
   * [Installation](#installation)
   * [Usage](#usage)
     * [Help](#help)
+    * [Using Dual Keys](#dual-keys)
     * [Commands](#commands)
     * [Service User Session Management](#service)
     * [Directory User Device Management](#directory)
@@ -43,6 +44,15 @@ Help can be obtained by either executing the application without any parameters 
 
 ```
 python cli.py --help
+```
+
+### <a name="dual-keys"></a>Using Dual Keys
+
+If you wish to use separate encryption and signature keys, the --encryption-key 
+argument must be used. The argument will be used as the signature key.
+
+```
+python cli.py --encryption-key=/path/to/encryption.key organization 86fc3e57-6f60-420c-9a4f-98b7b0f83000 /path/to/signature.key [COMMAND]
 ```
 
 ### <a name="commands"></a>Commands
