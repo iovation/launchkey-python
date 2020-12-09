@@ -24,13 +24,15 @@ from helpers import wait_for_response, get_service_client, \
               help="API URL to send auth requests. Defaults to "
                    "https://api.launchkey.com",
               type=click.STRING)
-@click.option('--encryption-key', '-e',
-              help="Path to encryption key file if separate encryption and "
-                   "signature keys are desired. The initially given key will "
-                   "be used as a signature key.",
+@click.option('--additional-key', '-k',
+              help="Path to a supplemental key file. If a response is "
+                   "returned in which the client cannot decrypt it will "
+                   "attempt to use any given additional keys. This option "
+                   "can be used multiple times.",
+              multiple=True,
               type=click.File('rb'))
 @click.pass_context
-def main(ctx, entity_type, entity_id, private_key, api, encryption_key):
+def main(ctx, entity_type, entity_id, private_key, api, additional_key):
     """
     ENTITY_TYPE: Entity type for the given ID. This can be a Service,
     Directory, or Organization.
@@ -39,8 +41,9 @@ def main(ctx, entity_type, entity_id, private_key, api, encryption_key):
     Directory, or Organization.
 
     PRIVATE_KEY: Path to private key belonging to the given entity ID.
-    If an encryption key is also given via --encryption-key, this key will
-    be the signature key.
+    This key will be used for signing and decrypting requests. In the case that
+    you would like to separate signature and encryption keys the --additional-key
+    option may be used to add explicit encryption keys.
     IE: /path/to/my.key
     """
 
@@ -61,8 +64,8 @@ def main(ctx, entity_type, entity_id, private_key, api, encryption_key):
         raise TypeError("Input entity type is not valid. Should be one of: "
                         "Organization, Directory, Service.")
 
-    if encryption_key:
-        ctx.obj['factory'].add_additional_private_key(encryption_key.read())
+    for k in additional_key:
+        ctx.obj['factory'].add_additional_private_key(k.read())
 
 
 @main.command()
