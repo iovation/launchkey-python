@@ -1,22 +1,20 @@
-Python SDK for LaunchKey API
-============================
+Python SDK for TruValidate Multifactor Authentication API
+=========================================================
 
 .. image:: https://travis-ci.org/iovation/launchkey-python.svg?branch=master
     :target: https://travis-ci.org/iovation/launchkey-python
-
-.. _LaunchKey: https://launchkey.com
 
 .. _docs: https://docs.launchkey.com
 
 .. _pyenv: https://github.com/pyenv/pyenv
 
-For use in implementing LaunchKey_.
+For use in implementing TruValidate Multifactor Authentication.
 
 
 Description
 -----------
 
-Use to more easily interact with iovation's LaunchKey API.
+Use to more easily interact with iovation's TruValidate Multifactor Authentication API.
 
 A more in-depth look at this SDK can be found at the official docs_.
 
@@ -50,10 +48,10 @@ or
 Usage
 -----
 
-Using LaunchKey Clients
+Using TruValidate Multifactor Authentication Clients
 ***********************
 
-The LaunchKey SDK is broken into credential based factories with access to
+The TruValidate Multifactor Authentication SDK is broken into credential based factories with access to
 functionality based clients.
 
 **Factories**
@@ -265,7 +263,7 @@ Running tests is as simple as::
 Validating Code
 ---------------
 
-The LaunchKey Service SDK supports and number of python versions and has
+The TruValidate Multifactor Authentication Service SDK supports and number of python versions and has
 fairly strict coding guidelines.
 Tests require a number of Python versions. The best way to manage these
 versions is with pyenv_. You will need to register all of the versions with
