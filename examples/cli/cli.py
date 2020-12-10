@@ -1,5 +1,6 @@
 import random
 import string
+import warnings
 
 import click
 import qrcode
@@ -65,7 +66,12 @@ def main(ctx, entity_type, entity_id, private_key, api, additional_key):
                         "Organization, Directory, Service.")
 
     for k in additional_key:
-        ctx.obj['factory'].add_additional_private_key(k.read())
+        key = k.read()
+        if key == private_key:
+            warnings.warn("An additional key file was given that matches the "
+                          "PRIVATE_KEY argument. Please verify this was "
+                          "expected.", UserWarning)
+        ctx.obj['factory'].add_additional_private_key(key)
 
 
 @main.command()
