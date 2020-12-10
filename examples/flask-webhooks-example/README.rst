@@ -1,5 +1,5 @@
 TruValidate Multifactor Authentication Webhooks Example App
-==============================
+===========================================================
 
 Example webapp to demonstrate TruValidate Multifactor Authentication webhooks using
 the Python Service SDK and Flask.

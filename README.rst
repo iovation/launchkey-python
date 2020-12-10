@@ -14,7 +14,7 @@ For use in implementing TruValidate Multifactor Authentication.
 Description
 -----------
 
-Use to more easily interact with iovation's TruValidate Multifactor Authentication API.
+Use to more easily interact with TransUnion's TruValidate Multifactor Authentication API.
 
 A more in-depth look at this SDK can be found at the official docs_.
 
@@ -49,7 +49,7 @@ Usage
 -----
 
 Using TruValidate Multifactor Authentication Clients
-***********************
+****************************************************
 
 The TruValidate Multifactor Authentication SDK is broken into credential based factories with access to
 functionality based clients.
