@@ -1,5 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
+
+3.9.0
+-----
+
+* Updated CLI to support separate encryption and signature keys
+
 3.8.1
 -----
 

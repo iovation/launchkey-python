@@ -1,5 +1,6 @@
 import random
 import string
+import warnings
 
 import click
 import qrcode
@@ -24,8 +25,15 @@ from helpers import wait_for_response, get_service_client, \
               help="API URL to send auth requests. Defaults to "
                    "https://api.launchkey.com",
               type=click.STRING)
+@click.option('--additional-key', '-k',
+              help="Path to a supplemental key file. If a response is "
+                   "returned in which the client cannot decrypt it will "
+                   "attempt to use any given additional keys. This option "
+                   "can be used multiple times.",
+              multiple=True,
+              type=click.File('rb'))
 @click.pass_context
-def main(ctx, entity_type, entity_id, private_key, api):
+def main(ctx, entity_type, entity_id, private_key, api, additional_key):
     """
     ENTITY_TYPE: Entity type for the given ID. This can be a Service,
     Directory, or Organization.
@@ -34,6 +42,9 @@ def main(ctx, entity_type, entity_id, private_key, api):
     Directory, or Organization.
 
     PRIVATE_KEY: Path to private key belonging to the given entity ID.
+    This key will be used for signing and decrypting requests. In the case that
+    you would like to separate signature and encryption keys the --additional-key
+    option may be used to add explicit encryption keys.
     IE: /path/to/my.key
     """
 
@@ -53,6 +64,14 @@ def main(ctx, entity_type, entity_id, private_key, api):
     else:
         raise TypeError("Input entity type is not valid. Should be one of: "
                         "Organization, Directory, Service.")
+
+    for k in additional_key:
+        key = k.read()
+        if key == private_key:
+            warnings.warn("An additional key file was given that matches the "
+                          "PRIVATE_KEY argument. Please verify this was "
+                          "expected.", UserWarning)
+        ctx.obj['factory'].add_additional_private_key(key)
 
 
 @main.command()
