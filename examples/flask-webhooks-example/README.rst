@@ -1,10 +1,9 @@
-LaunchKey Webhooks Example App
-==============================
+TruValidate Multifactor Authentication Webhooks Example App
+===========================================================
 
-Example webapp to demonstrate LaunchKey webhooks using 
-the Python Service SDK and Flask.
+Example webapp to demonstrate webhooks using the Python Service SDK and Flask.
 
-For more information on LaunchKey webhooks see:
+For more information on webhooks see:
 
 https://docs.launchkey.com/api/webhooks/index.html
 
@@ -29,6 +28,6 @@ Usage
     
     $ ngrok http 5000
     $ cp instance/example_config.py instance/config.py
-    $ # Update config.py to include the returned ngrok url and your LaunchKey credentials
+    $ # Update config.py to include the returned ngrok url and your TruValidate Multifactor Authentication credentials
     $ pipenv shell
     $ FLASK_APP=launchkey_example_app flask run
