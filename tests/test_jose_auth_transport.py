@@ -768,7 +768,7 @@ class TestJOSETransportAPIPing(unittest.TestCase):
         call_count = 10
         time_patch.return_value = 0
         for i in range(0, call_count):
-            self._transport._set_current_kid()
+            self._transport.update_and_return_active_encryption_kid()
             time_patch.return_value += API_CACHE_TIME + 1
         self.assertEqual(self._transport.get.call_count, call_count)
 

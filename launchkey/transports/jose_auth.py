@@ -190,17 +190,15 @@ class JOSETransport(object):
         :return: List of RSAKeys
         """
         if not self._public_key_cache:
-            self._set_current_kid()
+            self.update_and_return_active_encryption_kid()
+        return list(self._public_key_cache.values())
 
-        rsa_keys = map(lambda kv: kv[1], self._public_key_cache.items())
-        return list(rsa_keys)
-
-    def _set_current_kid(self):
+    def update_and_return_active_encryption_kid(self):
         """
         Determines whether a new current key is necessary, and if so, retrieves
         new `kid` and public key from LaunchKey API, sets the current `kid`
         with current timestamp, and caches the new key.
-        :return:
+        :return: Currently active key id
         """
         now = int(time())
         current_kid, current_kid_timestamp = self._current_kid
@@ -210,6 +208,7 @@ class JOSETransport(object):
             new_kid, new_public_key = self._get_current_kid_and_key()
             self._current_kid = new_kid, now
             self._cache_public_key(new_kid, new_public_key)
+        return self._current_kid[0]
 
     def _get_key_by_kid(self, kid):
         """
@@ -259,7 +258,6 @@ class JOSETransport(object):
         if not self._public_key_cache.get(kid):
             try:
                 rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
-
             except (TypeError, ValueError):
                 raise UnexpectedAPIResponse("RSA parsing error for public key"
                                             ": %s" % public_key)
@@ -412,7 +410,9 @@ class JOSETransport(object):
         """
         jwe = JWE(json.dumps(data), alg=self.jwe_cek_encryption,
                   enc=self.jwe_claims_encryption)
-        return jwe.encrypt(keys=self.api_public_keys)
+        # Retrieve the active API encryption KID
+        current_kid = self.update_and_return_active_encryption_kid()
+        return jwe.encrypt(keys=[self._public_key_cache[current_kid]])
 
     def _process_jose_request(self, method, path, subject, data=None):
         """
