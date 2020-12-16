@@ -93,7 +93,8 @@ class TestJOSETransport3rdParty(unittest.TestCase):
         self.assertEqual(len(keys), 1)
         self.assertIsInstance(keys[0], RSAKey)
 
-    def test_build_jwt_signature_no_key(self):
+    @patch.object(JWS, 'sign_compact')
+    def test_build_jwt_signature_no_key(self, _):
         with self.assertRaises(NoIssuerKey):
             self._transport._build_jwt_signature(MagicMock(spec=str), ANY, ANY, ANY, ANY)
 
@@ -164,7 +165,7 @@ class TestJWKESTSupportedAlgs(unittest.TestCase):
         self.addCleanup(patch.stopall)
 
     def _encrypt_decrypt(self):
-        self._transport.add_issuer_key(valid_private_key)
+        self._transport.add_encryption_private_key(valid_private_key)
         to_encrypt = {"tobe": "encrypted"}
         encrypted = self._transport._encrypt_request(to_encrypt)
         self.assertEqual(len(encrypted.split('.')), 5)
@@ -642,21 +643,36 @@ class TestJOSETransportIssuers(unittest.TestCase):
     def setUp(self):
         self._transport = JOSETransport()
 
-    def test_add_issuer_key(self):
+    @patch("launchkey.transports.jose_auth.warnings")
+    def test_add_issuer_key_creates_warning(self, warnings_patch):
+        self._transport.add_issuer_key(valid_private_key)
+        warnings_patch.warn.assert_called_once_with(
+            "This method will be removed in the future. Please use "
+            "add_encryption_key instead.",
+            DeprecationWarning
+        )
+
+    @patch("launchkey.transports.jose_auth.warnings")
+    def test_add_issuer_key_creates_warning(self, _):
         self.assertEqual(len(self._transport.issuer_private_keys), 0)
         self._transport.add_issuer_key(valid_private_key)
+        self.assertEqual(len(self._transport.issuer_private_keys), 1)
+
+    def test_add_issuer_key(self):
+        self.assertEqual(len(self._transport.issuer_private_keys), 0)
+        self._transport.add_encryption_private_key(valid_private_key)
         self.assertEqual(len(self._transport.issuer_private_keys), 1)
 
     def test_add_duplicate_issuer_key(self):
         self.assertEqual(len(self._transport.issuer_private_keys), 0)
-        self._transport.add_issuer_key(valid_private_key)
+        self._transport.add_encryption_private_key(valid_private_key)
         self.assertEqual(len(self._transport.issuer_private_keys), 1)
-        resp = self._transport.add_issuer_key(valid_private_key)
+        resp = self._transport.add_encryption_private_key(valid_private_key)
         self.assertFalse(resp)
         self.assertEqual(len(self._transport.issuer_private_keys), 1)
 
     def test_generate_key_id(self):
-        self._transport.add_issuer_key(valid_private_key)
+        self._transport.add_encryption_private_key(valid_private_key)
         self.assertEqual(self._transport.issuer_private_keys[0].kid,
                          '59:12:e2:f6:3f:79:d5:1e:18:75:c5:25:ff:b3:b7:f2')
 
@@ -677,12 +693,15 @@ class TestJOSETransportIssuers(unittest.TestCase):
         with self.assertRaises(InvalidPrivateKey):
             self._transport.set_issuer(ANY, uuid4(), "InvalidKey")
 
+    @patch("launchkey.transports.jose_auth.md5")
+    @patch("launchkey.transports.jose_auth.RSA")
     @patch("launchkey.transports.jose_auth.RSAKey")
     @patch("launchkey.transports.jose_auth.import_rsa_key")
-    def test_issuer_list(self, rsa_key_patch, import_key_patch):
+    def test_issuer_list(self, rsa_key_patch, import_key_patch, _, md5_patch):
         rsa_key_patch.return_value = MagicMock(spec=RSAKey)
         import_key_patch.return_value = MagicMock()
-        self._transport.add_issuer_key = MagicMock()
+        md5_patch.return_value.hexdigest.return_value = "9cdfb439c7876e703e307864c9167a15"
+        self._transport.add_encryption_private_key = MagicMock()
         for issuer in VALID_JWT_ISSUER_LIST:
             self._transport.set_issuer(issuer, uuid4(), ANY)
 
