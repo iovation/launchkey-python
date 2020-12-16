@@ -1,10 +1,5 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
-3.8.1
------
-
-* Fixed an issue where the SDK would improperly report which key was used when the encryption and signature keys differed
-* Fixed an issue where the SDK would fail to validate webhook signature verification if the signature key was not the one returned in the public-key endpoint
 
 3.9.0
 -----
