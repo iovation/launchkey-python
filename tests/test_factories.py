@@ -1,5 +1,5 @@
 import unittest
-from mock import MagicMock, ANY
+from mock import MagicMock, ANY, patch
 from launchkey.factories.base import BaseFactory
 from launchkey.factories import DirectoryFactory, OrganizationFactory, ServiceFactory
 from launchkey.clients import DirectoryClient, OrganizationClient, ServiceClient
@@ -12,10 +12,32 @@ from ddt import ddt, data
 class TestBaseFactory(unittest.TestCase):
 
     def setUp(self):
-        self._factory = BaseFactory(ANY, uuid1(), ANY, ANY, ANY, MagicMock(spec=JOSETransport))
+        self._transport = MagicMock(spec=JOSETransport)
+        self._factory = BaseFactory(ANY, uuid1(), ANY, ANY, ANY, self._transport)
 
-    def test_add_additional_private_key(self):
-        self._factory.add_additional_private_key(ANY)
+    @patch("launchkey.factories.base.warnings")
+    def test_add_additional_private_key_makes_deprecation_warning(self, warnings_patch):
+        self._factory.add_additional_private_key("PRIVATE KEY")
+        warnings_patch.warn.assert_called_once_with(
+            "This method will be removed in the future. Please use "
+            "add_encryption_key instead.",
+            DeprecationWarning
+        )
+
+    @patch("launchkey.factories.base.warnings")
+    def test_add_additional_private_key_calls_transport(self, _):
+        encryption_key = "PRIVATE KEY"
+        self._factory.add_additional_private_key(encryption_key)
+        self._transport.add_encryption_private_key.assert_called_with(
+            encryption_key
+        )
+
+    def test_add_encryption_private_key_calls_transport(self):
+        encryption_key = "PRIVATE KEY"
+        self._factory.add_encryption_private_key(encryption_key)
+        self._transport.add_encryption_private_key.assert_called_with(
+            encryption_key
+        )
 
     @data(uuid1(), uuid4())
     def test_multiple_uuid_support(self, entity_id):

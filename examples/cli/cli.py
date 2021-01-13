@@ -71,7 +71,7 @@ def main(ctx, entity_type, entity_id, private_key, api, additional_key):
             warnings.warn("An additional key file was given that matches the "
                           "PRIVATE_KEY argument. Please verify this was "
                           "expected.", UserWarning)
-        ctx.obj['factory'].add_additional_private_key(key)
+        ctx.obj['factory'].add_encryption_private_key(key)
 
 
 @main.command()

@@ -73,6 +73,47 @@ factory.
 | Service      |         No          |       No         |      Yes       |
 +--------------+---------------------+------------------+----------------+
 
+**Utilizing Single Purpose Keys**
+
+In the case that separate encryption and signature keys are being used. The
+initial key given to a factory will be used to sign requests, and any
+additional keys can be added after instantiation.
+
+.. code-block:: python
+
+    from launchkey.factories import OrganizationFactory
+
+    organization_id = "37d98bb9-ac71-44b7-9ac0-5d75e31e627a"
+    organization_signature_private_key = open("organization_signature_private_key.key").read()
+    organization_encryption_private_key = open("organization_encryption_private_key.key").read()
+
+    organization_factory = OrganizationFactory(organization_id, organization_signature_private_key)
+    organization_factory.add_encryption_private_key(organization_encryption_private_key)
+
+
+.. code-block:: python
+
+    from launchkey.factories import DirectoryFactory
+
+    directory_id = "37d98bb9-ac71-44b7-9ac0-5d75e31e627a"
+    directory_signature_private_key = open("directory_signature_private_key.key").read()
+    directory_encryption_private_key = open("directory_encryption_private_key.key").read()
+
+    directory_factory = DirectoryFactory(directory_id, directory_signature_private_key)
+    directory_factory.add_encryption_private_key(directory_encryption_private_key)
+
+
+.. code-block:: python
+
+    from launchkey.factories import ServiceFactory
+
+    service_id = "37d98bb9-ac71-44b7-9ac0-5d75e31e627a"
+    service_signature_private_key = open("service_signature_private_key.key").read()
+    service_encryption_private_key = open("service_encryption_private_key.key").read()
+
+    service_factory = ServiceFactory(organization_id, service_signature_private_key)
+    service_factory.add_encryption_private_key(service_encryption_private_key)
+
 **Using individual clients**
 
 .. code-block:: python
