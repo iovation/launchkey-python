@@ -156,15 +156,19 @@ def link_device(context):
 @when("I link my device")
 def link_physical_device(context):
     sdk_key = context.entity_manager.get_current_directory_sdk_keys()[0]
+    context.sample_app_device_manager.set_sdk_key(sdk_key)
     linking_code = context.entity_manager.get_current_linking_response().code
-    context.sample_app_device_manager.link_device(sdk_key, linking_code)
+    context.sample_app_device_manager.link_device(linking_code)
+
+    # We should now be on the home page if everything succeeded
+    context.appium_device_manager.get_scrollable_element_by_text("Auth Methods")
 
 
 @when("I link my physical device with the name \"{device_name}\"")
 def link_device_with_name(context, device_name):
     sdk_key = context.entity_manager.get_current_directory_sdk_keys()[0]
     linking_code = context.entity_manager.get_current_linking_response().code
-    context.sample_app_device_manager.link_device(sdk_key, linking_code,
+    context.sample_app_device_manager.link_device(linking_code,
                                                   device_name=device_name)
 
 

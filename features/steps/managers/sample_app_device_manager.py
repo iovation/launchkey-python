@@ -10,29 +10,42 @@ class SampleAppDeviceManager:
         self.appium_device_manager.click(text="Unlink 2 (Custom UI)")
 
     def _open_linking_menu(self):
-        self.appium_device_manager.click(text="Link (Custom UI - Manual)")
+        self.appium_device_manager.click(text="Link (Default UI - Manual)")
 
     def _fill_linking_code(self, linking_code):
-        self.appium_device_manager.send_keys(linking_code, text="Linking code")
+        self.appium_device_manager.send_keys(linking_code, text="ABCD123")
 
     def _fill_authenticator_sdk_key(self, sdk_key):
-        self.appium_device_manager.send_keys(sdk_key, text="Auth SDK Key")
+        sdk_key_element = self.appium_device_manager.get_element_by_id(resource_id="configs_sdk_key")
+        sdk_key_element.click()
+        sdk_key_element.clear()
+        self.appium_device_manager.send_keys(sdk_key, id="configs_sdk_key")
+        self.appium_device_manager.back()
+        # Click the Re-Initialize Button to save the sdk_key
+        self.appium_device_manager.click(text="RE-INITIALIZE")
+
 
     def _type_in_device_name(self, device_name):
         self.appium_device_manager.click(text="Use custom device name")
         self.appium_device_manager.send_keys(device_name, id="demo_link_edit_name")
 
     def _submit_linking_form(self):
-        self.appium_device_manager.click(id="demo_link_button")
+        self.appium_device_manager.click(id="pair_entercode_button_done")
 
-    def link_device(self, sdk_key, linking_code, device_name=None):
-        self._approve_alert()
+    def link_device(self, linking_code, device_name=None):
         self._open_linking_menu()
         self._fill_linking_code(linking_code)
-        self._fill_authenticator_sdk_key(sdk_key)
+        self._submit_linking_form()
         if device_name:
             self._type_in_device_name(device_name)
-        self._submit_linking_form()
+        self.appium_device_manager.click(text="OK")
+
+    def set_sdk_key(self, sdk_key):
+        self._open_options()
+        self._fill_authenticator_sdk_key(sdk_key)
+
+    def _open_options(self):
+        self.appium_device_manager.click(text="Config Testing")
 
     def _open_auth_menu(self):
         self.appium_device_manager.click(text="Check for Requests (XML)")
