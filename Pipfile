@@ -18,7 +18,7 @@ flake8 = "~=3.8.3"
 pylint = "~=2.5.3"
 coverage = "~=4.5.2"
 # Tools for multi-environment testing before sending to CI
-tox = "~=3.7.0"
+tox = "~=3.8.0"
 behave = "~=1.2.6"
 appium-python-client = "*"
 pyhamcrest = "*"
