@@ -120,6 +120,9 @@ class AppiumDeviceManager:
     def send_keys(self, keys, id=None, text=None):
         self.get_element(id=id, text=text).send_keys(keys)
 
+    def back(self):
+        self.driver.back()
+
     def quit(self):
         """
         Quits the driver and closes every associated window.
