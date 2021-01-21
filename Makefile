@@ -19,7 +19,7 @@ test:
 
 dependencies:
 		pip install --upgrade pipenv
-		pipenv install --three --dev
+		pipenv install --three --dev --ignore-pipfile
 
 coverage:
 		pipenv run coverage run --source="launchkey" setup.py nosetests
