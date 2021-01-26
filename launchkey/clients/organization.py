@@ -140,7 +140,7 @@ class OrganizationClient(ServiceManagingBaseClient):
 
     @api_call
     def add_directory_public_key(self, directory_id, public_key, expires=None,
-                                 active=None):
+                                 active=None, key_type=None):
         """
         Adds a public key to an Directory
         :param directory_id: Unique Directory ID
@@ -149,6 +149,8 @@ class OrganizationClient(ServiceManagingBaseClient):
         the key will no longer be valid
         :param active: Optional bool stating whether the key should be
         considered active and usable.
+        :param key_type: Optional KeyType enum to identify whether the key is
+        an encryption key, signature key, or a dual use key
         :raise: launchkey.exceptions.InvalidParameters - Input parameters
         were not correct
         :raise: launchkey.exceptions.InvalidPublicKey - The public key you
@@ -166,6 +168,10 @@ class OrganizationClient(ServiceManagingBaseClient):
             kwargs['date_expires'] = iso_format(expires)
         if active is not None:
             kwargs['active'] = active
+
+        if key_type is not None:
+            kwargs['key_type'] = key_type.value
+
         return \
             self._transport.post("/organization/v3/directory/keys",
                                  self._subject,

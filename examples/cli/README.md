@@ -4,6 +4,7 @@
   * [Installation](#installation)
   * [Usage](#usage)
     * [Help](#help)
+    * [Using Multiple Keys](#multiple-keys)
     * [Commands](#commands)
     * [Service User Session Management](#service)
     * [Directory User Device Management](#directory)
@@ -43,6 +44,18 @@ Help can be obtained by either executing the application without any parameters 
 
 ```
 python cli.py --help
+```
+
+### <a name="multiple-keys"></a>Using Multiple Keys
+
+If you wish to use separate encryption and signature keys, the --additional-key 
+option may be used to include supplementary keys that will be checked upon for
+decrypting responses.
+
+The required PRIVATE_KEY argument will always be used for signing requests.
+
+```
+python cli.py --additional-key=/path/to/encryption.key --additional-key=/path/to/encryption2.key organization 86fc3e57-6f60-420c-9a4f-98b7b0f83000 /path/to/signature.key [COMMAND]
 ```
 
 ### <a name="commands"></a>Commands

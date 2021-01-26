@@ -267,7 +267,7 @@ class ServiceManagingBaseClient(BaseClient):
 
     @api_call
     def add_service_public_key(self, service_id, public_key, expires=None,
-                               active=None):
+                               active=None, key_type=None):
         """
         Adds a public key to a Service
         :param service_id: Unique Service ID
@@ -276,6 +276,8 @@ class ServiceManagingBaseClient(BaseClient):
         key will no longer be valid
         :param active: Optional bool stating whether the key should be
         considered active and usable.
+        :param key_type: Optional KeyType enum to identify whether the key is
+        an encryption key, signature key, or a dual use key
         :raise: launchkey.exceptions.InvalidParameters - Input parameters were
         not correct
         :raise: launchkey.exceptions.InvalidPublicKey - The public key you
@@ -291,6 +293,9 @@ class ServiceManagingBaseClient(BaseClient):
             kwargs['date_expires'] = iso_format(expires)
         if active is not None:
             kwargs['active'] = active
+        if key_type is not None:
+            kwargs['key_type'] = key_type.value
+
         key_id = self._transport.post(
             "{}/keys".format(self.__service_base_path[0:-1]),
             self._subject, **kwargs).data['key_id']

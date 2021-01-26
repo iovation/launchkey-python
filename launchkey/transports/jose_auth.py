@@ -60,6 +60,7 @@ class JOSETransport(object):
         """
         self.issuer = None
         self.issuer_id = None
+        self.signing_key = None
         self.loaded_issuer_private_keys = {}
         self.issuer_private_keys = []
         self._server_time_difference = None, None
@@ -190,17 +191,15 @@ class JOSETransport(object):
         :return: List of RSAKeys
         """
         if not self._public_key_cache:
-            self._set_current_kid()
+            self.update_and_return_active_encryption_kid()
+        return list(self._public_key_cache.values())
 
-        rsa_keys = map(lambda kv: kv[1], self._public_key_cache.items())
-        return list(rsa_keys)
-
-    def _set_current_kid(self):
+    def update_and_return_active_encryption_kid(self):
         """
         Determines whether a new current key is necessary, and if so, retrieves
         new `kid` and public key from LaunchKey API, sets the current `kid`
         with current timestamp, and caches the new key.
-        :return:
+        :return: Currently active key id
         """
         now = int(time())
         current_kid, current_kid_timestamp = self._current_kid
@@ -210,6 +209,7 @@ class JOSETransport(object):
             new_kid, new_public_key = self._get_current_kid_and_key()
             self._current_kid = new_kid, now
             self._cache_public_key(new_kid, new_public_key)
+        return self._current_kid[0]
 
     def _get_key_by_kid(self, kid):
         """
@@ -259,7 +259,6 @@ class JOSETransport(object):
         if not self._public_key_cache.get(kid):
             try:
                 rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
-
             except (TypeError, ValueError):
                 raise UnexpectedAPIResponse("RSA parsing error for public key"
                                             ": %s" % public_key)
@@ -279,10 +278,9 @@ class JOSETransport(object):
 
         return key
 
-    def add_issuer_key(self, private_key):
+    def add_encryption_private_key(self, private_key):
         """
         Adds a private key to the list of keys available for decryption
-        and signatures
         :return: Boolean - Whether the key is already in the list
         """
         new_key = RSAKey(key=import_rsa_key(private_key),
@@ -294,6 +292,17 @@ class JOSETransport(object):
         self.loaded_issuer_private_keys[new_key.kid] = PKCS1_OAEP.new(
             RSA.importKey(private_key))
         return True
+
+    def add_issuer_key(self, private_key):
+        """
+        Adds a private key to the list of keys available for decryption
+        :return: Boolean - Whether the key is already in the list
+        """
+        warnings.warn(
+            "This method will be removed in the future. Please use "
+            "add_encryption_key instead.",
+            DeprecationWarning)
+        return self.add_encryption_private_key(private_key)
 
     def set_url(self, url, testing):
         """
@@ -310,7 +319,8 @@ class JOSETransport(object):
         Set the issuer credentials
         :param issuer: Issuer entity type (svc, dir, or org)
         :param issuer_id: Identifier for the issuer entity
-        :param private_key: PEM formatted private key for issuer entity
+        :param private_key: PEM formatted private key for issuer entity which
+                            will be used for signing requests.
         :return: None
         :raises launchkey.exceptions.InvalidEntityID: when issuer_id is not
         valid
@@ -328,7 +338,10 @@ class JOSETransport(object):
                 "The given id was invalid. Please ensure it is a UUID.")
         self.issuer = "%s:%s" % (issuer, issuer_id)
         try:
-            self.add_issuer_key(private_key)
+            self.signing_key = RSAKey(
+                key=import_rsa_key(private_key),
+                kid=self.__generate_key_id(private_key)
+            )
         except ValueError:
             raise InvalidPrivateKey(
                 "Invalid private key. Please ensure you are submitting "
@@ -336,8 +349,11 @@ class JOSETransport(object):
 
     def _get_jwt_signature(self, params):
         try:
+            if self.signing_key is None:
+                raise NoSuitableSigningKeys
+
             jws = JWS(params, alg=self.jwt_algorithm)
-            return jws.sign_compact(keys=self.issuer_private_keys)
+            return jws.sign_compact(keys=[self.signing_key])
         except NoSuitableSigningKeys:
             raise NoIssuerKey(
                 "An issuer key wasn't loaded. Please run set_issuer() first.")
@@ -412,7 +428,9 @@ class JOSETransport(object):
         """
         jwe = JWE(json.dumps(data), alg=self.jwe_cek_encryption,
                   enc=self.jwe_claims_encryption)
-        return jwe.encrypt(keys=self.api_public_keys)
+        # Retrieve the active API encryption KID
+        current_kid = self.update_and_return_active_encryption_kid()
+        return jwe.encrypt(keys=[self._public_key_cache[current_kid]])
 
     def _process_jose_request(self, method, path, subject, data=None):
         """

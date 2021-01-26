@@ -9,8 +9,57 @@ from six import assertRaisesRegex
 from launchkey.entities.validation import AuthorizeValidator, \
     ConditionalGeoFenceValidator, PolicyFenceValidator, FenceValidator, \
     GeoFenceValidator, TerritoryFenceValidator, GeoCircleFenceValidator, \
-    DirectoryUserTOTPValidator, ServiceTOTPVerificationValidator
+    DirectoryUserTOTPValidator, ServiceTOTPVerificationValidator, \
+    PublicKeyValidator
 from launchkey.exceptions.validation import AuthorizationInProgressValidator
+
+
+@ddt
+class TestPublicKeyValidator(TestCase):
+    # TODO: There were previously no PublicKeyValidator tests. The only tests
+    #  I'm adding here are for the new key_type field, but at some point
+    #  we should go back and fill in tests for the other fields.
+    def setUp(self):
+        self._validator = PublicKeyValidator()
+        self._valid_key = {
+            "id": "ab:cd:ef:gh:ij:kl:mn:op:qr:st:uv:wx:yz",
+            "active": True,
+            "date_created": "2017-10-03T22:50:15Z",
+            "date_expires": "2018-10-03T22:50:15Z",
+            "public_key": "A Public Key",
+            "key_type": 0
+        }
+
+    def test_succeeds(self):
+        self._validator.to_python(self._valid_key)
+
+    @data(0, 1, 2)
+    def test_valid_key_type(self, key_type):
+        self._valid_key["key_type"] = key_type
+        sanitized = self._validator.to_python(self._valid_key)
+
+        self.assertEqual(sanitized["key_type"], key_type)
+
+    @data(None, "")
+    def test_empty_key_type_defaults_to_zero(self, actual):
+        expected = 0
+        self._valid_key["key_type"] = actual
+        sanitized = self._validator.to_python(self._valid_key)
+
+        self.assertEqual(sanitized["key_type"], expected)
+
+    @data("sup", [], {})
+    def test_invalid_key_type_throws_invalid(self, invalid_key_type):
+        with self.assertRaises(Invalid):
+            self._valid_key["key_type"] = invalid_key_type
+            self._validator.to_python(self._valid_key)
+
+    def test_absent_key_type_defaults_to_zero(self):
+        expected = 0
+        del self._valid_key["key_type"]
+        sanitized = self._validator.to_python(self._valid_key)
+
+        self.assertEqual(sanitized["key_type"], expected)
 
 
 @ddt

@@ -87,7 +87,8 @@ class DirectoryServiceManager(BaseManager):
             service_id,
             public_key.public_key,
             expires=public_key.expires,
-            active=public_key.active
+            active=public_key.active,
+            key_type=public_key.key_type
         )
 
     def update_public_key(self, directory_id, key_id, service_id,

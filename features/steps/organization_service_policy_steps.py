@@ -69,7 +69,7 @@ def verify_current_organization_service_policy_has_factor_count_requirement(
         context):
     current_policy = context.entity_manager.\
         get_current_organization_service_policy()
-    if current_policy.minimum_amount is not 0:
+    if current_policy.minimum_amount != 0:
         raise Exception(
             "Expected minimum requirement amount to be 0 but it was %s" %
             current_policy.minimum_amount

@@ -1,9 +1,3 @@
-ci-py27: test
-
-ci-pypy: test
-
-ci-py35: test
-
 ci-py36: ci
 
 ci-py37: test
@@ -19,7 +13,7 @@ test:
 
 dependencies:
 		pip install --upgrade pipenv
-		pipenv install --three --dev
+		pipenv install --three --dev --ignore-pipfile
 
 coverage:
 		pipenv run coverage run --source="launchkey" setup.py nosetests

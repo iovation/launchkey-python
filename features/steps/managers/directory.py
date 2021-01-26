@@ -129,7 +129,8 @@ class DirectoryManager(BaseManager):
             directory_id,
             public_key.public_key,
             expires=public_key.expires,
-            active=public_key.active
+            active=public_key.active,
+            key_type=public_key.key_type
         )
 
     def retrieve_directory_public_keys(self, directory_id):
