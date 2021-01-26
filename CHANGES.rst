@@ -7,6 +7,9 @@ CHANGELOG for LaunchKey Python SDK
 * Updated CLI to support separate encryption and signature keys
 * Altered JOSE transport to ensure only the designated signing key is used for signing requests
 * Added the `add_encryption_private_key` method to all factories and deprecated `add_additional_private_key`
+* Added `KeyType` Enum
+* Added additional `key_type` parameter to `add_service_public_key`
+* Added additional `key_type` parameter to `add_directory_public_key`
 
 3.8.1
 -----
