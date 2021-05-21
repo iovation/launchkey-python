@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+4.0.0
+-----
+
+* Removed Python 2 support
+
 3.9.1
 -----
 

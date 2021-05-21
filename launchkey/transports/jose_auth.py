@@ -19,8 +19,6 @@ from jwkest.jws import JWS, NoSuitableSigningKeys
 from jwkest.jwe import JWE, JWEnc
 from jwkest.jwt import JWT, BadSyntax
 
-import six
-
 from ..exceptions import InvalidEntityID, InvalidPrivateKey, \
     InvalidIssuer, InvalidAlgorithm, LaunchKeyAPIException, \
     JWTValidationFailure, UnexpectedAPIResponse, NoIssuerKey, \
@@ -136,7 +134,7 @@ class JOSETransport(object):
 
         kid = jwt_headers.get("kid")
 
-        if not isinstance(kid, six.string_types):
+        if not isinstance(kid, str):
             raise JWTValidationFailure("`kid` header in JWT was missing or"
                                        " invalid.")
 
@@ -241,7 +239,7 @@ class JOSETransport(object):
         kid = self._get_kid_from_api_response(response)
         public_key = response.data
 
-        if not isinstance(public_key, six.string_types):
+        if not isinstance(public_key, str):
             raise UnexpectedAPIResponse("Unexpected API public key response"
                                         " received: %s" % response.data)
 
@@ -418,7 +416,7 @@ class JOSETransport(object):
             raise InvalidAlgorithm(
                 "Invalid hash algorithm {}!".format(hash_function))
 
-        return hasher(six.b(body)).hexdigest()
+        return hasher(body.encode("latin1")).hexdigest()
 
     def _encrypt_request(self, data):
         """

@@ -10,4 +10,4 @@ flask-sqlalchemy = "*"
 jinja2 = ">= 2.11.3, < 3.0.0"
 
 [requires]
-python = "==3.6"
+python_version = "3"

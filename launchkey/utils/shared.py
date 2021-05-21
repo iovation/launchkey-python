@@ -4,7 +4,6 @@ from functools import wraps
 from uuid import UUID
 import warnings
 
-import six
 from jwkest import JWKESTException
 
 from ..exceptions import InvalidIssuerFormat, InvalidIssuerVersion, \
@@ -36,7 +35,7 @@ class XiovJWTService(object):
         :raises launchkey.exceptions.WebhookAuthorizationError: when the
         "Authorization" header in the headers.
         """
-        if not isinstance(body, six.string_types):
+        if not isinstance(body, str):
             body = body.decode("utf-8")
 
         compact_jwt = None
