@@ -16,8 +16,8 @@ class OrganizationClient(ServiceManagingBaseClient):
     Organization Client for interacting with Organization endpoints
     """
     def __init__(self, subject_id, transport):
-        super(OrganizationClient, self).__init__(
-            'org', subject_id, transport, "/organization/v3/services")
+        super().__init__('org', subject_id, transport,
+                         "/organization/v3/services")
 
     @api_call
     def create_directory(self, name):

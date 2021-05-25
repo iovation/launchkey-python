@@ -1,2 +1,2 @@
 [MASTER]
-disable=useless-object-inheritance,R1725,W0707
+disable=useless-object-inheritance

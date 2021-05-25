@@ -286,7 +286,7 @@ class AuthPolicy(object):
                 location['name'] = geofence.name
         except (TypeError, ValueError):
             raise InvalidParameters("Latitude, Longitude, and Radius "
-                                    "must all be numbers.")
+                                    "must all be numbers.") from None
         for i, factor in enumerate(self._policy['factors']):
             if factor.get('factor') == "geofence":
                 self._policy['factors'][i]['attributes']['locations'].append(
@@ -409,7 +409,7 @@ class AuthPolicy(object):
             dumps(self._policy)
         except TypeError:
             raise InvalidParameters("Policy input was not JSON serializable. "
-                                    "Please verify it is correct.")
+                                    "Please verify it is correct.") from None
         return self._policy
 
     def set_policy(self, policy):
@@ -424,7 +424,7 @@ class AuthPolicy(object):
             try:
                 self._policy = loads(policy)
             except (ValueError, TypeError):
-                raise InvalidPolicyFormat()
+                raise InvalidPolicyFormat() from None
 
         if 'minimum_requirements' not in self._policy \
                 or 'factors' not in self._policy:
@@ -649,7 +649,7 @@ class AdvancedAuthorizationResponse(object):
                                            "Please verify the same key that "
                                            "initiated the auth request is "
                                            "being used to decrypt the current "
-                                           "message.", reason=e)
+                                           "message.", reason=e) from e
 
         self.type = self._retrieve_enum_from_value(AuthResponseType,
                                                    decrypted_jwe.get(
@@ -716,7 +716,7 @@ class AdvancedAuthorizationResponse(object):
                                            "Please verify the same key that "
                                            "initiated the auth request is "
                                            "being used to decrypt the current "
-                                           "message.", reason=e)
+                                           "message.", reason=e) from e
         self.authorization_request_id = \
             decrypted_package.get("auth_request")
         self.authorized = decrypted_package.get("response")
@@ -766,7 +766,7 @@ class AuthorizationResponse(AdvancedAuthorizationResponse):
     """
     def __init__(self, data, transport):
         self.auth_policy = None
-        super(AuthorizationResponse, self).__init__(data, transport)
+        super().__init__(data, transport)
         del self.policy
 
     def _parse_and_set_auth_policy(self, auth_policy):
@@ -822,8 +822,8 @@ class ServiceSecurityPolicy(AuthPolicy):
                  possession=False, jailbreak_protection=False):
         self.timefences = []
 
-        super(ServiceSecurityPolicy, self).__init__(
-            any, knowledge, inherence, possession, jailbreak_protection)
+        super().__init__(any, knowledge, inherence, possession,
+                         jailbreak_protection)
 
     def add_geofence(self, latitude, longitude, radius, name=None):
         """
@@ -841,8 +841,7 @@ class ServiceSecurityPolicy(AuthPolicy):
                 # If the name exists, we should raise an
                 # error since they should to be unique
                 raise DuplicateGeoFenceName
-        return super(ServiceSecurityPolicy, self).add_geofence(
-            latitude, longitude, radius, name)
+        return super().add_geofence(latitude, longitude, radius, name)
 
     def add_timefence(self, name, start_time, end_time, monday=False,
                       tuesday=False, wednesday=False, thursday=False,
@@ -960,7 +959,7 @@ class ServiceSecurityPolicy(AuthPolicy):
                             )
                         )
 
-        return super(ServiceSecurityPolicy, self)._parse_factors(factors)
+        return super()._parse_factors(factors)
 
 
 class Service(object):
