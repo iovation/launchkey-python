@@ -353,10 +353,10 @@ class JOSETransport(object):
 
             jws = JWS(params, alg=self.jwt_algorithm)
             return jws.sign_compact(keys=[self.signing_key])
-        except NoSuitableSigningKeys:
+        except NoSuitableSigningKeys as signing_error:
             raise NoIssuerKey(
                 "An issuer key wasn't loaded. "
-                "Please run set_issuer() first.") from None
+                "Please run set_issuer() first.") from signing_error
 
     def _build_jwt_signature(self, method, resource, jti, subject,
                              content_hash=None):
