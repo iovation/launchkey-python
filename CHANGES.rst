@@ -1,6 +1,11 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+3.9.1
+-----
+
+* Bumped urllib3 due to a security vulnerability
+
 3.9.0
 -----
 
