@@ -5,8 +5,9 @@ verify_ssl = true
 
 [packages]
 launchkey = {path = "./../..",editable = true}
-flask = "*"
+flask = ">= 1.1.2, <2.0.0"
 flask-sqlalchemy = "*"
+jinja2 = ">= 2.11.3, < 3.0.0"
 
 [requires]
 python = "==3.6"
