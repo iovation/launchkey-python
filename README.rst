@@ -1,8 +1,8 @@
 Python SDK for TruValidate Multifactor Authentication API
 =========================================================
 
-.. image:: https://travis-ci.org/iovation/launchkey-python.svg?branch=master
-    :target: https://travis-ci.org/iovation/launchkey-python
+.. image:: https://github.com/iovation/launchkey-python/actions/workflows/test_python_versions.yml/badge.svg?branch=master
+    :target: https://github.com/iovation/launchkey-python/actions/workflows/test_python_versions.yml
 
 .. _docs: https://docs.launchkey.com
 
