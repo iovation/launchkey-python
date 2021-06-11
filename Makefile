@@ -1,8 +1,8 @@
-ci-py36: ci
-
-ci-py37: test
+ci-py37: ci
 
 ci-py38: test
+
+ci-py39: test
 
 ci-pypy3: test
 

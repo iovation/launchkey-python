@@ -310,7 +310,7 @@ Tests require a number of Python versions. The best way to manage these
 versions is with pyenv_. You will need to register all of the versions with
 pyenv. There are a couple ways to do that. An example of doing it globally is::
 
-    pyenv local 3.6.6 3.7.0 3.8-dev pypy3.5-6.0.0
+    pyenv local 3.7.0 3.8.9 3.9.4 pypy3.5-6.0.0
 
 Install dependencies via Pipenv
 
