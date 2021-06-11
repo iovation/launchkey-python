@@ -1,6 +1,6 @@
 name: Run Integration Tests
 
-on: [pull_request]
+on: [pull_request, workflow_dispatch]
 
 jobs:
   run_behave_tests:
@@ -18,10 +18,8 @@ jobs:
         pipenv install --three --dev --ignore-pipfile
     - name: Create environment file
       shell: bash
-      env:
-        ENVIRONMENT_FILE: ${{ secrets.NP_INTEGRATION_TEST_ENV }}
       run: |
-        echo "$ENVIRONMENT_FILE" > ./features/example.py
+        echo ${{ secrets.NP_INTEGRATION_TEST_ENV }} | base64 -d > ./features/environment.py
     - name: Run Behave Tests
       run: |
         pipenv run behave
