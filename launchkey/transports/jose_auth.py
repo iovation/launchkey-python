@@ -26,7 +26,7 @@ from ..exceptions import InvalidEntityID, InvalidPrivateKey, \
 from .. import VALID_JWT_ISSUER_LIST, API_CACHE_TIME, \
     JOSE_SUPPORTED_CONTENT_HASH_ALGS, JOSE_SUPPORTED_JWE_ALGS, \
     JOSE_SUPPORTED_JWE_ENCS, JOSE_SUPPORTED_JWT_ALGS, \
-    JOSE_AUDIENCE, JOSE_JWT_LEEWAY, SDK_VERSION
+    JOSE_AUDIENCE, JOSE_JWT_LEEWAY
 from .http import RequestsTransport
 from .base import APIErrorResponse
 
@@ -383,9 +383,7 @@ class JOSETransport(object):
             "jti": jti,
             "request": {
                 "meth": method.upper(),
-                "path": resource,
-                "sdkv": SDK_VERSION,
-                "sdkl": "python"
+                "path": resource
             }
         }
 
