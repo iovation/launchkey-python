@@ -1,10 +1,9 @@
 import unittest
-from datetime import datetime, time
+from datetime import datetime
 
 import pytz
 from ddt import ddt, data
 from mock import ANY, patch
-from six import assertRaisesRegex
 
 from launchkey.entities.shared import KeyType
 from launchkey.entities.service import Service, ServiceSecurityPolicy, TimeFence, GeoFence
@@ -851,8 +850,8 @@ class SharedTests(object):
             }
 
             expected_service_id = 'expected-service-id'
-            with assertRaisesRegex(self, UnknownPolicyException,
-                                   "Valid nested Policy types for ConditionalGeofence Policies are:"):
+            with self.assertRaisesRegex(UnknownPolicyException,
+                                        "Valid nested Policy types for ConditionalGeofence Policies are:"):
                 self._client.get_service_policy(expected_service_id[:])
 
         def test_invalid_geofence_raises_not_implemented(self):

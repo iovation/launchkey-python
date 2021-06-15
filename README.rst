@@ -1,8 +1,8 @@
 Python SDK for TruValidate Multifactor Authentication API
 =========================================================
 
-.. image:: https://travis-ci.org/iovation/launchkey-python.svg?branch=master
-    :target: https://travis-ci.org/iovation/launchkey-python
+.. image:: https://github.com/iovation/launchkey-python/actions/workflows/test_python_versions.yml/badge.svg?branch=master
+    :target: https://github.com/iovation/launchkey-python/actions/workflows/test_python_versions.yml
 
 .. _docs: https://docs.launchkey.com
 
@@ -310,7 +310,7 @@ Tests require a number of Python versions. The best way to manage these
 versions is with pyenv_. You will need to register all of the versions with
 pyenv. There are a couple ways to do that. An example of doing it globally is::
 
-    pyenv local 3.7.0 3.8.9 3.9.4 pypy3.5-6.0.0
+    pyenv local 3.6.13 3.7.10 3.8.9 3.9.4 pypy3.7-7.3.3
 
 Install dependencies via Pipenv
 

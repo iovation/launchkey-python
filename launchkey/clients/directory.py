@@ -23,8 +23,8 @@ class DirectoryClient(ServiceManagingBaseClient):
     """
 
     def __init__(self, subject_id, transport):
-        super(DirectoryClient, self).__init__('dir', subject_id, transport,
-                                              "/directory/v3/services")
+        super().__init__('dir', subject_id, transport,
+                         "/directory/v3/services")
         self.x_iov_jwt_service = XiovJWTService(self._transport, self._subject)
 
     @api_call
@@ -208,8 +208,8 @@ class DirectoryClient(ServiceManagingBaseClient):
             warnings.warn("Invalid Directory Webhook received. There may be"
                           " an update available to add support.")
         except XiovJWTDecryptionFailure as reason:
-            raise UnableToDecryptWebhookRequest(reason=reason)
+            raise UnableToDecryptWebhookRequest(reason=reason) from reason
         except XiovJWTValidationFailure as reason:
-            raise UnexpectedWebhookRequest(reason)
+            raise UnexpectedWebhookRequest(reason) from reason
 
         return result

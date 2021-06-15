@@ -110,7 +110,7 @@ class BaseClient(object):
             UUID(str(subject_id))
         except ValueError:
             raise InvalidEntityID("The given id was invalid. Please ensure "
-                                  "it is a UUID.")
+                                  "it is a UUID.") from None
         self._subject = "%s:%s" % (subject_type, subject_id)
         self._transport = transport
 
@@ -122,12 +122,12 @@ class BaseClient(object):
             except Invalid:
                 raise UnexpectedAPIResponse(
                     api_response.data,
-                    api_response.status_code)
+                    api_response.status_code) from None
         else:
             try:
                 return validator.to_python(api_response)
             except Invalid:
-                raise UnexpectedAPIResponse(api_response)
+                raise UnexpectedAPIResponse(api_response) from None
 
 
 class ServiceManagingBaseClient(BaseClient):
@@ -135,8 +135,7 @@ class ServiceManagingBaseClient(BaseClient):
 
     def __init__(self, subject_type, subject_id, transport, service_base_path):
 
-        super(ServiceManagingBaseClient, self).__init__(
-            subject_type, subject_id, transport)
+        super().__init__(subject_type, subject_id, transport)
         self.__service_base_path = service_base_path
 
     @api_call

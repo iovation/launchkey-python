@@ -22,7 +22,7 @@ class ServiceClient(BaseClient):
     """Service Client for interacting with Serive endpoints"""
 
     def __init__(self, subject_id, transport):
-        super(ServiceClient, self).__init__('svc', subject_id, transport)
+        super().__init__('svc', subject_id, transport)
         self.x_iov_jwt_service = XiovJWTService(self._transport, self._subject)
 
     @api_call
@@ -368,7 +368,7 @@ class ServiceClient(BaseClient):
                         loads(body),
                         AuthorizeSSEValidator)
                 except UnexpectedAPIResponse as reason:
-                    raise UnexpectedWebhookRequest(reason=reason)
+                    raise UnexpectedWebhookRequest(reason=reason) from reason
                 result = SessionEndRequest(
                     body['service_user_hash'],
                     self._transport.parse_api_time(body['api_time']))
@@ -383,11 +383,13 @@ class ServiceClient(BaseClient):
                         self._transport
                     )
                 except XiovJWTDecryptionFailure as reason:
-                    raise UnableToDecryptWebhookRequest(reason=reason)
+                    raise UnableToDecryptWebhookRequest(reason=reason) \
+                        from reason
                 except KeyError as reason:
-                    raise UnexpectedAuthorizationResponse(reason=reason)
+                    raise UnexpectedAuthorizationResponse(reason=reason) \
+                        from reason
         except XiovJWTValidationFailure as reason:
-            raise UnexpectedWebhookRequest(reason)
+            raise UnexpectedWebhookRequest(reason) from reason
 
         return result
 

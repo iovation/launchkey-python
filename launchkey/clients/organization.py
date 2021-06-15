@@ -3,10 +3,7 @@
 # pylint: disable=too-many-public-methods,invalid-name,deprecated-method
 # pylint: disable=too-many-arguments
 
-try:
-    from base64 import encodebytes as encodestring
-except ImportError:  # pragma: no cover
-    from base64 import encodestring
+from base64 import encodebytes
 from .base import ServiceManagingBaseClient, api_call
 from ..utils.shared import iso_format
 from ..entities.shared import PublicKey
@@ -19,8 +16,8 @@ class OrganizationClient(ServiceManagingBaseClient):
     Organization Client for interacting with Organization endpoints
     """
     def __init__(self, subject_id, transport):
-        super(OrganizationClient, self).__init__(
-            'org', subject_id, transport, "/organization/v3/services")
+        super().__init__('org', subject_id, transport,
+                         "/organization/v3/services")
 
     @api_call
     def create_directory(self, name):
@@ -107,7 +104,7 @@ class OrganizationClient(ServiceManagingBaseClient):
         """
         kwargs = {"directory_id": str(directory_id)}
         if ios_p12 is not False:
-            kwargs['ios_p12'] = encodestring(ios_p12).decode(
+            kwargs['ios_p12'] = encodebytes(ios_p12).decode(
                 'utf-8') if ios_p12 else ios_p12
         if android_key is not False:
             kwargs['android_key'] = android_key

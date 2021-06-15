@@ -4,7 +4,6 @@ from functools import wraps
 from uuid import UUID
 import warnings
 
-import six
 from jwkest import JWKESTException
 
 from ..exceptions import InvalidIssuerFormat, InvalidIssuerVersion, \
@@ -36,7 +35,7 @@ class XiovJWTService(object):
         :raises launchkey.exceptions.WebhookAuthorizationError: when the
         "Authorization" header in the headers.
         """
-        if not isinstance(body, six.string_types):
+        if not isinstance(body, str):
             body = body.decode("utf-8")
 
         compact_jwt = None
@@ -57,7 +56,7 @@ class XiovJWTService(object):
                 path,
                 body)
         except (JWTValidationFailure, InvalidJWTResponse) as reason:
-            raise XiovJWTValidationFailure(reason=reason)
+            raise XiovJWTValidationFailure(reason=reason) from reason
         return body
 
     def decrypt_jwe(self, body, headers, method, path):
@@ -79,7 +78,7 @@ class XiovJWTService(object):
         try:
             return self._transport.decrypt_response(body)
         except JWKESTException as reason:
-            raise XiovJWTDecryptionFailure(reason)
+            raise XiovJWTDecryptionFailure(reason) from reason
 
 
 class UUIDHelper(object):
@@ -104,7 +103,7 @@ class UUIDHelper(object):
             try:
                 uuid_value = UUID(uuid_value)
             except (ValueError, TypeError, AttributeError):
-                raise InvalidIssuerFormat()
+                raise InvalidIssuerFormat() from None
 
         self.validate_version(uuid_value, version)
         return uuid_value

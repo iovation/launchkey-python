@@ -18,7 +18,7 @@ class APIResponse(object):
         self.raw_data = raw_data
 
     def __str__(self):
-        return super(APIResponse, self).__str__() + ": %s %s %s" % (
+        return super().__str__() + ": %s %s %s" % (
             self.status_code, self.reason, self.data)
 
 

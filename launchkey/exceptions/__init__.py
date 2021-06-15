@@ -90,7 +90,7 @@ class LaunchKeyAPIException(Exception):
 
     def __init__(self, message=None, status_code=None, reason=None,
                  error_data=None, *args, **kwargs):
-        super(LaunchKeyAPIException, self).__init__(message, *args, **kwargs)
+        super().__init__(message, *args, **kwargs)
         self.message = message
         self.status_code = status_code
         self.reason = reason
@@ -206,7 +206,7 @@ class AuthorizationInProgress(LaunchKeyAPIException):
     authorization_request_id = None
 
     def __init__(self, message=None, *args, **kwargs):
-        super(AuthorizationInProgress, self).__init__(message, *args, **kwargs)
+        super().__init__(message, *args, **kwargs)
 
         try:
             self.data = AuthorizationInProgressValidator().to_python(self.data)
