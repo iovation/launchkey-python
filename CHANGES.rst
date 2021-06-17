@@ -5,6 +5,7 @@ CHANGELOG for LaunchKey Python SDK
 -----
 
 * Removed Python 2 support
+* Updated JOSE Transport to include the SDK type, SDK version, and OS version in the User Agent
 
 3.9.1
 -----
