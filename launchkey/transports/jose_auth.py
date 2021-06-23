@@ -4,6 +4,7 @@
 
 import warnings
 import json
+import platform
 
 from base64 import b64decode
 from uuid import UUID, uuid4
@@ -26,7 +27,7 @@ from ..exceptions import InvalidEntityID, InvalidPrivateKey, \
 from .. import VALID_JWT_ISSUER_LIST, API_CACHE_TIME, \
     JOSE_SUPPORTED_CONTENT_HASH_ALGS, JOSE_SUPPORTED_JWE_ALGS, \
     JOSE_SUPPORTED_JWE_ENCS, JOSE_SUPPORTED_JWT_ALGS, \
-    JOSE_AUDIENCE, JOSE_JWT_LEEWAY
+    JOSE_AUDIENCE, JOSE_JWT_LEEWAY, SDK_VERSION
 from .http import RequestsTransport
 from .base import APIErrorResponse
 
@@ -455,6 +456,8 @@ class JOSETransport(object):
             signature = self._build_jwt_signature(method, path, jti, subject)
             headers = {"content-type": "application/jwt",
                        "Authorization": signature}
+        headers["User-Agent"] = f"PythonServiceSDK/{SDK_VERSION} " \
+                                f"({platform.system()} {platform.release()})"
         response = getattr(self._http_client, method.lower())(path, data=body,
                                                               headers=headers)
 
