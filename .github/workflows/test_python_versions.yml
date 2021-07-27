@@ -1,6 +1,6 @@
 name: Test Python Versions
 
-on: [pull_request, push]
+on: pull_request
 
 jobs:
   run_tests_nix:
