@@ -17,10 +17,10 @@ Feature: Directory clients can add a Public Key to a Directory Service
     And I retrieve the current Directory Service's Public Keys
     Then the Public Key is in the list of Public Keys for the Directory Service and has a <key_type> key type
   Examples:
-  | key_type |
-  | 0        |
-  | 1        |
-  | 2        |
+  | key_type   |
+  | BOTH       |
+  | ENCRYPTION |
+  | SIGNATURE  |
 
   Scenario: Adding a Public Key to a Directory Service with an empty key type defaults to a dual use key type
     When I add a Public Key to the Directory Service
