@@ -218,7 +218,7 @@ def verify_directory_public_key_is_in_list_of_public_keys(context):
 @then("the Public Key is in the list of Public Keys for the Directory and has "
       "a \"{key_type}\" key type")
 def verify_directory_public_key_is_in_list_of_public_keys(context, key_type):
-    key_type_enum = KeyType(int(key_type))
+    key_type_enum = KeyType(str(key_type))
     alpha_public_key = context.keys_manager.alpha_public_key
     current_directory_public_keys = context.entity_manager. \
         get_current_directory_public_keys()
