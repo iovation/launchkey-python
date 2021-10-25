@@ -14,3 +14,12 @@ def verify_no_exceptions_have_occured(context):
     if context.current_exception:
         raise Exception("An exception was raised when it shouldn't have been: "
                         "%s" % context.current_exception)
+
+
+def string_to_key_type(rawkeytype):
+    switch = {
+        "BOTH": 0,
+        "ENCRYPTION": 1,
+        "SIGNATURE": 2
+    }
+    return switch.get(rawkeytype, -1)

@@ -5,6 +5,7 @@ from behave import given, when, then
 
 from launchkey.entities.shared import KeyType, PublicKey
 
+from . import string_to_key_type
 
 # Add public keys
 
@@ -211,15 +212,6 @@ def verify_directory_public_key_is_in_list_of_public_keys(context):
         if key.public_key == alpha_public_key:
             return
     raise Exception("Unable to find the current directory public key")
-
-
-def string_to_key_type(rawkeytype):
-    switch = {
-        "BOTH": 0,
-        "ENCRYPTION": 1,
-        "SIGNATURE": 2
-    }
-    return switch.get(rawkeytype, -1)
 
 
 @then("the Public Key is in the list of Public Keys for the Directory and has "

@@ -5,6 +5,7 @@ from behave import given, when, then
 
 from launchkey.entities.shared import KeyType, PublicKey
 
+from . import string_to_key_type
 
 # Add public keys
 
@@ -243,12 +244,15 @@ def verify_directory_service_public_key_is_in_list_of_public_keys(context):
       "and has a \"{key_type}\" key type")
 def verify_directory_service_public_key_is_in_list_of_public_keys_with_key_type(
         context, key_type):
-    key_type_enum = KeyType(str(key_type))
+    if isinstance(key_type, str):
+        key_type_enum = KeyType(string_to_key_type(key_type))
+    else:
+        key_type_enum = KeyType(int(key_type))
     alpha_public_key = context.keys_manager.alpha_public_key
     current_directory_public_keys = context.entity_manager. \
         get_current_directory_service_public_keys()
     for key in current_directory_public_keys:
-        if key.public_key == alpha_public_key and key.key_type == key_type_enum:
+        if key.public_key == alpha_public_key and key.string_to_key_type(key_type) == key_type_enum:
             return
     raise Exception("Unable to find the current directory public key")
 
