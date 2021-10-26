@@ -5,6 +5,7 @@ from behave import given, when, then
 
 from launchkey.entities.shared import KeyType, PublicKey
 
+from . import string_to_key_type
 
 # Add public keys
 
@@ -218,7 +219,7 @@ def verify_directory_public_key_is_in_list_of_public_keys(context):
 @then("the Public Key is in the list of Public Keys for the Directory and has "
       "a \"{key_type}\" key type")
 def verify_directory_public_key_is_in_list_of_public_keys(context, key_type):
-    key_type_enum = KeyType(int(key_type))
+    key_type_enum = string_to_key_type(key_type)
     alpha_public_key = context.keys_manager.alpha_public_key
     current_directory_public_keys = context.entity_manager. \
         get_current_directory_public_keys()
@@ -257,7 +258,7 @@ def verify_directory_public_key_is_inactive(context):
 @then("the Directory Public Key Expiration Date is "
       "\"{expiration_timestamp}\"")
 def verify_directory_public_key_expiration_date(context,
-                                                        expiration_timestamp):
+                                                expiration_timestamp):
     key_id = context.keys_manager.alpha_md5_fingerprint
     current_directory_public_keys = context.entity_manager. \
         get_current_directory_public_keys()
