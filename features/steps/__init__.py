@@ -10,6 +10,7 @@ def verify_exception_has_occured(context, exception_class):
     elif context.current_exception.__class__.__name__ != exception_class:
         raise context.current_exception
 
+
 @then("there are no errors")
 def verify_no_exceptions_have_occured(context):
     if context.current_exception:
@@ -23,4 +24,4 @@ def string_to_key_type(rawkeytype):
         "ENCRYPTION": KeyType.ENCRYPTION,
         "SIGNATURE": KeyType.SIGNATURE
     }
-    return switch.get(rawkeytype, KeyType.OTHER)
+    return switch.get(rawkeytype.upper(), KeyType.OTHER)
