@@ -1,4 +1,5 @@
 from behave import then
+from launchkey.entities.shared import KeyType
 
 
 @then("a {exception_class} error occurs")
@@ -18,8 +19,8 @@ def verify_no_exceptions_have_occured(context):
 
 def string_to_key_type(rawkeytype):
     switch = {
-        "BOTH": 0,
-        "ENCRYPTION": 1,
-        "SIGNATURE": 2
+        "BOTH": KeyType.BOTH,
+        "ENCRYPTION": KeyType.ENCRYPTION,
+        "SIGNATURE": KeyType.SIGNATURE
     }
-    return switch.get(rawkeytype, -1)
+    return switch.get(rawkeytype, KeyType.OTHER)
