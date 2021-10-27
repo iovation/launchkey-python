@@ -5,7 +5,7 @@ from behave import given, when, then
 
 from launchkey.entities.shared import KeyType, PublicKey
 
-from . import string_to_key_type
+from features.steps import string_to_key_type
 
 # Add public keys
 
