@@ -36,7 +36,7 @@ def add_public_key_with_key_type_to_directory_service(context, key_type):
         "date_created": None,
         "date_expires": None,
         "public_key": context.keys_manager.alpha_public_key,
-        "key_type": KeyType(int(key_type))
+        "key_type": string_to_key_type(key_type)
     })
 
     context.directory_manager.add_public_key_to_directory(
