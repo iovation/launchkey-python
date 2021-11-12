@@ -25,8 +25,6 @@ def use_single_purpose_keys_with_encryption_key_as_signature_key(context):
         context.organization_id,
         context.organization_encryption_private_key)
 
-    organization_factory.add_encryption_private_key(context.organization_encryption_private_key)
-
     # Add single purpose key organization factory to context so it may be referenced
     # by other tests
     context.single_purpose_key_organization_factory = organization_factory
@@ -45,8 +43,13 @@ def use_single_purpose_keys(context):
 
 
 @when("I perform an API call using single purpose keys")
-@when("I attempt an API call using single purpose keys")
 def perform_basic_api_call(context):
+    directory_manager = DirectoryManager(context.single_purpose_key_organization_factory)
+    directory_manager.create_directory()
+
+
+@when("I attempt an API call using single purpose keys")
+def attempt_basic_api_call(context):
     try:
         directory_manager = DirectoryManager(context.single_purpose_key_organization_factory)
         directory_manager.create_directory()
