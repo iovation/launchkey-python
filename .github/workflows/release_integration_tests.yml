@@ -1,0 +1,29 @@
+name: Run Integration Tests For Release
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run_behave_tests:
+    runs-on: ubuntu-latest
+    if: endsWith(github.event.pull_request.head.ref, '-DEV') && contains(github.event.pull_request.head.repo.full_name, 'iovation/launchkey-python')
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip wheel
+        python -m pip install --upgrade pipenv
+        pipenv install --three --dev --ignore-pipfile
+    - name: Create environment file
+      shell: bash
+      run: |
+        echo ${{ secrets.NP_INTEGRATION_TEST_ENV }} | base64 -d > ./features/environment.py
+    - name: Run Behave Tests
+      run: |
+        pipenv run behave

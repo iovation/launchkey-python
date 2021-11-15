@@ -1,0 +1,29 @@
+name: Run Integration Tests
+
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types: [labeled]
+
+jobs:
+  run_behave_tests:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test')
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip wheel
+        python -m pip install --upgrade pipenv
+        pipenv install --three --dev --ignore-pipfile
+    - name: Create environment file
+      shell: bash
+      run: |
+        echo ${{ secrets.NP_INTEGRATION_TEST_ENV }} | base64 -d > ./features/environment.py
+    - name: Run Behave Tests
+      run: |
+        pipenv run behave
