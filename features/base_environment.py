@@ -13,14 +13,8 @@ from steps.managers import DirectoryManager, DirectoryDeviceManager, \
 def before_all(context):
     context.organization_factory = OrganizationFactory(
         context.organization_id,
-        context.organization_signature_private_key,
+        context.organization_dual_purpose_private_key,
         url=getattr(context, 'launchkey_url', LAUNCHKEY_PRODUCTION)
-    )
-    context.organization_factory.add_encryption_private_key(
-        context.organization_encryption_private_key
-    )
-    context.organization_factory.add_encryption_private_key(
-        context.organization_signature_private_key
     )
     sample_app_package = 'com.launchkey.android.authenticator.demo.javaApp'
 
@@ -155,3 +149,5 @@ def before_scenario(context, scenario):
 def after_scenario(context, scenario):
     context.directory_device_manager.cleanup()
     context.directory_totp_manager.cleanup()
+    if hasattr(context, 'single_purpose_key_organization_factory'):
+        del context.single_purpose_key_organization_factory
