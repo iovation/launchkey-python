@@ -165,6 +165,10 @@ class NoIssuerKey(LaunchKeyAPIException):
     """Issuer key was not loaded"""
 
 
+class EntityKeyNotFound(LaunchKeyAPIException):
+    """The key id with this current response could not be found within the entities available keys"""
+
+
 class InvalidJWTResponse(LaunchKeyAPIException):
     """JWT Response is not in a valid format"""
 
