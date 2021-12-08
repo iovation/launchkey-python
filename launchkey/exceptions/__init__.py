@@ -166,7 +166,8 @@ class NoIssuerKey(LaunchKeyAPIException):
 
 
 class EntityKeyNotFound(LaunchKeyAPIException):
-    """The key id with this current response could not be found within the entities available keys"""
+    """The key id with this current response could not be found within the
+    entities available keys"""
 
 
 class InvalidJWTResponse(LaunchKeyAPIException):
