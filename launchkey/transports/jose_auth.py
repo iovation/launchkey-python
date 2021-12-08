@@ -492,7 +492,8 @@ class JOSETransport(object):
                 if key.kid == package.headers['kid']:
                     keys = [key]
             if len(keys) == 0:
-                raise EntityKeyNotFound("The key id: %s could not be found in the entities available keys."
+                raise EntityKeyNotFound("The key id: %s could not be found in "
+                                        "the entities available keys."
                                         % package.headers["kid"])
         else:
             keys = list(self.issuer_private_keys)
