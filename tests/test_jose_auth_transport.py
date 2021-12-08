@@ -12,7 +12,7 @@ from launchkey.transports.base import APIResponse, APIErrorResponse
 from launchkey.exceptions import InvalidAlgorithm, UnexpectedAPIResponse, \
     InvalidEntityID, InvalidIssuer, InvalidPrivateKey, NoIssuerKey, \
     InvalidJWTResponse, JWTValidationFailure, LaunchKeyAPIException, \
-    UnexpectedKeyID
+    UnexpectedKeyID, EntityKeyNotFound
 from launchkey import JOSE_SUPPORTED_JWT_ALGS, JOSE_SUPPORTED_JWE_ALGS, JOSE_SUPPORTED_JWE_ENCS, \
     JOSE_SUPPORTED_CONTENT_HASH_ALGS, API_CACHE_TIME, VALID_JWT_ISSUER_LIST, JOSE_JWT_LEEWAY, SDK_VERSION
 
@@ -161,9 +161,9 @@ class TestJWKESTSupportedAlgs(unittest.TestCase):
         self._transport.get.return_value = public_key
         self._transport._server_time_difference = 0, time()
 
-        self._jwt_patch = patch("launchkey.transports.jose_auth.JWT", return_value=MagicMock(spec=JWT)).start()
-        self._jwt_patch.return_value.unpack.return_value.headers = faux_jwt_headers
-
+        self._jwenc_patch = patch("launchkey.transports.jose_auth.JWEnc",
+                                  return_value=MagicMock(spec=JWT)).start()
+        self._jwenc_patch.return_value.unpack.return_value.headers = faux_jwt_headers
         self.addCleanup(patch.stopall)
 
     def _encrypt_decrypt(self):
@@ -191,6 +191,28 @@ class TestJWKESTSupportedAlgs(unittest.TestCase):
         for enc in JOSE_SUPPORTED_JWE_ENCS:
             self._transport.jwe_claims_encryption = enc
             self._encrypt_decrypt()
+
+    def test_no_valid_keys_returns_error(self):
+        with self.assertRaises(EntityKeyNotFound):
+            self._jwenc_patch.return_value.unpack.return_value.headers = \
+                {"alg": "RS512",
+                 "typ": "JWT",
+                 "kid": "ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff"
+                 }
+            self._encrypt_decrypt()
+
+    @patch("launchkey.transports.jose_auth.JWE")
+    def test_no_kid_in_headers_uses_all_keys_to_decrypt(self, jwe_patch):
+        self._jwenc_patch.return_value.unpack.return_value.headers = \
+            {"alg": "RS512",
+             "typ": "JWT",
+             }
+        jwe_patch.return_value.decrypt.return_value = b'{"tobe": "encrypted"}'
+        jwe_patch.return_value.encrypt.return_value = \
+            "this.value.is.encrypted.correctly"
+        self._encrypt_decrypt()
+        jwe_patch.return_value.decrypt.assert_called_once_with(
+            ANY, keys=self._transport.issuer_private_keys)
 
 
 class TestHashlibSupportedAlgs(unittest.TestCase):

@@ -23,7 +23,7 @@ from jwkest.jwt import JWT, BadSyntax
 from ..exceptions import InvalidEntityID, InvalidPrivateKey, \
     InvalidIssuer, InvalidAlgorithm, LaunchKeyAPIException, \
     JWTValidationFailure, UnexpectedAPIResponse, NoIssuerKey, \
-    InvalidJWTResponse, UnexpectedKeyID
+    InvalidJWTResponse, UnexpectedKeyID, EntityKeyNotFound
 from .. import VALID_JWT_ISSUER_LIST, API_CACHE_TIME, \
     JOSE_SUPPORTED_CONTENT_HASH_ALGS, JOSE_SUPPORTED_JWE_ALGS, \
     JOSE_SUPPORTED_JWE_ENCS, JOSE_SUPPORTED_JWT_ALGS, \
@@ -486,11 +486,17 @@ class JOSETransport(object):
         :return: Decrypted string
         """
         package = JWEnc().unpack(response)
-        keys = list(self.issuer_private_keys)
+        keys = list()
         if 'kid' in package.headers:
             for key in self.issuer_private_keys:
                 if key.kid == package.headers['kid']:
                     keys = [key]
+            if len(keys) == 0:
+                raise EntityKeyNotFound("The key id: %s could not be found in "
+                                        "the entities available keys."
+                                        % package.headers["kid"])
+        else:
+            keys = list(self.issuer_private_keys)
         return JWE().decrypt(response, keys=keys).decode('utf-8')
 
     def decrypt_rsa_response(self, response, key_id):

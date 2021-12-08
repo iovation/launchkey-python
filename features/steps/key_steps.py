@@ -1,7 +1,7 @@
 from launchkey import LAUNCHKEY_PRODUCTION
 from launchkey.factories import OrganizationFactory
 from behave import given, when, then
-from hamcrest import assert_that, equal_to
+from hamcrest import assert_that, equal_to, string_contains_in_order
 
 from managers import DirectoryManager
 
@@ -64,7 +64,8 @@ def attempt_basic_api_call(context):
 
 @then("no valid key will be available to decrypt response")
 def no_key_exists_to_decrypt_response(context):
-    assert_that(str(context.current_exception), equal_to("Incorrect decryption."),
-                "Expected an Incorrect Decryption error but received a different error.")
 
-    context.execute_steps("Then a ValueError error occurs")
+    assert_that(str(context.current_exception),
+                string_contains_in_order("The key id:", "could not be found in the entities available keys."))
+
+    context.execute_steps("Then a EntityKeyNotFound error occurs")
