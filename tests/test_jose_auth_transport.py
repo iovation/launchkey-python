@@ -194,8 +194,6 @@ class TestJWKESTSupportedAlgs(unittest.TestCase):
 
     def test_no_valid_keys_returns_error(self):
         with self.assertRaises(EntityKeyNotFound):
-            self._jwenc_patch = patch("launchkey.transports.jose_auth.JWEnc",
-                                    return_value=MagicMock(spec=JWT)).start()
             self._jwenc_patch.return_value.unpack.return_value.headers = \
                 {"alg": "RS512",
                  "typ": "JWT",
@@ -203,14 +201,18 @@ class TestJWKESTSupportedAlgs(unittest.TestCase):
                  }
             self._encrypt_decrypt()
 
-    def test_no_kid_in_headers_uses_all_keys_to_decrypt(self):
-        self._jwenc_patch = patch("launchkey.transports.jose_auth.JWEnc",
-                                return_value=MagicMock(spec=JWT)).start()
+    @patch("launchkey.transports.jose_auth.JWE")
+    def test_no_kid_in_headers_uses_all_keys_to_decrypt(self, jwe_patch):
         self._jwenc_patch.return_value.unpack.return_value.headers = \
             {"alg": "RS512",
              "typ": "JWT",
              }
+        jwe_patch.return_value.decrypt.return_value = b'{"tobe": "encrypted"}'
+        jwe_patch.return_value.encrypt.return_value = \
+            "this.value.is.encrypted.correctly"
         self._encrypt_decrypt()
+        jwe_patch.return_value.decrypt.assert_called_once_with(
+            ANY, keys=self._transport.issuer_private_keys)
 
 
 class TestHashlibSupportedAlgs(unittest.TestCase):
