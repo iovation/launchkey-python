@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.8] # Should match Pipfile, otherwise `pipenv check` will fail
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
