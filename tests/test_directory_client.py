@@ -4,7 +4,6 @@ from json import dumps
 from uuid import uuid4
 
 import pytz
-import six
 from mock import MagicMock, ANY, patch
 
 from launchkey.clients import DirectoryClient
@@ -97,7 +96,7 @@ class TestDirectoryClient(unittest.TestCase):
         )
 
     def test_get_linked_devices_status(self):
-        for key, value in six.iteritems(DeviceStatus._status_map):
+        for key, value in DeviceStatus._status_map.items():
             self._response.data = [{"id": ANY, "name": ANY, "status": key, "type": ANY}]
             device = self._directory_client.get_linked_devices(ANY)[0]
             self.assertEqual(device.status.status_code, value[0])

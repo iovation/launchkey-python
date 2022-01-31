@@ -27,8 +27,8 @@ class ServiceFactory(BaseFactory):
         JOSETransport(jwt_algorithm="RS512", jwe_cek_encryption="RSA-OAEP",
         jwe_claims_encryption="A256CBC-HS512", content_hash_algorithm="S256")
         """
-        super(ServiceFactory, self).__init__('svc', service_id, private_key,
-                                             url, testing, transport)
+        super().__init__('svc', service_id, private_key,
+                         url, testing, transport)
 
     def make_service_client(self):
         """

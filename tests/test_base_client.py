@@ -2,7 +2,6 @@ import unittest
 from mock import MagicMock, ANY, patch
 from uuid import uuid4
 from formencode import Schema, Invalid
-import six
 
 from launchkey.clients.base import api_call, ERROR_CODE_MAP, STATUS_CODE_MAP, \
     BaseClient
@@ -25,7 +24,7 @@ class TestAPICallDecorator(unittest.TestCase):
         self.assertEqual(api_call(method)(), method())
 
     def test_error_code_map_message_passthrough(self):
-        for code, exception in six.iteritems(ERROR_CODE_MAP):
+        for code, exception in ERROR_CODE_MAP.items():
             self._failure_method.side_effect = LaunchKeyAPIException(
                 {"error_code": code, "error_detail": {"error": "details"}}, 400
             )
@@ -36,7 +35,7 @@ class TestAPICallDecorator(unittest.TestCase):
             self.assertIsNone(raised.exception.reason)
 
     def test_error_code_map_without_error_data(self):
-        for code, exception in six.iteritems(ERROR_CODE_MAP):
+        for code, exception in ERROR_CODE_MAP.items():
             self._failure_method.side_effect = LaunchKeyAPIException(
                 {"error_code": code, "error_detail": {"error": "details"}}, 400
             )
@@ -45,7 +44,7 @@ class TestAPICallDecorator(unittest.TestCase):
             self.assertEqual(raised.exception.data, {})
 
     def test_error_code_map_with_error_data(self):
-        for code, exception in six.iteritems(ERROR_CODE_MAP):
+        for code, exception in ERROR_CODE_MAP.items():
             self._failure_method.side_effect = LaunchKeyAPIException(
                 {"error_code": code, "error_detail": {"error": "details"},
                  "error_data": {"error": "data"}}, 400
@@ -55,7 +54,7 @@ class TestAPICallDecorator(unittest.TestCase):
             self.assertEqual(raised.exception.data, {"error": "data"})
 
     def test_status_code_map(self):
-        for code, exception in six.iteritems(STATUS_CODE_MAP):
+        for code, exception in STATUS_CODE_MAP.items():
             self._failure_method.side_effect = LaunchKeyAPIException({}, code)
             with self.assertRaises(exception):
                 api_call(self._failure_method)()

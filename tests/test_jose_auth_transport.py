@@ -1,4 +1,5 @@
 import unittest
+import platform
 
 from Cryptodome.PublicKey.RSA import RsaKey
 from ddt import data, ddt
@@ -11,9 +12,10 @@ from launchkey.transports.base import APIResponse, APIErrorResponse
 from launchkey.exceptions import InvalidAlgorithm, UnexpectedAPIResponse, \
     InvalidEntityID, InvalidIssuer, InvalidPrivateKey, NoIssuerKey, \
     InvalidJWTResponse, JWTValidationFailure, LaunchKeyAPIException, \
-    UnexpectedKeyID
+    UnexpectedKeyID, EntityKeyNotFound
 from launchkey import JOSE_SUPPORTED_JWT_ALGS, JOSE_SUPPORTED_JWE_ALGS, JOSE_SUPPORTED_JWE_ENCS, \
-    JOSE_SUPPORTED_CONTENT_HASH_ALGS, API_CACHE_TIME, VALID_JWT_ISSUER_LIST, JOSE_JWT_LEEWAY
+    JOSE_SUPPORTED_CONTENT_HASH_ALGS, API_CACHE_TIME, VALID_JWT_ISSUER_LIST, JOSE_JWT_LEEWAY, SDK_VERSION
+
 from datetime import datetime
 from jwkest.jwk import RSAKey
 from uuid import uuid4
@@ -159,9 +161,9 @@ class TestJWKESTSupportedAlgs(unittest.TestCase):
         self._transport.get.return_value = public_key
         self._transport._server_time_difference = 0, time()
 
-        self._jwt_patch = patch("launchkey.transports.jose_auth.JWT", return_value=MagicMock(spec=JWT)).start()
-        self._jwt_patch.return_value.unpack.return_value.headers = faux_jwt_headers
-
+        self._jwenc_patch = patch("launchkey.transports.jose_auth.JWEnc",
+                                  return_value=MagicMock(spec=JWT)).start()
+        self._jwenc_patch.return_value.unpack.return_value.headers = faux_jwt_headers
         self.addCleanup(patch.stopall)
 
     def _encrypt_decrypt(self):
@@ -189,6 +191,28 @@ class TestJWKESTSupportedAlgs(unittest.TestCase):
         for enc in JOSE_SUPPORTED_JWE_ENCS:
             self._transport.jwe_claims_encryption = enc
             self._encrypt_decrypt()
+
+    def test_no_valid_keys_returns_error(self):
+        with self.assertRaises(EntityKeyNotFound):
+            self._jwenc_patch.return_value.unpack.return_value.headers = \
+                {"alg": "RS512",
+                 "typ": "JWT",
+                 "kid": "ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff:ff"
+                 }
+            self._encrypt_decrypt()
+
+    @patch("launchkey.transports.jose_auth.JWE")
+    def test_no_kid_in_headers_uses_all_keys_to_decrypt(self, jwe_patch):
+        self._jwenc_patch.return_value.unpack.return_value.headers = \
+            {"alg": "RS512",
+             "typ": "JWT",
+             }
+        jwe_patch.return_value.decrypt.return_value = b'{"tobe": "encrypted"}'
+        jwe_patch.return_value.encrypt.return_value = \
+            "this.value.is.encrypted.correctly"
+        self._encrypt_decrypt()
+        jwe_patch.return_value.decrypt.assert_called_once_with(
+            ANY, keys=self._transport.issuer_private_keys)
 
 
 class TestHashlibSupportedAlgs(unittest.TestCase):
@@ -224,21 +248,42 @@ class TestJOSEProcessJOSERequest(unittest.TestCase):
         self._transport.decrypt_response = MagicMock(return_value="Decrypted Response")
         self._transport._encrypt_request = MagicMock(return_value="Encrypted Response")
 
-    @patch('requests.get')
-    def test_process_jose_request_success_encrypted_response(self, requests_patch):
-        requests_patch.return_value = MagicMock()
+    def test_process_jose_request_success_encrypted_response(self):
         response = self._transport._process_jose_request('GET', '/path', 'subject', 'body')
         self._transport.decrypt_response.assert_called_once()
         self.assertEqual(response.data, self._transport.decrypt_response.return_value)
 
+    def test_encrypted_header_contains_expected_user_agent(self):
+        self._transport._process_jose_request('GET', '/path', 'subject', 'body')
+        self._http_transport.get.assert_called_once_with(
+            ANY, data=ANY, headers={
+                "content-type": "application/jwe",
+                "Authorization": ANY,
+                "User-Agent": f"PythonServiceSDK/{SDK_VERSION} " \
+                                f"({platform.system()} {platform.release()})"
+            }
+        )
+
     def test_process_jose_request_success_unencrypted_response(self):
         self._transport._http_client = MagicMock()
         self._transport._http_client.get.return_value = APIResponse({"a": "response"}, {}, 200)
-        response = self._transport._process_jose_request('GET', '/path', ANY)
+        response = self._transport._process_jose_request('GET', '/path', 'subject')
         self._transport.decrypt_response.assert_not_called()
         self.assertIsInstance(response, APIResponse)
         self.assertEqual(response.data, {"a": "response"})
         self.assertEqual(response.status_code, 200)
+
+    def test_unencrypted_header_contains_expected_user_agent(self):
+        self._transport._http_client.get.return_value = APIResponse({"a": "response"}, {}, 200)
+        self._transport._process_jose_request("GET", "/path", "subject")
+        self._http_transport.get.assert_called_once_with(
+            ANY, data=ANY, headers={
+                "content-type": "application/jwt",
+                "Authorization": ANY,
+                "User-Agent": f"PythonServiceSDK/{SDK_VERSION} " \
+                              f"({platform.system()} {platform.release()})"
+            }
+        )
 
     def test_process_jose_request_success_empty_response(self):
         self._transport._http_client = MagicMock()

@@ -4,6 +4,7 @@
 
 import warnings
 import json
+import platform
 
 from base64 import b64decode
 from uuid import UUID, uuid4
@@ -19,16 +20,14 @@ from jwkest.jws import JWS, NoSuitableSigningKeys
 from jwkest.jwe import JWE, JWEnc
 from jwkest.jwt import JWT, BadSyntax
 
-import six
-
 from ..exceptions import InvalidEntityID, InvalidPrivateKey, \
     InvalidIssuer, InvalidAlgorithm, LaunchKeyAPIException, \
     JWTValidationFailure, UnexpectedAPIResponse, NoIssuerKey, \
-    InvalidJWTResponse, UnexpectedKeyID
+    InvalidJWTResponse, UnexpectedKeyID, EntityKeyNotFound
 from .. import VALID_JWT_ISSUER_LIST, API_CACHE_TIME, \
     JOSE_SUPPORTED_CONTENT_HASH_ALGS, JOSE_SUPPORTED_JWE_ALGS, \
     JOSE_SUPPORTED_JWE_ENCS, JOSE_SUPPORTED_JWT_ALGS, \
-    JOSE_AUDIENCE, JOSE_JWT_LEEWAY
+    JOSE_AUDIENCE, JOSE_JWT_LEEWAY, SDK_VERSION
 from .http import RequestsTransport
 from .base import APIErrorResponse
 
@@ -129,14 +128,13 @@ class JOSETransport(object):
         try:
             jwt = headers.get("X-IOV-JWT")
             jwt_headers = JWT().unpack(jwt).headers
-
-        except (BadSyntax, IndexError, ValueError):
+        except (BadSyntax, IndexError, ValueError) as jwt_error:
             raise UnexpectedAPIResponse("JWT was missing or malformed in API "
-                                        "response.")
+                                        "response.") from jwt_error
 
         kid = jwt_headers.get("kid")
 
-        if not isinstance(kid, six.string_types):
+        if not isinstance(kid, str):
             raise JWTValidationFailure("`kid` header in JWT was missing or"
                                        " invalid.")
 
@@ -154,7 +152,7 @@ class JOSETransport(object):
             return response.headers["X-IOV-KEY-ID"]
         except KeyError:
             raise UnexpectedAPIResponse("X-IOV-KEY-ID was missing or malformed"
-                                        " in API response.")
+                                        " in API response.") from None
 
     @staticmethod
     def parse_api_time(api_time):
@@ -179,7 +177,8 @@ class JOSETransport(object):
                     response.data['api_time']), now
             except (KeyError, ValueError, TypeError):
                 raise UnexpectedAPIResponse(
-                    "Unexpected api time received: %s" % response.data)
+                    "Unexpected api time received: %s" % response.data) \
+                    from None
         return self._server_time_difference[0]
 
     @property
@@ -241,7 +240,7 @@ class JOSETransport(object):
         kid = self._get_kid_from_api_response(response)
         public_key = response.data
 
-        if not isinstance(public_key, six.string_types):
+        if not isinstance(public_key, str):
             raise UnexpectedAPIResponse("Unexpected API public key response"
                                         " received: %s" % response.data)
 
@@ -259,9 +258,9 @@ class JOSETransport(object):
         if not self._public_key_cache.get(kid):
             try:
                 rsa_key = RSAKey(key=import_rsa_key(public_key), kid=kid)
-            except (TypeError, ValueError):
+            except (TypeError, ValueError) as rsa_error:
                 raise UnexpectedAPIResponse("RSA parsing error for public key"
-                                            ": %s" % public_key)
+                                            ": %s" % public_key) from rsa_error
 
             self._public_key_cache[kid] = rsa_key
 
@@ -335,17 +334,18 @@ class JOSETransport(object):
             UUID(str(issuer_id))
         except ValueError:
             raise InvalidEntityID(
-                "The given id was invalid. Please ensure it is a UUID.")
+                "The given id was invalid. Please ensure it is a UUID.") \
+                from None
         self.issuer = "%s:%s" % (issuer, issuer_id)
         try:
             self.signing_key = RSAKey(
                 key=import_rsa_key(private_key),
                 kid=self.__generate_key_id(private_key)
             )
-        except ValueError:
+        except ValueError as rsa_error:
             raise InvalidPrivateKey(
                 "Invalid private key. Please ensure you are submitting "
-                "a string representation of a PEM private key.")
+                "a string representation of a PEM private key.") from rsa_error
 
     def _get_jwt_signature(self, params):
         try:
@@ -354,9 +354,10 @@ class JOSETransport(object):
 
             jws = JWS(params, alg=self.jwt_algorithm)
             return jws.sign_compact(keys=[self.signing_key])
-        except NoSuitableSigningKeys:
+        except NoSuitableSigningKeys as signing_error:
             raise NoIssuerKey(
-                "An issuer key wasn't loaded. Please run set_issuer() first.")
+                "An issuer key wasn't loaded. "
+                "Please run set_issuer() first.") from signing_error
 
     def _build_jwt_signature(self, method, resource, jti, subject,
                              content_hash=None):
@@ -396,9 +397,9 @@ class JOSETransport(object):
     def _get_jwt_payload(self, compact_jwt):
         try:
             return JWS().verify_compact(compact_jwt, keys=self.api_public_keys)
-        except (AttributeError, BadSyntax):
+        except (AttributeError, BadSyntax) as jws_error:
             raise InvalidJWTResponse(
-                "Received JWT is not valid: %s" % compact_jwt)
+                "Received JWT is not valid: %s" % compact_jwt) from jws_error
 
     @staticmethod
     def _get_content_hash(body, hash_function):
@@ -418,7 +419,7 @@ class JOSETransport(object):
             raise InvalidAlgorithm(
                 "Invalid hash algorithm {}!".format(hash_function))
 
-        return hasher(six.b(body)).hexdigest()
+        return hasher(body.encode("latin1")).hexdigest()
 
     def _encrypt_request(self, data):
         """
@@ -455,6 +456,8 @@ class JOSETransport(object):
             signature = self._build_jwt_signature(method, path, jti, subject)
             headers = {"content-type": "application/jwt",
                        "Authorization": signature}
+        headers["User-Agent"] = f"PythonServiceSDK/{SDK_VERSION} " \
+                                f"({platform.system()} {platform.release()})"
         response = getattr(self._http_client, method.lower())(path, data=body,
                                                               headers=headers)
 
@@ -483,11 +486,17 @@ class JOSETransport(object):
         :return: Decrypted string
         """
         package = JWEnc().unpack(response)
-        keys = list(self.issuer_private_keys)
+        keys = list()
         if 'kid' in package.headers:
             for key in self.issuer_private_keys:
                 if key.kid == package.headers['kid']:
                     keys = [key]
+            if len(keys) == 0:
+                raise EntityKeyNotFound("The key id: %s could not be found in "
+                                        "the entities available keys."
+                                        % package.headers["kid"])
+        else:
+            keys = list(self.issuer_private_keys)
         return JWE().decrypt(response, keys=keys).decode('utf-8')
 
     def decrypt_rsa_response(self, response, key_id):
@@ -533,7 +542,8 @@ class JOSETransport(object):
         try:
             payload = self._get_jwt_payload(auth)
         except JWKESTException as reason:
-            raise JWTValidationFailure("Unable to parse JWT", reason=reason)
+            raise JWTValidationFailure("Unable to parse JWT",
+                                       reason=reason) from reason
 
         self._verify_jwt_payload(payload, self.audience, self.issuer, subject)
 
@@ -596,7 +606,8 @@ class JOSETransport(object):
             self._cache_public_key(kid, public_key)
             payload = self._get_jwt_payload(compact_jwt)
         except JWKESTException as reason:
-            raise JWTValidationFailure("Unable to parse JWT", reason=reason)
+            raise JWTValidationFailure("Unable to parse JWT",
+                                       reason=reason) from reason
 
         self._verify_jwt_payload(payload, self.audience, self.issuer, subject)
 
@@ -676,7 +687,7 @@ class JOSETransport(object):
                                                            'func'))
             except InvalidAlgorithm as reason:
                 raise JWTValidationFailure("Invalid algorithm in JWT",
-                                           reason=reason)
+                                           reason=reason) from reason
             received_hash = custom_segment.get('hash')
             if received_hash != expected_hash:
                 raise JWTValidationFailure(

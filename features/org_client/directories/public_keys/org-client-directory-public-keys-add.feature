@@ -17,15 +17,15 @@ Feature: Organization clients can add a Public Key to a Directory
     And I retrieve the current Directory's Public Keys
     Then the Public Key is in the list of Public Keys for the Directory and has a <key_type> key type
   Examples:
-  | key_type |
-  | 0        |
-  | 1        |
-  | 2        |
+  | key_type   |
+  | BOTH       |
+  | ENCRYPTION |
+  | SIGNATURE  |
 
   Scenario: Adding a Public Key to a Directory with an empty key type defaults to a dual use key type
     When I add a Public Key to the Directory
     And I retrieve the current Directory's Public Keys
-    Then the Public Key is in the list of Public Keys for the Directory and has a "0" key type
+    Then the Public Key is in the list of Public Keys for the Directory and has a "BOTH" key type
 
   Scenario: Adding a Public Key to a Directory with an invalid key type yields an error
     When I attempt to add a Public Key with a "sup" type to the Directory

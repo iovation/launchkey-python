@@ -4,7 +4,6 @@ from unittest import TestCase
 from dateutil.tz import tzutc
 from ddt import data, ddt
 from formencode import Invalid
-from six import assertRaisesRegex
 
 from launchkey.entities.validation import AuthorizeValidator, \
     ConditionalGeoFenceValidator, PolicyFenceValidator, FenceValidator, \
@@ -122,8 +121,7 @@ class TestDirectoryUserTOTPValidator(TestCase):
         )
 
     def test_invalid_digits(self):
-        with assertRaisesRegex(
-                self,
+        with self.assertRaisesRegex(
                 Invalid,
                 r"^digits: Please enter an integer value$"):
             self._validator.to_python({
@@ -147,8 +145,7 @@ class TestDirectoryUserTOTPValidator(TestCase):
         )
 
     def test_invalid_period(self):
-        with assertRaisesRegex(
-                self,
+        with self.assertRaisesRegex(
                 Invalid,
                 r"^period: Please enter an integer value$"):
             self._validator.to_python({
@@ -324,7 +321,7 @@ class TestPolicyFenceValidator(TestCase):
             "country": "US",
             "name": name
         }
-        with assertRaisesRegex(self, Invalid, r"^name: Please enter a value$"):
+        with self.assertRaisesRegex(Invalid, r"^name: Please enter a value$"):
             self._validator.to_python(self._data)
 
     def test_territory_type(self):
@@ -369,7 +366,7 @@ class TestPolicyFenceValidator(TestCase):
             "longitude": -90,
             "radius": 105
         }
-        with assertRaisesRegex(self, Invalid, "type: Missing value$"):
+        with self.assertRaisesRegex(Invalid, "type: Missing value$"):
             self._validator.to_python(self._data)
 
 
@@ -519,7 +516,7 @@ class TestConditionalGeoFenceValidator(TestCase):
                 "factors": ["KNOWLEDGE", "INHERENCE", "POSSESSION"]
             }
         }
-        with assertRaisesRegex(self, Invalid, "^inside: Missing value$"):
+        with self.assertRaisesRegex(Invalid, "^inside: Missing value$"):
             self._validator().to_python(self._data)
 
     def test_missing_outside(self):
@@ -538,7 +535,7 @@ class TestConditionalGeoFenceValidator(TestCase):
                 "factors": ["KNOWLEDGE", "INHERENCE", "POSSESSION"]
             }
         }
-        with assertRaisesRegex(self, Invalid, "^outside: Missing value$"):
+        with self.assertRaisesRegex(Invalid, "^outside: Missing value$"):
             self._validator().to_python(self._data)
 
 

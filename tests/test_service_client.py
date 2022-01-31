@@ -8,7 +8,6 @@ from ddt import ddt, data, unpack
 from formencode import Invalid
 from jwkest import JWKESTException
 from mock import MagicMock, ANY, patch
-from six import assertRaisesRegex, assertCountEqual
 
 from launchkey.clients import ServiceClient
 from launchkey.clients.service import AuthorizationResponse, SessionEndRequest, AuthPolicy
@@ -918,13 +917,13 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
                                                     deny_rooted_jailbroken=False, deny_emulator_simulator=True,
                                                     fences=fences)
 
-        assertCountEqual(self, fences, geofence_policy.fences)
+        self.assertEqual(len(fences), len(geofence_policy.fences))
         self.assertEqual(fences, geofence_policy.fences)
 
     def test_old_fence_raises_exception(self):
         fences = [GeoFence(200, 100, 200, "OldFence")]
 
-        with assertRaisesRegex(self, InvalidFenceType, "Invalid Fence object. Fence must be one of the following"):
+        with self.assertRaisesRegex(InvalidFenceType, "Invalid Fence object. Fence must be one of the following"):
             ConditionalGeoFencePolicy(
                 self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY, deny_rooted_jailbroken=False,
                 deny_emulator_simulator=True, fences=fences
@@ -933,7 +932,7 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
     def test_time_fence_throws_exception(self):
         from datetime import time
         fences = [TimeFence("TimeFence", time(hour=9), time(hour=17), monday=True)]
-        with assertRaisesRegex(self, InvalidFenceType, "Invalid Fence object. Fence must be one of the following"):
+        with self.assertRaisesRegex(InvalidFenceType, "Invalid Fence object. Fence must be one of the following"):
             ConditionalGeoFencePolicy(
                 self.DEFAULT_INSIDE_POLICY, self.DEFAULT_OUTSIDE_POLICY, fences=fences
             )
@@ -943,13 +942,13 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
                                                        deny_rooted_jailbroken=False, deny_emulator_simulator=False)
 
         # Test Inside Policy
-        with assertRaisesRegex(self, InvalidPolicyAttributes, "Inside and Outside policies must be one of the "
+        with self.assertRaisesRegex(InvalidPolicyAttributes, "Inside and Outside policies must be one of the "
                                                              "following:"):
             ConditionalGeoFencePolicy(conditional_policy, self.DEFAULT_OUTSIDE_POLICY,
                                       deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
         # Test Outside Policy
-        with assertRaisesRegex(self, InvalidPolicyAttributes, "Inside and Outside policies must be one of the "
+        with self.assertRaisesRegex(InvalidPolicyAttributes, "Inside and Outside policies must be one of the "
                                                              "following:"):
             ConditionalGeoFencePolicy(self.DEFAULT_INSIDE_POLICY, conditional_policy,
                                       deny_rooted_jailbroken=False, deny_emulator_simulator=True)
@@ -967,22 +966,22 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
         inside = FactorsPolicy(deny_rooted_jailbroken=True, deny_emulator_simulator=False, knowledge_required=True)
         outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, possession_required=True)
         # TEST INSIDE
-        with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_rooted_jailbroken is not allowed"):
+        with self.assertRaisesRegex(InvalidPolicyAttributes, "Setting deny_rooted_jailbroken is not allowed"):
             ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
         # TEST OUTSIDE
         outside = FactorsPolicy(deny_rooted_jailbroken=True, deny_emulator_simulator=False, knowledge_required=True)
-        with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_rooted_jailbroken is not allowed"):
+        with self.assertRaisesRegex(InvalidPolicyAttributes, "Setting deny_rooted_jailbroken is not allowed"):
             ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
     def test_deny_emulator_simulator_cannot_be_set_on_inner_policy(self):
         inside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, knowledge_required=True)
         outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=False, possession_required=True)
         # TEST INSIDE
-        with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_emulator_simulator is not allowed"):
+        with self.assertRaisesRegex(InvalidPolicyAttributes, "Setting deny_emulator_simulator is not allowed"):
             ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
         # TEST OUTSIDE
         outside = FactorsPolicy(deny_rooted_jailbroken=False, deny_emulator_simulator=True, knowledge_required=True)
-        with assertRaisesRegex(self, InvalidPolicyAttributes, "Setting deny_emulator_simulator is not allowed"):
+        with self.assertRaisesRegex(InvalidPolicyAttributes, "Setting deny_emulator_simulator is not allowed"):
             ConditionalGeoFencePolicy(inside, outside, deny_rooted_jailbroken=False, deny_emulator_simulator=True)
 
     def test_inside_policy_fences_throws_exception(self):
@@ -990,7 +989,7 @@ class TestConditionalGeoFencePolicy(unittest.TestCase):
         inside = FactorsPolicy(
             deny_rooted_jailbroken=False, deny_emulator_simulator=False,  knowledge_required=True, fences=fences
         )
-        with assertRaisesRegex(self, InvalidPolicyAttributes,
+        with self.assertRaisesRegex(InvalidPolicyAttributes,
                                     "Fences are not allowed on Inside or Outside Policy objects"):
             ConditionalGeoFencePolicy(inside=inside, outside=self.DEFAULT_OUTSIDE_POLICY)
 

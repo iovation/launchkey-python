@@ -54,7 +54,7 @@ class AuthorizationResponsePolicy(Policy):
     def __init__(self, requirement=None, amount=0, fences=None,
                  inherence_required=False, knowledge_required=False,
                  possession_required=False):
-        super(AuthorizationResponsePolicy, self).__init__(fences)
+        super().__init__(fences)
 
         if requirement and not isinstance(requirement, Requirement):
             raise InvalidPolicyAttributes("Requirement must be an enumeration "
@@ -122,7 +122,7 @@ class ConditionalGeoFencePolicy(Policy):
     #  pylint: disable=too-many-arguments
     def __init__(self, inside, outside, deny_rooted_jailbroken=False,
                  deny_emulator_simulator=False, fences=None):
-        super(ConditionalGeoFencePolicy, self).__init__(fences)
+        super().__init__(fences)
 
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
@@ -232,7 +232,7 @@ class LegacyPolicy(Policy):
 
             sanitized_fences.append(fence)
 
-        super(LegacyPolicy, self).__init__(sanitized_fences)
+        super().__init__(sanitized_fences)
         self.amount = amount
         self.inherence_required = inherence_required
         self.knowledge_required = knowledge_required
@@ -291,7 +291,7 @@ class MethodAmountPolicy(Policy):
     """
     def __init__(self, amount=0, deny_rooted_jailbroken=False,
                  deny_emulator_simulator=False, fences=None):
-        super(MethodAmountPolicy, self).__init__(fences)
+        super().__init__(fences)
         self.amount = amount
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
@@ -345,7 +345,7 @@ class FactorsPolicy(Policy):
                  deny_emulator_simulator=False, inherence_required=False,
                  knowledge_required=False, possession_required=False,
                  fences=None):
-        super(FactorsPolicy, self).__init__(fences)
+        super().__init__(fences)
         self.deny_rooted_jailbroken = deny_rooted_jailbroken
         self.deny_emulator_simulator = deny_emulator_simulator
         self.inherence_required = inherence_required
@@ -408,7 +408,7 @@ class GeoCircleFence(Fence):
     :param name: name of the Fence
     """
     def __init__(self, latitude, longitude, radius, name=None):
-        super(GeoCircleFence, self).__init__(name)
+        super().__init__(name)
         self.latitude = float(latitude)
         self.longitude = float(longitude)
         self.radius = float(radius)
@@ -454,7 +454,7 @@ class TerritoryFence(Fence):
     """
     def __init__(self, country, administrative_area=None, postal_code=None,
                  name=None):
-        super(TerritoryFence, self).__init__(name)
+        super().__init__(name)
         self.country = country
         self.administrative_area = administrative_area
         self.postal_code = str(postal_code) if postal_code else None
