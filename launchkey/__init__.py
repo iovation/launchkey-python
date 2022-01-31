@@ -1,5 +1,5 @@
 """LaunchKey Service SDK module"""
-SDK_VERSION = '4.0.0'
+SDK_VERSION = '4.1.0'
 LAUNCHKEY_PRODUCTION = "https://api.launchkey.com"
 VALID_JWT_ISSUER_LIST = ["svc", "dir", "org"]
 JOSE_SUPPORTED_JWE_ALGS = ['RSA-OAEP']
