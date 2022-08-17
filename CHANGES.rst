@@ -1,6 +1,10 @@
 CHANGELOG for LaunchKey Python SDK
 ==================================
 
+4.0.1
+-----
+* Updated dependencies and fixed security issue for PyLint in dev dependencies
+
 4.0.0
 -----
 

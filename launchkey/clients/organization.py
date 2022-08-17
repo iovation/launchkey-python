@@ -135,6 +135,7 @@ class OrganizationClient(ServiceManagingBaseClient):
                                      self._subject,
                                      directory_id=str(directory_id)).data]
 
+    # pylint: disable = duplicate-code
     @api_call
     def add_directory_public_key(self, directory_id, public_key, expires=None,
                                  active=None, key_type=None):

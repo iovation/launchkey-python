@@ -1,2 +1,2 @@
 [MASTER]
-disable=useless-object-inheritance
+disable=useless-object-inheritance,consider-using-f-string
