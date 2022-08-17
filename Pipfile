@@ -14,7 +14,7 @@ mock = ">= 2.0.0, < 3.0.0"
 ddt = ">= 1.1.1, < 2.0.0"
 # Tools for static analysis
 flake8 = "~=3.8.3"
-pylint = "~=2.7.0"
+pylint = "~=2.13.0"
 coverage = "~=4.5.2"
 # Tools for multi-environment testing before sending to CI
 tox = "~=3.8.0"

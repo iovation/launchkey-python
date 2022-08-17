@@ -486,7 +486,7 @@ class JOSETransport(object):
         :return: Decrypted string
         """
         package = JWEnc().unpack(response)
-        keys = list()
+        keys = []
         if 'kid' in package.headers:
             for key in self.issuer_private_keys:
                 if key.kid == package.headers['kid']:
