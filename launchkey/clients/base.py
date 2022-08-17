@@ -264,6 +264,7 @@ class ServiceManagingBaseClient(BaseClient):
         self._transport.patch(self.__service_base_path, self._subject,
                               **kwargs)
 
+    # pylint: disable = duplicate-code
     @api_call
     def add_service_public_key(self, service_id, public_key, expires=None,
                                active=None, key_type=None):
@@ -523,7 +524,7 @@ class ServiceManagingBaseClient(BaseClient):
 
     @staticmethod
     def __generate_fence_objects_from_policy(policy):
-        fences = list()
+        fences = []
         for fence in policy["fences"]:
             if fence["type"] == "GEO_CIRCLE":
                 fences.append(
