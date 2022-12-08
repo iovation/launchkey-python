@@ -58,4 +58,4 @@ jobs:
         pipenv run pylint launchkey
     - name: Dependency Check
       run: |
-        pipenv check
+        pipenv check --ignore 51457
