@@ -1,3 +1,7 @@
+⛔️ DEPRECATED ⛔️
+============
+As of 05/23/2023 the TruValidate Multifactor Authentication API has been taken offline.
+
 Python SDK for TruValidate Multifactor Authentication API
 =========================================================
 
